@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}QR-меню{% endblock %}
+{% block content %}
+<style>
+  .qr svg { width: 100%; height: auto; display: block; }
+  @media print {
+    header, .no-print { display: none !important; }
+    body { background: #fff !important; }
+  }
+</style>
+<h1 class="text-3xl font-bold mb-4 no-print">QR-меню</h1>
+
+{% if is_local %}
+  <p class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 no-print">
+    Вы открыли страницу через localhost, поэтому QR-код ведёт на адрес, который с телефона не откроется.
+    Откройте эту страницу по IP компьютера (например, 192.168.1.5:8000/menu/qr/) и обновите её.
+  </p>
+{% endif %}
+
+<div class="max-w-sm mx-auto bg-white rounded-2xl shadow p-6 text-center">
+  <div class="text-xl font-bold mb-3">Наше меню</div>
+  <div class="qr">{{ qr }}</div>
+  <div class="mt-3 text-sm text-slate-500">Наведите камеру телефона на код</div>
+  <div class="mt-1 text-xs text-slate-400 break-all">{{ url }}</div>
+</div>
+
+<div class="max-w-sm mx-auto mt-4 space-y-3 no-print">
+  <button type="button" onclick="window.print()" class="w-full h-14 rounded-xl bg-slate-900 text-white text-lg font-bold">Печать</button>
+  <a href="{% url 'public_menu' %}" class="flex items-center justify-center w-full h-14 rounded-xl bg-white border-2 border-slate-900 text-slate-900 text-lg font-bold">Открыть меню</a>
+    <a href="{% url 'tables_qr' %}" class="flex items-center justify-center w-full h-14 rounded-xl bg-emerald-600 text-white text-lg font-bold">QR для каждого стола</a>
+</div>
+{% endblock %}

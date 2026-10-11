@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+
+# virtual environment
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# local data and backups
+db.sqlite3
+*.sqlite3
+backups/
+*.dump
+
+# collected static files
+staticfiles/
+
+# editor and system
+.idea/
+.DS_Store
+Thumbs.db

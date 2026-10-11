@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="max-w-sm mx-auto mt-16 bg-white border border-slate-200 rounded-[20px] shadow-sm p-8">
+  <div class="flex items-center gap-3 mb-6">
+    <span class="w-11 h-11 rounded-xl bg-amber-400 text-slate-900 grid place-items-center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 3v2M12 3v2"/></svg>
+    </span>
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Вход</h1>
+      <p class="text-sm text-slate-500">CafePOS</p>
+    </div>
+  </div>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if form.errors %}<p class="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">Неверный логин или пароль.</p>{% endif %}
+    <div>
+      <label for="id_username" class="block text-sm text-slate-500 mb-1.5">Логин</label>
+      <input id="id_username" name="username" autofocus autocomplete="username"
+             class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    </div>
+    <div>
+      <label for="id_password" class="block text-sm text-slate-500 mb-1.5">Пароль</label>
+      <input id="id_password" name="password" type="password" autocomplete="current-password"
+             class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    </div>
+    <button class="w-full min-h-[56px] bg-emerald-500 hover:bg-emerald-400 text-emerald-950 rounded-2xl text-lg font-bold">Войти</button>
+  </form>
+</div>
+{% endblock %}

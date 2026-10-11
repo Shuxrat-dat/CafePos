@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Залы{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-[28px] font-bold tracking-tight">План зала</h1>
+  <p class="text-sm text-slate-500 mt-1">Выберите стол, чтобы открыть заказ</p>
+</div>
+
+<div class="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-slate-500 mb-2">
+  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-white border border-slate-300 inline-block"></i>Свободен</span>
+  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-amber-400 inline-block"></i>Занят</span>
+  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-slate-300 inline-block"></i>Чужой стол</span>
+  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-red-600 inline-block"></i>Гость просит</span>
+</div>
+
+{% for hall in halls %}
+  <h2 class="text-xl font-bold mb-3 mt-7">{{ hall.name }}</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    {% for table in hall.tables.all %}
+      {% if table.locked %}
+        <div class="min-h-[132px] rounded-[18px] p-4 flex flex-col justify-between bg-slate-100 border border-slate-200 text-slate-500">
+          <span class="text-[22px] font-bold">Стол {{ table.number }}</span>
+          <span class="text-sm">Занят · {{ table.open_order.waiter.username }}</span>
+        </div>
+      {% else %}
+        <form method="post" action="{% url 'open_table' table.id %}" class="relative">
+          {% csrf_token %}
+          {% if table.guest_pending %}
+            <div class="absolute -top-2 right-3.5 z-10 flex items-center gap-1.5 text-xs font-bold text-white bg-red-600 rounded-full px-3 py-1 shadow-md">
+              <span class="w-[7px] h-[7px] rounded-full bg-white"></span>Заявка гостя
+            </div>
+          {% endif %}
+          <button class="w-full min-h-[132px] rounded-[18px] p-4 text-left flex flex-col justify-between shadow-sm border
+            {% if table.open_order %}bg-amber-50 border-amber-300 ring-1 ring-inset ring-amber-300 hover:bg-amber-100{% else %}bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-300{% endif %}">
+            <span class="text-[22px] font-bold">Стол {{ table.number }}</span>
+            {% if table.open_order %}
+              <span class="text-sm font-semibold text-amber-900">Заказ №{{ table.open_order.id }} · {{ table.open_order.total }} сум{% if user.sees_all_orders %} · {{ table.open_order.waiter.username }}{% endif %}</span>
+            {% else %}
+              <span class="text-sm text-slate-500">Свободен · {{ table.seats }} мест</span>
+            {% endif %}
+          </button>
+        </form>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% empty %}
+  <p class="text-slate-500">Залов пока нет. Создайте их в админке.</p>
+{% endfor %}
+{% endblock %}

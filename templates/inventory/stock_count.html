@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Пересчёт остатков{% endblock %}
+{% block content %}
+<a href="{% url 'stock' %}" class="inline-flex items-center gap-1.5 min-h-[44px] text-[15px] text-slate-600 hover:text-slate-900">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>К складу
+</a>
+<h1 class="text-[28px] font-bold tracking-tight mt-1 mb-5">Пересчёт остатков</h1>
+
+{% if done != "" %}
+  <p class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 max-w-2xl">
+    {% if done == "0" %}Расхождений нет, остатки совпали.{% else %}Исправлено позиций: {{ done }}.{% endif %}
+  </p>
+{% endif %}
+{% if error %}<p class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium max-w-2xl">{{ error }}</p>{% endif %}
+
+<form method="post" class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5 max-w-2xl">
+  {% csrf_token %}
+  <p class="text-sm text-slate-500 mb-3">Введите, сколько продукта реально на складе. Пустые поля пропускаются, остаток не меняется.</p>
+  <div class="divide-y divide-slate-100">
+    {% for p in products %}
+      <div class="py-3 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-semibold">{{ p.name }}</div>
+          <div class="text-sm text-slate-500">В учёте: {{ p.stock|floatformat:"-3g" }} {{ p.get_unit_display }}</div>
+        </div>
+        <input name="fact_{{ p.id }}" value="{{ p.entered }}" inputmode="decimal" placeholder="факт"
+               class="w-32 border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg text-right focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+    {% empty %}
+      <p class="text-slate-500">Продуктов пока нет.</p>
+    {% endfor %}
+  </div>
+  <button class="mt-4 w-full min-h-[56px] rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-bold">Применить пересчёт</button>
+</form>
+{% endblock %}

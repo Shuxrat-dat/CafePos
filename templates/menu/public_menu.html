@@ -1,0 +1,35 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Меню</title>
+  <script src="{% static 'js/tailwind.js' %}"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900">
+  <header class="bg-slate-900 text-white px-4 py-4 text-center">
+    <h1 class="text-2xl font-bold">Меню</h1>
+  </header>
+  <main class="p-4 max-w-xl mx-auto space-y-6">
+    {% for category in categories %}
+      <section>
+        <h2 class="text-xl font-bold mb-2">{{ category.name }}</h2>
+        <div class="bg-white rounded-2xl shadow divide-y">
+          {% for dish in category.available %}
+            <div class="p-4 flex justify-between gap-4">
+              <div class="min-w-0">
+                <div class="font-semibold">{{ dish.name }}</div>
+                {% if dish.description %}<div class="text-sm text-slate-500 mt-1">{{ dish.description }}</div>{% endif %}
+              </div>
+              <div class="font-bold whitespace-nowrap">{{ dish.price|floatformat:"0g" }} сум</div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% empty %}
+      <p class="text-center text-slate-500">Меню скоро появится.</p>
+    {% endfor %}
+  </main>
+</body>
+</html>

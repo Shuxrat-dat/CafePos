@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Отчёты{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-[28px] font-bold tracking-tight">Отчёты</h1>
+  <p class="text-sm text-slate-500 mt-1">{{ date_from }} — {{ date_to }}</p>
+</div>
+
+<div class="flex flex-wrap items-end gap-3 mb-6">
+  <div class="flex flex-wrap gap-2">
+    {% for r in ranges %}
+      <a href="?from={{ r.start }}&to={{ r.end }}"
+         class="px-4 min-h-[44px] flex items-center rounded-xl font-semibold border {% if r.start == date_from and r.end == date_to %}bg-slate-900 border-slate-900 text-white{% else %}bg-white border-slate-200 text-slate-600 hover:text-slate-900{% endif %}">{{ r.label }}</a>
+    {% endfor %}
+  </div>
+  <form method="get" class="flex items-end gap-2 ml-auto">
+    <div>
+      <label class="block text-xs text-slate-500 mb-1">С</label>
+      <input type="date" name="from" value="{{ date_from }}" class="border border-slate-300 rounded-xl px-3 min-h-[44px] bg-white">
+    </div>
+    <div>
+      <label class="block text-xs text-slate-500 mb-1">По</label>
+      <input type="date" name="to" value="{{ date_to }}" class="border border-slate-300 rounded-xl px-3 min-h-[44px] bg-white">
+    </div>
+    <button class="px-5 min-h-[44px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold">Показать</button>
+  </form>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <div class="text-sm text-slate-500">Выручка</div>
+    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ revenue|floatformat:"0g" }} сум</div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <div class="text-sm text-slate-500">Заказов</div>
+    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ orders_count }}</div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <div class="text-sm text-slate-500">Средний чек</div>
+    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ avg_check|floatformat:"0g" }} сум</div>
+  </div>
+  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <div class="text-sm text-slate-500">Маржа ({{ margin_pct }}%)</div>
+    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ margin|floatformat:"0g" }} сум</div>
+    <div class="text-xs text-slate-500 mt-1">Себестоимость {{ cost|floatformat:"0g" }}</div>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-4">
+  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <h2 class="text-xl font-bold mb-3">Оплата</h2>
+    {% for m in methods %}
+      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span>{{ m.label }}</span><span class="font-semibold">{{ m.sum|floatformat:"0g" }} сум</span></div>
+    {% endfor %}
+  </section>
+
+  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <h2 class="text-xl font-bold mb-3">Официанты</h2>
+    {% for w in waiters %}
+      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0">
+        <span>{{ w.name }} · {{ w.orders }} зак.</span>
+        <span class="font-semibold">{{ w.revenue|floatformat:"0g" }} сум</span>
+      </div>
+    {% empty %}
+      <p class="text-slate-500">Нет данных за период</p>
+    {% endfor %}
+  </section>
+
+  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <h2 class="text-xl font-bold mb-3">Популярные блюда</h2>
+    {% for d in top_dishes %}
+      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0">
+        <span>{{ d.name }} × {{ d.qty }}</span>
+        <span class="font-semibold">{{ d.revenue|floatformat:"0g" }} сум</span>
+      </div>
+    {% empty %}
+      <p class="text-slate-500">Нет данных за период</p>
+    {% endfor %}
+  </section>
+
+  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
+    <h2 class="text-xl font-bold mb-3">Мало на складе</h2>
+    {% for p in low_stock %}
+      <div class="flex justify-between items-center py-2 {% if p.stock < 0 %}bg-red-50 rounded-lg px-2{% endif %}">
+        <span>
+          {{ p.name }}
+          {% if p.stock < 0 %}<span class="ml-1 text-xs font-bold text-red-700">в минусе</span>{% endif %}
+        </span>
+        <span class="font-semibold text-red-600">{{ p.stock|floatformat:"-3g" }} {{ p.get_unit_display }}</span>
+      </div>
+    {% empty %}
+      <p class="text-slate-500">Всё в норме</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

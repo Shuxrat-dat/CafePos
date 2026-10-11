@@ -1,0 +1,45 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CafePOS{% endblock %}</title>
+  <script src="{% static 'js/tailwind.js' %}"></script>
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900 antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% with page=request.resolver_match.url_name %}
+  <header class="bg-slate-900 text-white h-[60px] px-7 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <a href="{% url 'floor' %}" class="flex items-center gap-2.5 mr-5 text-lg font-bold tracking-wide">
+        <span class="w-[30px] h-[30px] rounded-[9px] bg-amber-400 text-slate-900 grid place-items-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 3v2M12 3v2"/></svg>
+        </span>
+        CafePOS
+      </a>
+      <a href="{% url 'floor' %}"
+         class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'floor' or page == 'order_detail' or page == 'pay' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Зал</a>
+      {% if user.is_superuser or user.role == 'owner' or user.role == 'admin' %}
+        <a href="{% url 'reports' %}"
+           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'reports' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Отчёты</a>
+        <a href="{% url 'stock' %}"
+           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'stock' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Склад</a>
+        <a href="{% url 'menu_qr' %}"
+           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'menu_qr' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">QR-меню</a>
+      {% endif %}
+    </div>
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'logout' %}" class="flex items-center gap-3">
+      {% csrf_token %}
+      <span class="text-sm text-slate-300">{{ user.get_full_name|default:user.username }} · <b class="text-white font-semibold">{{ user.get_role_display }}</b></span>
+      <button class="min-h-[44px] px-3.5 rounded-[10px] border border-slate-700 text-slate-200 text-sm hover:bg-slate-800">Выйти</button>
+    </form>
+    {% endif %}
+  </header>
+  {% endwith %}
+  <main class="px-7 py-6 max-w-7xl mx-auto">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

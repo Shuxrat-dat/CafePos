@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Кухня{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-[28px] font-bold tracking-tight">Кухня</h1>
+  <p class="text-sm text-slate-500 mt-1">Обновляется автоматически каждые 5 секунд</p>
+</div>
+<div id="tickets" hx-get="{% url 'kitchen_tickets' %}" hx-trigger="every 5s" hx-swap="innerHTML">
+  {% include "kitchen/_tickets.html" %}
+</div>
+{% endblock %}

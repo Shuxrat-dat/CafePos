@@ -1,0 +1,28 @@
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for order in orders %}
+    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-5">
+      <div class="flex justify-between items-start mb-2 pb-3 border-b border-slate-100">
+        <div>
+          <div class="text-xl font-bold">Стол {{ order.table.number }}</div>
+          <div class="text-sm text-slate-500">{{ order.table.hall.name }}</div>
+        </div>
+        <span class="text-sm font-semibold rounded-full bg-amber-50 border border-amber-300 text-amber-900 px-3 py-1">№{{ order.id }}</span>
+      </div>
+      <ul class="divide-y divide-slate-100">
+        {% for item in order.cooking_items %}
+          <li class="py-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-lg font-semibold">{{ item.dish.name }} × {{ item.quantity }}</div>
+              {% for m in item.modifiers.all %}<div class="text-sm text-amber-800">+ {{ m.name }}</div>{% endfor %}
+              {% if item.comment %}<div class="text-sm text-slate-500">«{{ item.comment }}»</div>{% endif %}
+            </div>
+            <button hx-post="{% url 'mark_ready' item.id %}" hx-target="#tickets"
+                    class="min-h-[52px] px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-bold shrink-0">Готово</button>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% empty %}
+    <p class="text-slate-500 text-lg">Новых заказов нет</p>
+  {% endfor %}
+</div>

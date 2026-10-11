@@ -1,0 +1,86 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Меню · {{ table }}</title>
+  <script src="{% static 'js/tailwind.js' %}"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900">
+  <header class="bg-slate-900 text-white px-4 py-4 text-center">
+    <h1 class="text-2xl font-bold">Меню</h1>
+    <div class="text-sm text-slate-300">{{ table }}</div>
+  </header>
+
+  <form method="post" class="p-4 pb-32 max-w-xl mx-auto space-y-6">
+    {% csrf_token %}
+    {% if sent %}
+      <p class="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800">Заказ отправлен официанту. Он подойдёт и подтвердит его.</p>
+    {% endif %}
+    {% if error %}
+      <p class="p-4 rounded-xl bg-red-50 border border-red-300 text-red-700 font-medium">{{ error }}</p>
+    {% endif %}
+
+    {% for category in categories %}
+      <section>
+        <h2 class="text-xl font-bold mb-2">{{ category.name }}</h2>
+        <div class="bg-white rounded-2xl shadow divide-y">
+          {% for dish in category.available %}
+            <div class="p-4 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-semibold">{{ dish.name }}</div>
+                {% if dish.description %}<div class="text-sm text-slate-500 mt-1">{{ dish.description }}</div>{% endif %}
+                <div class="font-bold mt-1">{{ dish.price|floatformat:"0g" }} сум</div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" data-delta="-1" class="qty-btn w-10 h-10 rounded-full bg-slate-200 text-xl font-bold">−</button>
+                <input type="number" name="qty_{{ dish.id }}" value="{{ dish.picked }}" min="0" max="20"
+                       data-price="{{ dish.price|stringformat:'d' }}" inputmode="numeric"
+                       class="qty w-12 text-center border rounded-lg py-2">
+                <button type="button" data-delta="1" class="qty-btn w-10 h-10 rounded-full bg-slate-200 text-xl font-bold">+</button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% empty %}
+      <p class="text-center text-slate-500">Меню скоро появится.</p>
+    {% endfor %}
+
+    <div class="fixed bottom-0 inset-x-0 bg-white border-t p-3">
+      <div class="max-w-xl mx-auto flex items-center gap-3">
+        <div class="flex-1">
+          <div class="text-xs text-slate-500">Итого</div>
+          <div id="total" class="text-xl font-bold">0 сум</div>
+        </div>
+        <button class="px-6 h-14 rounded-xl bg-emerald-600 text-white text-lg font-bold">Отправить официанту</button>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    (function () {
+      var inputs = document.querySelectorAll('.qty');
+      var out = document.getElementById('total');
+      function recalc() {
+        var sum = 0;
+        inputs.forEach(function (i) {
+          sum += (parseInt(i.value, 10) || 0) * (parseFloat(i.dataset.price) || 0);
+        });
+        out.textContent = Math.round(sum).toLocaleString('ru-RU') + ' сум';
+      }
+      document.querySelectorAll('.qty-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var input = b.parentNode.querySelector('.qty');
+          var v = (parseInt(input.value, 10) || 0) + parseInt(b.dataset.delta, 10);
+          input.value = Math.max(0, Math.min(20, v));
+          recalc();
+        });
+      });
+      inputs.forEach(function (i) { i.addEventListener('input', recalc); });
+      recalc();
+    })();
+  </script>
+</body>
+</html>

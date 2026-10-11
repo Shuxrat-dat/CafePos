@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Оплата заказа №{{ order.id }}{% endblock %}
+{% block content %}
+<a href="{% url 'order_detail' order.id %}" class="inline-flex items-center gap-1.5 min-h-[44px] text-[15px] text-slate-600 hover:text-slate-900">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>К заказу
+</a>
+<div class="max-w-xl mx-auto mt-2 bg-white border border-slate-200 rounded-[20px] shadow-sm p-7">
+  <h1 class="text-2xl font-bold tracking-tight">Оплата · {{ order.table }}</h1>
+
+  <div class="flex gap-2 mt-5 p-1 bg-slate-100 rounded-2xl">
+    <a href="{% url 'pay' order.id %}"
+       class="flex-1 text-center min-h-[44px] flex items-center justify-center rounded-xl font-semibold {% if not split %}bg-slate-900 text-white{% else %}text-slate-600 hover:text-slate-900{% endif %}">Весь счёт</a>
+    <a href="{% url 'pay' order.id %}?split=1"
+       class="flex-1 text-center min-h-[44px] flex items-center justify-center rounded-xl font-semibold {% if split %}bg-slate-900 text-white{% else %}text-slate-600 hover:text-slate-900{% endif %}">Разделить счёт</a>
+  </div>
+
+  <p class="text-sm text-slate-500 mt-6">К оплате</p>
+  <p id="due" class="text-5xl font-extrabold tracking-tight">{% if split %}0{% else %}{{ order.total }}{% endif %} сум</p>
+
+  {% if error %}
+    <p class="mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium">{{ error }}</p>
+  {% endif %}
+
+  {% if shortages %}
+    <div class="mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900">
+      <p class="font-semibold">Продукта на складе не хватает. Оплата возможна.</p>
+      <ul class="mt-1 text-sm list-disc pl-5">
+        {% for s in shortages %}
+          <li>{{ s.name }}: нужно {{ s.need|floatformat:"-3" }} {{ s.unit }}, на складе {{ s.stock|floatformat:"-3" }} {{ s.unit }}</li>
+        {% endfor %}
+      </ul>
+      <p class="text-sm mt-1">После оплаты остаток уйдёт в минус. Сделайте приход или инвентаризацию.</p>
+    </div>
+  {% endif %}
+
+  <form method="post" class="mt-6 space-y-3">
+    {% csrf_token %}
+
+    {% if split %}
+      <input type="hidden" name="split" value="1">
+      <p class="text-sm text-slate-500">Укажите, сколько штук каждой позиции оплачивает этот гость.</p>
+      <ul class="divide-y divide-slate-100 pb-2">
+        {% for item in items %}
+          <li class="py-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-semibold">{{ item.dish.name }} <span class="text-slate-400 font-normal">из {{ item.quantity }}</span></div>
+              <div class="text-xs text-slate-500">
+                {{ item.unit_total }} сум за шт.{% for m in item.modifiers.all %} · {{ m.name }}{% endfor %}
+              </div>
+            </div>
+            <input type="number" name="qty_{{ item.id }}" min="0" max="{{ item.quantity }}" value="{{ item.picked }}"
+                   data-price="{{ item.unit_total|stringformat:'d' }}" inputmode="numeric"
+                   class="split-qty w-20 border border-slate-300 rounded-xl px-2 min-h-[48px] text-lg text-center focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="grid grid-cols-2 gap-3">
+      <label class="flex items-center gap-3 px-4 min-h-[56px] border border-slate-200 rounded-xl text-lg cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+        <input type="radio" name="method" value="cash" {% if method != "card" %}checked{% endif %} class="w-5 h-5 accent-emerald-600"> Наличные
+      </label>
+      <label class="flex items-center gap-3 px-4 min-h-[56px] border border-slate-200 rounded-xl text-lg cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+        <input type="radio" name="method" value="card" {% if method == "card" %}checked{% endif %} class="w-5 h-5 accent-emerald-600"> Карта
+      </label>
+    </div>
+
+    <div>
+      <label class="block text-sm text-slate-500 mb-1.5">Получено наличными (если пусто, ровно сумма к оплате)</label>
+      <input name="received" value="{{ received }}" inputmode="numeric"
+             class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    </div>
+
+    <button class="w-full min-h-[56px] rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-extrabold">Принять оплату</button>
+  </form>
+</div>
+
+{% if split %}
+<script>
+  (function () {
+    var inputs = document.querySelectorAll('.split-qty');
+    var out = document.getElementById('due');
+    if (!inputs.length) return;
+    function recalc() {
+      var sum = 0;
+      inputs.forEach(function (i) {
+        sum += (parseInt(i.value, 10) || 0) * (parseFloat(i.dataset.price) || 0);
+      });
+      out.textContent = Math.round(sum) + ' сум';
+    }
+    inputs.forEach(function (i) { i.addEventListener('input', recalc); });
+    recalc();
+  })();
+</script>
+{% endif %}
+{% endblock %}
