@@ -1,0 +1,32 @@
+{% load i18n ui %}
+<tr id="dish-{{ dish.id }}" class="{% if dish.is_hidden %}bg-slate-50 text-slate-500{% endif %}">
+  <td class="px-4 py-2.5">
+    <div class="flex items-center gap-3">
+      <span class="w-14 h-11 rounded-lg overflow-hidden shrink-0 border border-line">{% include "components/dish_image.html" with cls="w-14 h-11" size=20 %}</span>
+      <div class="min-w-0">
+        <a href="{% url 'dish_edit' dish.id %}" class="font-semibold hover:underline">{{ dish|tr }}</a>
+        <div class="text-xs text-muted truncate max-w-[260px]">
+          {% if dish.modifiers.all %}{% blocktranslate trimmed with n=dish.modifiers.all|length %}вариантов: {{ n }}{% endblocktranslate %} · {% endif %}{% if dish.recipe.all %}{% translate 'есть техкарта' %}{% else %}{% translate 'без техкарты' %}{% endif %}
+        </div>
+      </div>
+    </div>
+  </td>
+  <td class="px-4 py-2.5 hidden md:table-cell text-slate-600">{{ dish.category|tr }}</td>
+  <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">{{ dish.price|money }}</td>
+  <td class="px-4 py-2.5 text-center">
+    <button hx-post="{% url 'dish_toggle' dish.id %}" hx-vals='{"field": "available"}' hx-target="#dish-{{ dish.id }}" hx-swap="outerHTML"
+            class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors {% if dish.is_available %}bg-brand{% else %}bg-slate-300{% endif %}"
+            role="switch" aria-checked="{{ dish.is_available|yesno:'true,false' }}" title="{% if dish.is_available %}{% translate 'В продаже' %}{% else %}{% translate 'Стоп-лист' %}{% endif %}">
+      <span class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform {% if dish.is_available %}translate-x-6{% else %}translate-x-1{% endif %}"></span>
+    </button>
+  </td>
+  <td class="px-4 py-2.5 text-center">
+    <button hx-post="{% url 'dish_toggle' dish.id %}" hx-vals='{"field": "hidden"}' hx-target="#dish-{{ dish.id }}" hx-swap="outerHTML"
+            class="icon-btn w-10 h-10 border-0 {% if dish.is_hidden %}text-slate-400{% else %}text-brand{% endif %}" title="{% if dish.is_hidden %}{% translate 'Скрыто — показать' %}{% else %}{% translate 'Показывается — скрыть' %}{% endif %}">
+      {% if dish.is_hidden %}{% icon "eye-off" 18 %}{% else %}{% icon "eye" 18 %}{% endif %}
+    </button>
+  </td>
+  <td class="px-4 py-2.5 text-right">
+    <a href="{% url 'dish_edit' dish.id %}" class="icon-btn w-10 h-10 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</a>
+  </td>
+</tr>

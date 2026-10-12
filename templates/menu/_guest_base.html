@@ -1,0 +1,37 @@
+{% load static i18n ui %}<!doctype html>
+{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{% translate 'Меню' %}{% endblock %} · {{ cafe.name }}</title>
+  <script src="{% static 'js/tailwind.js' %}"></script>
+  <script>tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#0f766e', 600: '#0d6961', 50: '#effaf8' }, ink: '#0f172a', muted: '#64748b', line: '#e5e7eb', canvas: '#f4f5f7', night: '#0b1220' } } } };</script>
+  <style type="text/tailwindcss">
+    @layer components {
+      .seg { @apply flex p-1 bg-white/10 rounded-xl gap-1; }
+      .seg-item { @apply flex-1 inline-flex items-center justify-center min-h-[36px] px-3 rounded-lg text-sm font-semibold text-slate-300; }
+      .seg-item-active { @apply bg-white text-night; }
+    }
+  </style>
+</head>
+<body class="bg-canvas min-h-screen text-ink antialiased">
+  {# Меню для гостей: без входа, на телефоне #}
+  <header class="bg-night text-white">
+    <div class="max-w-xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="grid place-items-center w-11 h-11 rounded-xl bg-brand text-white overflow-hidden shrink-0">
+          {% if cafe.logo %}<img src="{{ cafe.logo.url }}" alt="" class="w-full h-full object-cover">{% else %}{% icon "utensils" 22 %}{% endif %}
+        </span>
+        <div class="min-w-0">
+          <div class="font-bold text-lg truncate">{{ cafe.name }}</div>
+          <div class="text-sm text-slate-300 truncate">{% block subtitle %}{% translate 'Меню' %}{% endblock %}</div>
+        </div>
+      </div>
+      <div class="w-40 shrink-0">{% include "components/lang_switch.html" %}</div>
+    </div>
+  </header>
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,49 +1,112 @@
 {% extends "base.html" %}
-{% block title %}Залы{% endblock %}
+{% load i18n ui %}
+{% block title %}{% translate 'Зал' %}{% endblock %}
 {% block content %}
-<div class="mb-5">
-  <h1 class="text-[28px] font-bold tracking-tight">План зала</h1>
-  <p class="text-sm text-slate-500 mt-1">Выберите стол, чтобы открыть заказ</p>
-</div>
-
-<div class="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-slate-500 mb-2">
-  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-white border border-slate-300 inline-block"></i>Свободен</span>
-  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-amber-400 inline-block"></i>Занят</span>
-  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-slate-300 inline-block"></i>Чужой стол</span>
-  <span class="flex items-center gap-2"><i class="w-3 h-3 rounded bg-red-600 inline-block"></i>Гость просит</span>
-</div>
-
-{% for hall in halls %}
-  <h2 class="text-xl font-bold mb-3 mt-7">{{ hall.name }}</h2>
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-    {% for table in hall.tables.all %}
-      {% if table.locked %}
-        <div class="min-h-[132px] rounded-[18px] p-4 flex flex-col justify-between bg-slate-100 border border-slate-200 text-slate-500">
-          <span class="text-[22px] font-bold">Стол {{ table.number }}</span>
-          <span class="text-sm">Занят · {{ table.open_order.waiter.username }}</span>
-        </div>
-      {% else %}
-        <form method="post" action="{% url 'open_table' table.id %}" class="relative">
-          {% csrf_token %}
-          {% if table.guest_pending %}
-            <div class="absolute -top-2 right-3.5 z-10 flex items-center gap-1.5 text-xs font-bold text-white bg-red-600 rounded-full px-3 py-1 shadow-md">
-              <span class="w-[7px] h-[7px] rounded-full bg-white"></span>Заявка гостя
-            </div>
-          {% endif %}
-          <button class="w-full min-h-[132px] rounded-[18px] p-4 text-left flex flex-col justify-between shadow-sm border
-            {% if table.open_order %}bg-amber-50 border-amber-300 ring-1 ring-inset ring-amber-300 hover:bg-amber-100{% else %}bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-300{% endif %}">
-            <span class="text-[22px] font-bold">Стол {{ table.number }}</span>
-            {% if table.open_order %}
-              <span class="text-sm font-semibold text-amber-900">Заказ №{{ table.open_order.id }} · {{ table.open_order.total }} сум{% if user.sees_all_orders %} · {{ table.open_order.waiter.username }}{% endif %}</span>
-            {% else %}
-              <span class="text-sm text-slate-500">Свободен · {{ table.seats }} мест</span>
-            {% endif %}
-          </button>
-        </form>
-      {% endif %}
-    {% endfor %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div class="min-w-0">
+    <h1 class="page-title">{% translate 'Зал' %}</h1>
+    <p class="page-sub"><span id="floor-hall-name">{% translate 'Все залы' %}</span> · <b class="text-ink" data-sum="free">{{ counts.free }}</b> / <span data-sum="total">{{ counts.total }}</span> {% translate 'столов свободно' %}</p>
   </div>
-{% empty %}
-  <p class="text-slate-500">Залов пока нет. Создайте их в админке.</p>
-{% endfor %}
+  <div class="flex flex-wrap items-center gap-2">
+    <div class="relative">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 16 %}</span>
+      <input id="table-search" type="search" inputmode="numeric" autocomplete="off" class="input w-40 pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" aria-label="{% translate 'Найти стол' %}">
+    </div>
+    {# Навынос и доставка доступны, но второстепенны по сравнению со столами #}
+    <form method="post" action="{% url 'new_order' %}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
+      <button class="btn btn-secondary min-h-[40px]">{% icon "shopping-bag" 18 %}{% translate 'Навынос' %}</button>
+    </form>
+    <form method="post" action="{% url 'new_order' %}">{% csrf_token %}<input type="hidden" name="type" value="delivery">
+      <button class="btn btn-secondary min-h-[40px]">{% icon "bike" 18 %}{% translate 'Доставка' %}</button>
+    </form>
+  </div>
+</div>
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  {% if halls|length > 1 %}
+    <div id="hall-filter" class="seg w-auto flex-wrap" role="group" aria-label="{% translate 'Зал' %}">
+      <button type="button" data-hall="" data-name="{% translate 'Все залы' %}" class="seg-item flex-none px-3 seg-item-active">{% translate 'Все залы' %}</button>
+      {% for hall in halls %}
+        <button type="button" data-hall="{{ hall.id }}" data-name="{{ hall|tr }}" class="seg-item flex-none px-3">{{ hall|tr }}</button>
+      {% endfor %}
+    </div>
+  {% else %}<div id="hall-filter"></div>{% endif %}
+  {# Строка состояний: показывает количество и работает как фильтр #}
+  <div id="state-filter" class="flex flex-wrap gap-2" role="group" aria-label="{% translate 'Статус' %}">
+    <button type="button" data-state="free" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-emerald-500"></i>{% translate 'Свободно' %} <b class="text-ink" data-count="free">{{ counts.free }}</b></button>
+    <button type="button" data-state="busy" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-brand"></i>{% translate 'Занято' %} <b class="text-ink" data-count="busy">{{ counts.busy }}</b></button>
+    <button type="button" data-state="bill" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-orange-500"></i>{% translate 'Ожидает оплаты' %} <b class="text-ink" data-count="bill">{{ counts.bill }}</b></button>
+    <button type="button" data-state="reserved" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-slate-400"></i>{% translate 'Забронировано' %} <b class="text-ink" data-count="reserved">{{ counts.reserved }}</b></button>
+  </div>
+</div>
+
+<div id="floor-grid" hx-get="{% url 'floor_grid' %}" hx-trigger="every 15s" hx-swap="innerHTML">
+  {% include "pos/_floor_grid.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var hall = '', state = '', query = '';
+    try { hall = sessionStorage.getItem('floorHall') || ''; } catch (e) {}
+    var hallFilter = document.getElementById('hall-filter');
+    if (!hallFilter.querySelector('[data-hall="' + hall + '"]')) hall = '';
+
+    function apply() {
+      hallFilter.querySelectorAll('[data-hall]').forEach(function (b) {
+        var on = b.dataset.hall === hall;
+        b.classList.toggle('seg-item-active', on);
+        if (on) document.getElementById('floor-hall-name').textContent = b.dataset.name;
+      });
+      document.querySelectorAll('#state-filter [data-state]').forEach(function (b) {
+        b.classList.toggle('chip-active', b.dataset.state === state);
+      });
+      var counts = { free: 0, busy: 0, bill: 0, reserved: 0, locked: 0 }, total = 0;
+      document.querySelectorAll('#floor-grid [data-hall-section]').forEach(function (section) {
+        var hallOk = hall === '' || section.dataset.hallSection === hall;
+        var visible = 0;
+        section.querySelectorAll('[data-table]').forEach(function (t) {
+          if (hallOk) {
+            total += 1;
+            counts[t.dataset.state] = (counts[t.dataset.state] || 0) + 1;
+          }
+          var ok = hallOk && (state === '' || t.dataset.state === state || (state === 'busy' && t.dataset.state === 'locked'))
+            && (query === '' || t.dataset.table.toLowerCase().indexOf(query) === 0);
+          t.classList.toggle('hidden', !ok);
+          if (ok) visible += 1;
+        });
+        section.classList.toggle('hidden', visible === 0);
+      });
+      counts.busy += counts.locked;
+      Object.keys(counts).forEach(function (k) {
+        var el = document.querySelector('[data-count="' + k + '"]');
+        if (el) el.textContent = counts[k];
+      });
+      document.querySelector('[data-sum="free"]').textContent = counts.free;
+      document.querySelector('[data-sum="total"]').textContent = total;
+      var empty = document.getElementById('floor-empty');
+      if (empty) empty.classList.toggle('hidden', !!document.querySelector('#floor-grid [data-table]:not(.hidden)'));
+    }
+    hallFilter.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-hall]');
+      if (!b) return;
+      hall = b.dataset.hall;
+      try { sessionStorage.setItem('floorHall', hall); } catch (err) {}
+      apply();
+    });
+    document.getElementById('state-filter').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-state]');
+      if (!b) return;
+      state = state === b.dataset.state ? '' : b.dataset.state;
+      apply();
+    });
+    document.getElementById('table-search').addEventListener('input', function (e) {
+      query = e.target.value.trim().toLowerCase();
+      apply();
+    });
+    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target.id === 'floor-grid') apply(); });
+    apply();
+  })();
+</script>
 {% endblock %}

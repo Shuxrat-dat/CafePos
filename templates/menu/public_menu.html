@@ -1,35 +1,28 @@
-{% load static %}
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Меню</title>
-  <script src="{% static 'js/tailwind.js' %}"></script>
-</head>
-<body class="bg-slate-100 min-h-screen text-slate-900">
-  <header class="bg-slate-900 text-white px-4 py-4 text-center">
-    <h1 class="text-2xl font-bold">Меню</h1>
-  </header>
-  <main class="p-4 max-w-xl mx-auto space-y-6">
-    {% for category in categories %}
-      <section>
-        <h2 class="text-xl font-bold mb-2">{{ category.name }}</h2>
-        <div class="bg-white rounded-2xl shadow divide-y">
-          {% for dish in category.available %}
-            <div class="p-4 flex justify-between gap-4">
-              <div class="min-w-0">
-                <div class="font-semibold">{{ dish.name }}</div>
-                {% if dish.description %}<div class="text-sm text-slate-500 mt-1">{{ dish.description }}</div>{% endif %}
+{% extends "menu/_guest_base.html" %}
+{% load i18n ui %}
+{% block content %}
+<main class="max-w-xl mx-auto p-4 space-y-6">
+  {% for category in categories %}
+    <section>
+      <h2 class="text-lg font-bold mb-2">{{ category|tr }}</h2>
+      <div class="bg-white rounded-xl border border-line divide-y divide-line overflow-hidden">
+        {% for dish in category.available %}
+          <div class="p-3 flex gap-3">
+            <span class="w-20 h-20 rounded-xl overflow-hidden shrink-0">{% include "components/dish_image.html" with cls="w-20 h-20" size=28 %}</span>
+            <div class="min-w-0 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="font-semibold leading-snug">{{ dish|tr }}</div>
+                {% with d=dish|tr:"description" %}{% if d %}<div class="text-sm text-muted mt-0.5 line-clamp-2">{{ d }}</div>{% endif %}{% endwith %}
               </div>
-              <div class="font-bold whitespace-nowrap">{{ dish.price|floatformat:"0g" }} сум</div>
+              <div class="font-bold mt-1">{{ dish.price|money }}</div>
             </div>
-          {% endfor %}
-        </div>
-      </section>
-    {% empty %}
-      <p class="text-center text-slate-500">Меню скоро появится.</p>
-    {% endfor %}
-  </main>
-</body>
-</html>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% empty %}
+    <p class="text-center text-muted py-10">{% translate 'Меню скоро появится.' %}</p>
+  {% endfor %}
+  {% if cafe.address or cafe.phone %}<p class="text-center text-sm text-muted pb-6">{{ cafe.address }}{% if cafe.address and cafe.phone %} · {% endif %}{{ cafe.phone }}</p>{% endif %}
+</main>
+{% endblock %}

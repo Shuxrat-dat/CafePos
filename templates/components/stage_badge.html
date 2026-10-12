@@ -1,0 +1,7 @@
+{# Этап заказа — одинаково на всех экранах. Цветов мало: ожидание оранжевое, готово зелёное, отмена красная #}
+{% with s=stage|default:order.stage %}
+<span class="badge {% if s == 'cooking' %}bg-orange-50 text-orange-800{% elif s == 'ready' %}bg-emerald-50 text-emerald-800{% elif s == 'served' %}bg-brand-50 text-brand-700{% elif s == 'cancelled' %}bg-red-50 text-red-700{% else %}bg-slate-100 text-slate-700{% endif %}">
+  <span class="w-1.5 h-1.5 rounded-full {% if s == 'cooking' %}bg-orange-500{% elif s == 'ready' %}bg-emerald-500{% elif s == 'served' %}bg-brand{% elif s == 'cancelled' %}bg-red-500{% else %}bg-slate-400{% endif %}"></span>
+  {{ order.stage_label }}
+</span>
+{% endwith %}

@@ -1,17 +1,19 @@
 from django.conf import settings
 from django.db import models, transaction
 from django.db.models import F
+from django.utils.translation import gettext_lazy as _
 
 from menu.models import Dish
 
 
 class Product(models.Model):
     class Unit(models.TextChoices):
-        GRAM = "g", "г"
-        ML = "ml", "мл"
-        PIECE = "pcs", "шт"
+        GRAM = "g", _("г")
+        ML = "ml", _("мл")
+        PIECE = "pcs", _("шт")
 
     name = models.CharField("Название", max_length=150, unique=True)
+    name_uz = models.CharField("Название (узб.)", max_length=150, blank=True)
     unit = models.CharField("Единица", max_length=5, choices=Unit.choices, default=Unit.GRAM)
     stock = models.DecimalField("Остаток", max_digits=14, decimal_places=3, default=0, editable=False)
     min_stock = models.DecimalField("Минимальный остаток", max_digits=14, decimal_places=3, default=0)
@@ -27,6 +29,10 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_unit_display()})"
+
+    @property
+    def is_low(self):
+        return self.stock <= self.min_stock
 
 
 class RecipeItem(models.Model):
@@ -45,10 +51,10 @@ class RecipeItem(models.Model):
 
 class StockMovement(models.Model):
     class Kind(models.TextChoices):
-        INCOME = "income", "Приход"
-        WRITEOFF = "writeoff", "Списание (порча, потери)"
-        SALE = "sale", "Продажа"
-        ADJUST = "adjust", "Корректировка (инвентаризация)"
+        INCOME = "income", _("Приход")
+        WRITEOFF = "writeoff", _("Списание (порча, потери)")
+        SALE = "sale", _("Продажа")
+        ADJUST = "adjust", _("Корректировка (инвентаризация)")
 
     product = models.ForeignKey(Product, verbose_name="Продукт", on_delete=models.PROTECT, related_name="movements")
     kind = models.CharField("Тип", max_length=10, choices=Kind.choices)

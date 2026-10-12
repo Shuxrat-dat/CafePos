@@ -1,0 +1,8 @@
+{% load i18n %}
+{% with page=request.resolver_match.url_name %}
+<div class="flex gap-1 border-b border-line mb-5 overflow-x-auto no-scrollbar">
+  <a href="{% url 'manage_menu' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'manage_menu' or page == 'dish_create' or page == 'dish_edit' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Блюда' %}</a>
+  <a href="{% url 'manage_categories' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if 'categories' in page %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Категории' %}</a>
+  <a href="{% url 'manage_modifiers' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if 'modifiers' in page %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Модификаторы' %}</a>
+</div>
+{% endwith %}

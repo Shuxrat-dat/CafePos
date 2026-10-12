@@ -1,91 +1,175 @@
-{% for g in order.pending_guests %}
-  <div class="mb-4 p-4 rounded-2xl bg-red-50 border border-red-200">
-    <div class="font-bold text-red-700 flex items-center gap-2">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-      Заявка гостя
+{% load i18n ui %}
+{# Корзина заказа. Перерисовывается целиком после каждого действия (HTMX). #}
+<div class="px-4 pt-4 pb-3 border-b border-line">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg font-bold tracking-tight">{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}</h1>
+        {% include "components/stage_badge.html" %}
+      </div>
+      <p class="text-sm text-muted truncate">
+        {% if order.is_dine_in and order.table %}{{ order.table.hall|tr }} · {% blocktranslate trimmed with n=order.table.number %}стол {{ n }}{% endblocktranslate %}{% else %}{{ order.get_order_type_display }}{% endif %}
+        · {{ order.waiter.first_name|default:order.waiter.username }}
+      </p>
     </div>
+    {% if order.is_dine_in %}
+      <button type="button" class="icon-btn shrink-0" hx-get="{% url 'move_form' order.id %}" hx-target="#modal" title="{% translate 'Перенести на другой стол' %}" aria-label="{% translate 'Перенести на другой стол' %}">{% icon "move" 18 %}</button>
+    {% endif %}
+  </div>
+
+  <div class="seg mt-3" role="group" aria-label="{% translate 'Тип заказа' %}">
+    {% for value, label in order.OrderType.choices %}
+      <button type="button" hx-post="{% url 'set_type' order.id %}" hx-vals='{"type": "{{ value }}"}' hx-target="#order-panel"
+              class="seg-item flex-col gap-0.5 min-h-[50px] text-xs leading-tight text-center {% if order.order_type == value %}seg-item-active{% endif %}" {% if order.order_type == value and value != 'dine_in' %}disabled{% endif %}>
+        {% if value == 'dine_in' %}{% icon "utensils" 17 %}{% elif value == 'takeaway' %}{% icon "shopping-bag" 17 %}{% else %}{% icon "bike" 17 %}{% endif %}<span>{{ label }}</span>
+      </button>
+    {% endfor %}
+  </div>
+
+  {% if not order.is_dine_in %}
+    <button type="button" hx-get="{% url 'customer_form' order.id %}" hx-target="#modal"
+            class="mt-2 w-full flex items-center gap-3 rounded-xl border border-dashed {% if order.order_type == 'delivery' and not order.delivery_address %}border-orange-400 bg-orange-50{% else %}border-line hover:bg-slate-50{% endif %} px-3 py-2 text-left text-sm">
+      <span class="text-slate-500">{% icon "user" 18 %}</span>
+      <span class="flex-1 min-w-0">
+        {% if order.customer_name or order.customer_phone or order.delivery_address %}
+          <span class="block font-medium truncate">{{ order.customer_name|default:"—" }}{% if order.customer_phone %} · {{ order.customer_phone }}{% endif %}</span>
+          {% if order.delivery_address %}<span class="block text-muted truncate">{{ order.delivery_address }}</span>{% endif %}
+        {% elif order.order_type == 'delivery' %}
+          <span class="font-medium text-orange-900">{% translate 'Укажите адрес и телефон для доставки' %}</span>
+        {% else %}
+          <span class="text-muted">{% translate 'Имя клиента (необязательно)' %}</span>
+        {% endif %}
+      </span>
+      {% icon "pencil" 16 "text-slate-400" %}
+    </button>
+  {% endif %}
+</div>
+
+{% for g in order.pending_guests %}
+  <div class="mx-4 mt-3 p-3 rounded-xl bg-red-50 border border-red-200">
+    <div class="font-semibold text-red-700 flex items-center gap-2 text-sm">{% icon "bell" 16 %}{% translate 'Заявка гостя' %}</div>
     <ul class="mt-1 text-sm text-red-900">
       {% for gi in g.items.all %}
-        <li>{{ gi.dish.name }} × {{ gi.quantity }}{% if not gi.dish.is_available %} (нет в продаже){% endif %}</li>
+        <li>{{ gi.dish|tr }} × {{ gi.quantity }}{% if not gi.dish.is_available %} ({% translate 'нет в продаже' %}){% endif %}</li>
       {% endfor %}
     </ul>
-    <div class="mt-3 flex gap-2">
-      <button hx-post="{% url 'accept_guest' order.id g.id %}" hx-target="#order-panel"
-              class="flex-1 min-h-[44px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold">Принять</button>
-      <button hx-post="{% url 'reject_guest' order.id g.id %}" hx-target="#order-panel" hx-confirm="Отклонить заявку гостя?"
-              class="flex-1 min-h-[44px] rounded-xl bg-white border border-red-200 text-red-700 font-bold">Отклонить</button>
+    <div class="mt-2 flex gap-2">
+      <button hx-post="{% url 'accept_guest' order.id g.id %}" hx-target="#order-panel" class="btn btn-sm btn-primary flex-1">{% translate 'Принять' %}</button>
+      <button hx-post="{% url 'reject_guest' order.id g.id %}" hx-target="#order-panel" hx-confirm="{% translate 'Отклонить заявку гостя?' %}" class="btn btn-sm btn-danger flex-1">{% translate 'Отклонить' %}</button>
     </div>
   </div>
 {% endfor %}
 
-<h2 class="text-xl font-bold mb-2">Заказ</h2>
-<ul class="divide-y divide-slate-100">
-  {% for item in order.items.all %}
-    <li class="py-3 flex items-center justify-between gap-2 {% if item.status == 'ready' %}bg-emerald-50 -mx-2 px-2 rounded-xl{% endif %}">
-      <div class="min-w-0">
-        <div class="font-semibold truncate">{{ item.dish.name }}</div>
-        <div class="mt-1 flex flex-wrap items-center gap-x-1 text-xs text-slate-500">
-          <span class="inline-block rounded-full px-2 py-0.5 font-semibold
-            {% if item.status == 'new' %}bg-slate-200 text-slate-700
-            {% elif item.status == 'cooking' %}bg-amber-50 text-amber-900 border border-amber-300
-            {% elif item.status == 'ready' %}bg-emerald-100 text-emerald-800
-            {% else %}bg-slate-100 text-slate-600{% endif %}">{{ item.get_status_display }}</span>
-          {% for m in item.modifiers.all %}<span>· {{ m.name }}</span>{% endfor %}
-          {% if item.comment %}<span>· «{{ item.comment }}»</span>{% endif %}
+<ul class="flex-1 min-h-[120px] overflow-y-auto px-4 divide-y divide-line">
+  {% for item in order_items %}
+    <li class="py-3 {% if item.status == 'ready' %}bg-emerald-50/60 -mx-4 px-4{% endif %}">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="font-semibold leading-snug">{{ item.dish|tr }}</div>
+          {% if item.modifiers.all or item.comment %}
+            <div class="text-xs text-slate-500 mt-0.5">
+              {% for m in item.modifiers.all %}{{ m|tr }}{% if m.price_delta %} +{{ m.price_delta|num }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+              {% if item.comment %}<span class="italic">{% if item.modifiers.all %} · {% endif %}«{{ item.comment }}»</span>{% endif %}
+            </div>
+          {% endif %}
+          {% if item.status != 'new' %}
+            <span class="mt-1 badge {% if item.status == 'queued' %}bg-slate-100 text-slate-700{% elif item.status == 'cooking' %}bg-orange-50 text-orange-900{% elif item.status == 'ready' %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-600{% endif %}">{{ item.get_status_display }}</span><span class="text-xs text-muted ml-1">× {{ item.quantity }}</span>
+          {% endif %}
+        </div>
+        <div class="text-right shrink-0">
+          <div class="font-bold tabular-nums">{{ item.line_total|money }}</div>
+          {% if item.quantity > 1 %}<div class="text-xs text-muted tabular-nums">{{ item.unit_total|num }} × {{ item.quantity }}</div>{% endif %}
         </div>
       </div>
-      <div class="flex items-center gap-1.5 shrink-0">
+      {% if item.status == "new" or item.status == "ready" or user.can_cancel_sent_orders %}
+      <div class="flex items-center justify-between gap-2 mt-2">
         {% if item.status == "new" %}
-          <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal"
-                  class="w-11 h-11 rounded-xl border border-slate-200 bg-white text-slate-600 grid place-items-center" title="Изменить" aria-label="Изменить">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-          </button>
-          <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel"
-                  class="w-11 h-11 rounded-xl border border-slate-200 bg-white text-slate-700 grid place-items-center" aria-label="Уменьшить">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
-          </button>
-          <span class="w-6 text-center font-bold">{{ item.quantity }}</span>
-          <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel"
-                  class="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 grid place-items-center" aria-label="Увеличить">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
+          <div class="flex items-center gap-1.5">
+            <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel" class="icon-btn w-10 h-10" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
+            <span class="w-8 text-center font-bold tabular-nums">{{ item.quantity }}</span>
+            <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="icon-btn w-10 h-10 bg-brand-50 border-brand-200 text-brand-700" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
+          </div>
+          <div class="flex items-center gap-1">
+            <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="icon-btn w-10 h-10 border-0" title="{% translate 'Комментарий и варианты' %}" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</button>
+            <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          </div>
         {% else %}
-          <span class="w-10 text-center font-bold text-slate-600">×{{ item.quantity }}</span>
+          <span></span>
+          <div class="flex items-center gap-1">
+            {% if item.status == "ready" %}
+              <button hx-post="{% url 'serve_item' order.id item.id %}" hx-target="#order-panel" class="btn btn-sm btn-primary">{% icon "check" 16 %}{% translate 'Подано' %}</button>
+            {% endif %}
+            {% if user.can_cancel_sent_orders %}
+              <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" hx-confirm="{% translate 'Блюдо уже на кухне. Убрать его из заказа?' %}" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+            {% endif %}
+          </div>
         {% endif %}
-        {% if item.status == "ready" %}
-          <button hx-post="{% url 'serve_item' order.id item.id %}" hx-target="#order-panel"
-                  class="px-3.5 min-h-[44px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-bold">Подано</button>
-        {% endif %}
-        <span class="w-24 text-right font-bold">{{ item.line_total }}</span>
       </div>
+      {% endif %}
     </li>
   {% empty %}
-    <li class="py-4 text-slate-500">Нажмите на блюдо, чтобы добавить</li>
+    <li class="py-10 text-center">
+      <span class="inline-grid place-items-center w-12 h-12 rounded-xl bg-slate-100 text-slate-400 mb-2">{% icon "shopping-bag" 22 %}</span>
+      <p class="font-medium">{% translate 'Заказ пуст' %}</p>
+      <p class="text-sm text-muted">{% translate 'Нажмите на блюдо, чтобы добавить' %}</p>
+    </li>
   {% endfor %}
 </ul>
 
-<div class="mt-4 pt-3 border-t border-slate-200 flex justify-between items-baseline">
-  <span class="text-sm text-slate-500">Итого</span><span class="text-3xl font-extrabold tracking-tight">{{ order.total }} сум</span>
+<div class="border-t border-line px-4 pt-3 pb-4 bg-white">
+  <dl class="space-y-1 text-sm">
+    <div class="flex justify-between"><dt class="text-muted">{% translate 'Подытог' %}</dt><dd class="tabular-nums">{{ totals.subtotal|money }}</dd></div>
+    <div class="flex justify-between items-center">
+      <dt class="text-muted flex items-center gap-1.5">
+        {% translate 'Скидка' %}{% if order.discount_kind == 'percent' %} {{ order.discount_value|num }}%{% endif %}
+        {% if can_discount and order_items %}
+          <button type="button" hx-get="{% url 'discount_form' order.id %}" hx-target="#modal" class="text-brand font-medium hover:underline">{% if order.discount_kind %}{% translate 'изменить' %}{% else %}{% translate 'добавить' %}{% endif %}</button>
+        {% endif %}
+      </dt>
+      <dd class="tabular-nums {% if totals.discount %}text-red-600{% endif %}">{% if totals.discount %}−{{ totals.discount|money }}{% else %}—{% endif %}</dd>
+    </div>
+    {% if order.service_percent %}
+      <div class="flex justify-between"><dt class="text-muted">{% blocktranslate trimmed with p=order.service_percent|num %}Обслуживание {{ p }}%{% endblocktranslate %}</dt><dd class="tabular-nums">{{ totals.service|money }}</dd></div>
+    {% endif %}
+  </dl>
+  <div class="flex justify-between items-baseline mt-2 pt-2 border-t border-dashed border-line">
+    <span class="font-semibold">{% translate 'Итого' %}</span>
+    <span class="text-[28px] leading-none font-extrabold tracking-tight tabular-nums">{{ totals.total|money }}</span>
+  </div>
+
+  {# Одно главное действие: в зале — отправить новые блюда на кухню, иначе — оплата. Остальное второстепенно #}
+  {% if order_items %}
+    {% with send_first=order.has_new_items %}
+    <div class="mt-3 space-y-2">
+      {% if send_first and order.is_dine_in or send_first and not user.can_take_payment %}
+        <button hx-post="{% url 'send_to_kitchen' order.id %}" hx-target="#order-panel" class="btn btn-primary btn-lg w-full">{% icon "send" 18 %}{% translate 'Отправить на кухню' %}</button>
+        <div class="grid {% if user.can_take_payment %}grid-cols-2{% endif %} gap-2">
+          <form method="post" action="{% url 'request_bill' order.id %}">{% csrf_token %}
+            <button class="btn btn-secondary w-full">{% icon "printer" 17 %}{% translate 'Пречек' %}</button></form>
+          {% if user.can_take_payment %}<a href="{% url 'pay' order.id %}" class="btn btn-secondary">{% icon "wallet" 17 %}{% translate 'Оплатить' %}</a>{% endif %}
+        </div>
+      {% else %}
+        {% if user.can_take_payment %}
+          <a href="{% url 'pay' order.id %}" class="btn btn-primary btn-lg w-full">{% icon "wallet" 18 %}{% translate 'Перейти к оплате' %}</a>
+        {% endif %}
+        {# Здесь не больше одного второстепенного действия: «на кухню» для навыноса или пречек для зала #}
+        <div>
+          {% if send_first %}
+            <button hx-post="{% url 'send_to_kitchen' order.id %}" hx-target="#order-panel" class="btn btn-secondary w-full">{% icon "send" 17 %}{% translate 'На кухню без оплаты' %}</button>
+          {% endif %}
+          {% if order.is_dine_in %}
+            <form method="post" action="{% url 'request_bill' order.id %}">{% csrf_token %}
+              <button class="btn btn-secondary w-full">{% icon "printer" 17 %}{% translate 'Пречек' %}</button></form>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if order.has_ready_items %}
+        <button hx-post="{% url 'serve_all' order.id %}" hx-target="#order-panel" class="btn btn-ghost w-full">{% icon "check-circle" 17 %}{% translate 'Всё готовое подано' %}</button>
+      {% endif %}
+    </div>
+    {% endwith %}
+  {% endif %}
+  {% if can_cancel %}
+    <button type="button" hx-get="{% url 'cancel_form' order.id %}" hx-target="#modal" class="mt-2 w-full btn btn-ghost btn-sm text-red-700 hover:text-red-800 hover:bg-red-50">{% translate 'Отменить заказ' %}</button>
+  {% endif %}
 </div>
-
-{% if order.has_new_items %}
-  <button hx-post="{% url 'send_to_kitchen' order.id %}" hx-target="#order-panel"
-          class="mt-4 w-full min-h-[52px] rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-[17px] font-bold">
-    Отправить на кухню
-  </button>
-{% endif %}
-
-{% if order.can_pay and order.status == "open" and user.can_take_payment %}
-  <a href="{% url 'pay' order.id %}"
-     class="mt-3 flex items-center justify-center w-full min-h-[56px] rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-extrabold">
-    Оплатить
-  </a>
-{% endif %}
-
-{% if can_cancel %}
-  <form method="post" action="{% url 'cancel_order' order.id %}" class="mt-2"
-        onsubmit="return confirm('Отменить заказ?{% if order.has_sent_items %} Блюда уже отправлены на кухню.{% endif %}')">
-    {% csrf_token %}
-    <button class="w-full min-h-[44px] rounded-xl text-red-700 hover:bg-red-50 font-semibold text-sm">Отменить заказ</button>
-  </form>
-{% endif %}

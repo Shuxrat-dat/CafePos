@@ -1,0 +1,21 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{% blocktranslate trimmed with n=order.id %}Отменить заказ №{{ n }}?{% endblocktranslate %}{% endblock %}
+{% block modal_body %}
+<form method="post" action="{% url 'cancel_order' order.id %}" class="space-y-4">
+  {% csrf_token %}
+  {% if order.has_sent_items %}
+    <div class="alert-warn">{% icon "alert" 18 %}{% translate 'Часть блюд уже отправлена на кухню. Заказ останется в истории как отменённый.' %}</div>
+  {% else %}
+    <p class="text-sm text-muted">{% translate 'Заказ останется в истории как отменённый.' %}</p>
+  {% endif %}
+  <div>
+    <label class="label" for="cancel-reason">{% translate 'Причина отмены' %}</label>
+    <input id="cancel-reason" name="reason" class="input" maxlength="200" placeholder="{% translate 'Гость ушёл, ошибка кассира…' %}" autofocus>
+  </div>
+  <div class="flex gap-2">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Не отменять' %}</button>
+    <button class="btn btn-lg flex-1 bg-red-600 text-white hover:bg-red-700">{% translate 'Отменить заказ' %}</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,50 +1,116 @@
 {% extends "base.html" %}
-{% block title %}Заказ №{{ order.id }}{% endblock %}
+{% load i18n ui %}
+{% block title %}{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
+{% block main_class %}px-3 py-3 lg:px-4 lg:py-4 w-full max-w-[1600px] mx-auto{% endblock %}
 {% block content %}
-<a href="{% url 'floor' %}" class="inline-flex items-center gap-1.5 min-h-[44px] text-[15px] text-slate-600 hover:text-slate-900">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>К столам
-</a>
-<div class="flex items-center justify-between gap-3 mb-5">
-  <div>
-    <h1 class="text-[26px] font-bold tracking-tight">Заказ №{{ order.id }} · {{ order.table }}</h1>
-    <p class="text-sm text-slate-500 mt-0.5">Нажмите на блюдо, чтобы добавить в заказ</p>
-  </div>
-  <button hx-get="{% url 'move_form' order.id %}" hx-target="#modal" hx-swap="innerHTML"
-          class="px-4 min-h-[44px] rounded-xl bg-white border border-slate-200 font-semibold text-slate-600 shrink-0">Перенести стол</button>
-</div>
-
-<div class="grid lg:grid-cols-[1fr_420px] gap-5 items-start">
-  <section class="space-y-7 min-w-0">
-    {% for category in categories %}
-      <div>
-        <h2 class="text-xl font-bold mb-3">{{ category.name }}</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-          {% for dish in category.dishes.all %}
-            {% if dish.is_available %}
-              <button
-                {% if dish.modifiers.all %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"
-                {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
-                hx-swap="innerHTML"
-                class="min-h-[96px] bg-white hover:bg-emerald-50 hover:border-emerald-300 active:bg-emerald-100 border border-slate-200 rounded-2xl shadow-sm px-4 py-3.5 text-left flex flex-col justify-between">
-                <span class="text-[17px] font-semibold leading-tight">{{ dish.name }}</span>
-                <span class="mt-2 flex items-center justify-between">
-                  <span class="text-[15px] font-bold">{{ dish.price }} сум</span>
-                  {% if dish.modifiers.all %}<span class="text-xs text-slate-500">Модификаторы</span>{% endif %}
-                </span>
-              </button>
-            {% endif %}
-          {% endfor %}
+<div class="grid lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
+  {# ---------- Меню ---------- #}
+  <section class="min-w-0">
+    <div class="sticky top-14 md:top-0 z-20 bg-canvas pt-1 pb-3 -mx-1 px-1">
+      <div class="flex items-center gap-2 mb-3">
+        <a href="{% url 'floor' %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
+        <div class="relative flex-1">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
+          <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">
         </div>
       </div>
-    {% empty %}
-      <p class="text-slate-500">Меню пусто. Добавьте блюда в админке.</p>
-    {% endfor %}
+      <div id="cat-chips" class="flex flex-wrap gap-2">
+        <button type="button" data-cat="" class="chip chip-active">{% translate 'Все' %}</button>
+        {% for category in categories %}
+          <button type="button" data-cat="{{ category.id }}" class="chip">{{ category|tr }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="dish-list" class="space-y-6">
+      {% for category in categories %}
+        <div data-cat-section="{{ category.id }}">
+          <h2 class="section-title mb-2.5 text-slate-700">{{ category|tr }}</h2>
+          <div class="grid gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+            {% for dish in category.pos_dishes %}
+              {% if dish.is_available %}
+                <button type="button" data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
+                  {% if dish.modifiers.all %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"
+                  {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
+                  hx-swap="innerHTML"
+                  class="group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition">
+                  {% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}
+                  <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
+                    <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
+                    <span class="flex items-center justify-between gap-2">
+                      <span class="font-bold tabular-nums">{{ dish.price|money }}</span>
+                      {% if dish.modifiers.all %}<span class="text-slate-400" title="{% translate 'Есть варианты' %}">{% icon "more" 18 %}</span>{% endif %}
+                    </span>
+                  </span>
+                </button>
+              {% else %}
+                <div data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}" class="card overflow-hidden flex flex-col opacity-60 cursor-not-allowed" title="{% translate 'Нет в наличии' %}">
+                  <span class="relative">
+                    {% include "components/dish_image.html" with cls="w-full h-[72px] grayscale" size=28 %}
+                    <span class="absolute top-2 left-2 badge bg-ink text-white">{% translate 'Стоп-лист' %}</span>
+                  </span>
+                  <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
+                    <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
+                    <span class="font-bold tabular-nums text-slate-500">{{ dish.price|money }}</span>
+                  </span>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="card">{% translate 'Меню пусто' as t1 %}{% translate 'Добавьте категории и блюда в разделе «Меню».' as t2 %}{% include "components/empty.html" with icon="book-open" title=t1 text=t2 %}</div>
+      {% endfor %}
+      <div id="no-results" class="hidden card">{% translate 'Ничего не найдено' as t1 %}{% translate 'Попробуйте другое название.' as t2 %}{% include "components/empty.html" with icon="search" title=t1 text=t2 %}</div>
+    </div>
   </section>
 
-  <aside class="bg-white border border-slate-200 rounded-[20px] shadow-sm p-5 lg:sticky lg:top-4">
-    <div id="order-panel" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 5s" hx-swap="innerHTML">{% include "pos/_order_panel.html" %}</div>
+  {# ---------- Корзина ---------- #}
+  <aside id="cart" class="card lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+    <div id="order-panel" class="flex flex-col min-h-0 h-full" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 10s" hx-swap="innerHTML">
+      {% include "pos/_order_panel.html" %}
+    </div>
   </aside>
 </div>
 
-<div id="modal"></div>
+{# Быстрый переход к корзине на телефоне #}
+<a href="#cart" class="lg:hidden fixed bottom-4 right-4 z-30 btn btn-primary btn-lg shadow-pop">{% icon "receipt" 18 %}{% translate 'Корзина' %}</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var search = document.getElementById('dish-search');
+    var chips = document.getElementById('cat-chips');
+    var cat = '';
+    function apply() {
+      var q = search.value.trim().toLowerCase();
+      var any = false;
+      document.querySelectorAll('[data-cat-section]').forEach(function (section) {
+        var sectionVisible = false;
+        var catOk = q !== '' || cat === '' || section.dataset.catSection === cat;
+        section.querySelectorAll('[data-dish]').forEach(function (d) {
+          var ok = catOk && (q === '' || d.dataset.search.indexOf(q) !== -1);
+          d.classList.toggle('hidden', !ok);
+          if (ok) sectionVisible = true;
+        });
+        section.classList.toggle('hidden', !sectionVisible);
+        if (sectionVisible) any = true;
+      });
+      document.getElementById('no-results').classList.toggle('hidden', any);
+    }
+    search.addEventListener('input', apply);
+    chips.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-cat]');
+      if (!b) return;
+      cat = b.dataset.cat;
+      search.value = '';
+      chips.querySelectorAll('[data-cat]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
+      apply();
+    });
+    document.body.addEventListener('openCustomer', function () {
+      htmx.ajax('GET', '{% url "customer_form" order.id %}', { target: '#modal' });
+    });
+  })();
+</script>
 {% endblock %}

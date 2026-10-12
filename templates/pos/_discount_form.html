@@ -1,0 +1,52 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{% translate 'Скидка на заказ' %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{% blocktranslate trimmed with s=order.subtotal|money %}Сумма позиций: {{ s }}{% endblocktranslate %}</p>{% endblock %}
+{% block modal_body %}
+<form hx-post="{% url 'discount_form' order.id %}" hx-target="#order-panel" id="discount-form"
+      hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()" class="space-y-4">
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+  {% with kind=form.kind|default:order.discount_kind|default:'percent' %}
+  <div class="seg" role="radiogroup">
+    <label class="seg-item cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+      <input type="radio" name="kind" value="percent" class="sr-only" {% if kind == 'percent' %}checked{% endif %}>{% icon "percent" 15 %}{% translate 'Процент' %}
+    </label>
+    <label class="seg-item cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+      <input type="radio" name="kind" value="amount" class="sr-only" {% if kind == 'amount' %}checked{% endif %}>{% icon "banknote" 15 %}{% translate 'Сумма' %}
+    </label>
+  </div>
+  {% endwith %}
+  <div class="flex flex-wrap gap-2" id="discount-presets">
+    <button type="button" data-p="5" class="chip">5%</button>
+    <button type="button" data-p="10" class="chip">10%</button>
+    <button type="button" data-p="15" class="chip">15%</button>
+    <button type="button" data-p="20" class="chip">20%</button>
+    <button type="button" data-p="50" class="chip">50%</button>
+  </div>
+  <div>
+    <label class="label" for="d-value">{% translate 'Размер скидки' %}</label>
+    <input id="d-value" name="value" inputmode="decimal" class="input text-lg font-semibold" value="{{ form.value|default:'' }}{% if not form.value and order.discount_kind %}{{ order.discount_value|num }}{% endif %}" autocomplete="off">
+  </div>
+  <div>
+    <label class="label" for="d-reason">{% translate 'Причина (для отчёта)' %}</label>
+    <input id="d-reason" name="reason" class="input" maxlength="100" value="{{ form.reason|default:order.discount_reason }}" placeholder="{% translate 'Постоянный гость, акция, компенсация' %}">
+  </div>
+  <div class="flex gap-2 pt-1">
+    {% if order.discount_kind %}
+      <button type="submit" name="kind" value="" class="btn btn-danger btn-lg flex-1">{% translate 'Убрать скидку' %}</button>
+    {% else %}
+      <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
+    {% endif %}
+    <button class="btn btn-primary btn-lg flex-1">{% translate 'Применить' %}</button>
+  </div>
+</form>
+<script>
+  document.getElementById('discount-presets').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-p]');
+    if (!b) return;
+    var form = document.getElementById('discount-form');
+    form.querySelector('input[name=kind][value=percent]').checked = true;
+    form.querySelector('#d-value').value = b.dataset.p;
+  });
+</script>
+{% endblock %}

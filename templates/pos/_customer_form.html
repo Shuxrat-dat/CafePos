@@ -1,0 +1,33 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{% if order.order_type == 'delivery' %}{% translate 'Доставка' %}{% else %}{% translate 'Клиент' %}{% endif %}{% endblock %}
+{% block modal_body %}
+<form hx-post="{% url 'customer_form' order.id %}" hx-target="#order-panel"
+      hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()" class="space-y-4">
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+  <div class="grid sm:grid-cols-2 gap-3">
+    <div>
+      <label class="label" for="c-name">{% translate 'Имя' %}</label>
+      <input id="c-name" name="customer_name" class="input" maxlength="100" value="{{ order.customer_name }}" autocomplete="off">
+    </div>
+    <div>
+      <label class="label" for="c-phone">{% translate 'Телефон' %}{% if order.order_type == 'delivery' %} <span class="text-red-600">*</span>{% endif %}</label>
+      <input id="c-phone" name="customer_phone" type="tel" inputmode="tel" class="input" maxlength="30" value="{{ order.customer_phone }}" placeholder="+998 90 123 45 67" autocomplete="off">
+    </div>
+  </div>
+  {% if order.order_type == 'delivery' %}
+    <div>
+      <label class="label" for="c-address">{% translate 'Адрес доставки' %} <span class="text-red-600">*</span></label>
+      <input id="c-address" name="delivery_address" class="input" maxlength="255" value="{{ order.delivery_address }}" placeholder="{% translate 'Улица, дом, квартира, ориентир' %}">
+    </div>
+  {% endif %}
+  <div>
+    <label class="label" for="c-note">{% translate 'Комментарий к заказу' %}</label>
+    <input id="c-note" name="note" class="input" maxlength="255" value="{{ order.note }}">
+  </div>
+  <div class="flex gap-2 pt-1">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
+    <button class="btn btn-primary btn-lg flex-1">{% translate 'Сохранить' %}</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Списание' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Склад' %}</h1>
+  <p class="page-sub">{% translate 'Списание испорченных и утерянных продуктов' %}</p>
+</div>
+{% include "inventory/_tabs.html" %}
+<form method="post" class="card p-5 space-y-3 max-w-lg">
+  {% csrf_token %}
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+  <div>
+    <label class="label" for="w-product">{% translate 'Продукт' %}</label>
+    <select id="w-product" name="product" class="input">
+      <option value="">{% translate 'Выберите…' %}</option>
+      {% for p in products %}<option value="{{ p.id }}" {% if form.product == p.id|stringformat:"d" %}selected{% endif %}>{{ p|tr }} · {{ p.stock|qty }} {{ p.get_unit_display }}</option>{% endfor %}
+    </select>
+  </div>
+  <div><label class="label" for="w-qty">{% translate 'Количество' %}</label><input id="w-qty" name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="input"></div>
+  <div><label class="label" for="w-comment">{% translate 'Причина' %} <span class="text-red-600">*</span></label><input id="w-comment" name="comment" value="{{ form.comment }}" maxlength="200" class="input" placeholder="{% translate 'Испортилось, разбито, истёк срок' %}"></div>
+  <button class="btn btn-danger w-full">{% icon "arrow-up" 18 %}{% translate 'Списать' %}</button>
+</form>
+{% endblock %}

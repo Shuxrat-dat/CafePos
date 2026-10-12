@@ -1,0 +1,17 @@
+{# Поле формы Django в едином стиле: подпись, поле, подсказка и ошибки #}
+{% if field.field.widget.input_type == "checkbox" and not field.field.widget.allow_multiple_selected %}
+  <label class="flex items-start gap-3 py-1.5 cursor-pointer">
+    {{ field }}
+    <span>
+      <span class="block text-[15px] font-medium text-ink">{{ field.label }}</span>
+      {% if field.help_text %}<span class="block text-xs text-muted mt-0.5">{{ field.help_text }}</span>{% endif %}
+    </span>
+  </label>
+{% else %}
+  <div>
+    <label for="{{ field.id_for_label }}" class="label">{{ field.label }}{% if field.field.required %} <span class="text-red-600">*</span>{% endif %}</label>
+    {{ field }}
+    {% if field.help_text %}<p class="text-xs text-muted mt-1">{{ field.help_text }}</p>{% endif %}
+  </div>
+{% endif %}
+{% for error in field.errors %}<p class="text-sm text-red-700 mt-1">{{ error }}</p>{% endfor %}

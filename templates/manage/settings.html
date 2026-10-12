@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Настройки' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Данные заведения, чек, оплата и язык' %}</p>
+</div>
+{% include "manage/_settings_tabs.html" %}
+
+<form method="post" enctype="multipart/form-data" class="grid lg:grid-cols-2 gap-4 items-start max-w-5xl">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-error lg:col-span-2">{% icon "alert" 18 %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <section class="card p-5 space-y-4">
+    <h2 class="section-title">{% translate 'Заведение' %}</h2>
+    {% include "components/field.html" with field=form.name %}
+    {% include "components/field.html" with field=form.address %}
+    {% include "components/field.html" with field=form.phone %}
+    <div class="flex items-center gap-4">
+      <span class="grid place-items-center w-16 h-16 rounded-xl bg-brand text-white overflow-hidden shrink-0">
+        {% if cafe.logo %}<img src="{{ cafe.logo.url }}" alt="" class="w-full h-full object-cover">{% else %}{% icon "utensils" 28 %}{% endif %}
+      </span>
+      <div class="flex-1">{% include "components/field.html" with field=form.logo %}</div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      {% include "components/field.html" with field=form.default_language %}
+      <div><span class="label">{% translate 'Валюта' %}</span><div class="input flex items-center bg-slate-50 text-muted">UZS · {% translate 'сум' %}</div></div>
+    </div>
+  </section>
+
+  <section class="card p-5 space-y-4">
+    <h2 class="section-title">{% translate 'Оплата и налоги' %}</h2>
+    <div class="grid grid-cols-2 gap-3">
+      {% include "components/field.html" with field=form.service_percent %}
+      {% include "components/field.html" with field=form.vat_percent %}
+    </div>
+    <div>
+      <span class="label">{% translate 'Способы оплаты на кассе' %}</span>
+      <div class="rounded-xl border border-line px-3 py-1">
+        {% include "components/field.html" with field=form.accept_cash %}
+        {% include "components/field.html" with field=form.accept_card %}
+        {% include "components/field.html" with field=form.accept_mixed %}
+      </div>
+    </div>
+    {% include "components/field.html" with field=form.kitchen_warn_minutes %}
+  </section>
+
+  <section class="card p-5 space-y-4">
+    <h2 class="section-title">{% translate 'Чек' %}</h2>
+    {% include "components/field.html" with field=form.receipt_header %}
+    {% include "components/field.html" with field=form.receipt_footer %}
+  </section>
+
+  {% if DEMO_MODE %}
+    <section class="card p-5 border-orange-300 bg-orange-50/50">
+      <h2 class="section-title flex items-center gap-2">{% icon "presentation" 18 %}{% translate 'Демо-режим' %}</h2>
+      <p class="text-sm text-slate-600 mt-1 mb-4">{% translate 'Вернуть демо-ресторан к исходному состоянию после презентации. Затрагивает только демо-базу, рабочие данные не трогаются.' %}</p>
+      <button type="submit" form="demo-reset" class="btn btn-warn">{% icon "refresh" 18 %}{% translate 'Восстановить демо-данные' %}</button>
+    </section>
+  {% endif %}
+
+  <div class="lg:col-span-2">
+    <button class="btn btn-primary btn-lg">{% icon "check" 18 %}{% translate 'Сохранить настройки' %}</button>
+  </div>
+</form>
+{% if DEMO_MODE %}
+  <form id="demo-reset" method="post" action="{% url 'demo_reset' %}" onsubmit="return confirm('{% translate "Все изменения в демо-ресторане будут сброшены. Продолжить?" as t %}{{ t|escapejs }}')">{% csrf_token %}</form>
+{% endif %}
+{% endblock %}

@@ -1,45 +1,219 @@
-{% load static %}
-<!doctype html>
-<html lang="ru">
+{% load static i18n ui %}<!doctype html>
+{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}CafePOS{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>{% block title %}{% endblock %} · {{ cafe.name }}</title>
   <script src="{% static 'js/tailwind.js' %}"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#0f766e', 600: '#0d6961', 700: '#0b5a53', 50: '#f0f9f7', 100: '#d6efea', 200: '#a7e3d7' },
+            ink: '#111827', muted: '#6b7280', line: '#e5e7eb', canvas: '#f6f7f9', night: '#0b1220',
+          },
+          fontFamily: { sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'] },
+          boxShadow: { card: '0 1px 2px rgba(17,24,39,.05)', pop: '0 16px 40px -12px rgba(17,24,39,.28)' },
+        },
+      },
+    };
+  </script>
+  <style type="text/tailwindcss">
+    @layer components {
+      /* Дизайн-система CafePOS: один акцент (бирюзовый); зелёный — свободно и успех; оранжевый — ожидание; красный — ошибки */
+      .card { @apply bg-white border border-line rounded-xl shadow-card; }
+      .btn { @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-lg font-semibold text-[15px] transition-colors select-none whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none; }
+      .btn-lg { @apply min-h-[52px] px-5 text-base; }
+      .btn-sm { @apply min-h-[36px] px-3 text-sm; }
+      .btn-primary { @apply bg-brand text-white hover:bg-brand-600 active:bg-brand-700; }
+      .btn-dark { @apply bg-ink text-white hover:bg-slate-800; }
+      .btn-secondary { @apply bg-white text-ink border border-line hover:bg-slate-50 active:bg-slate-100; }
+      .btn-outline { @apply bg-white text-brand-700 border border-brand/40 hover:bg-brand-50; }
+      .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-ink; }
+      .btn-danger { @apply bg-white text-red-700 border border-red-200 hover:bg-red-50; }
+      .btn-warn { @apply bg-orange-500 text-white hover:bg-orange-600; }
+      .icon-btn { @apply inline-grid place-items-center w-11 h-11 rounded-lg border border-line bg-white text-slate-600 hover:bg-slate-50 hover:text-ink active:bg-slate-100 transition-colors; }
+      .input { @apply w-full rounded-lg border border-line bg-white px-3.5 min-h-[44px] text-[15px] text-ink placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand; }
+      .label { @apply block text-[13px] font-medium text-slate-600 mb-1.5; }
+      .badge { @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap; }
+      .chip { @apply inline-flex items-center gap-1.5 min-h-[38px] px-3 rounded-lg border border-line bg-white text-sm font-medium text-slate-600 hover:text-ink hover:border-slate-300 whitespace-nowrap; }
+      .chip-active { @apply bg-brand-50 border-brand/40 text-brand-700 hover:text-brand-700 hover:border-brand/40; }
+      .page-title { @apply text-[22px] font-bold tracking-tight text-ink; }
+      .page-sub { @apply text-sm text-muted mt-0.5; }
+      .section-title { @apply text-base font-semibold text-ink; }
+      .table-head { @apply text-left text-xs font-semibold uppercase tracking-wide text-muted; }
+      .alert-error { @apply flex gap-2.5 items-start px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm font-medium; }
+      .alert-warn { @apply flex gap-2.5 items-start px-4 py-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-900 text-sm; }
+      .alert-ok { @apply flex gap-2.5 items-start px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium; }
+      .seg { @apply flex p-1 bg-slate-100 rounded-lg gap-1; }
+      .seg-item { @apply flex-1 inline-flex items-center justify-center gap-1.5 min-h-[38px] px-2 rounded-md text-sm font-semibold text-slate-600 hover:text-ink; }
+      .seg-item-active { @apply bg-white text-ink shadow-card; }
+      /* Пункт навигации: на широком экране — строка с подписью, на среднем — иконка с короткой подписью */
+      .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[58px] rounded-lg text-[11px] font-medium text-slate-600 hover:bg-slate-100 hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3 xl:text-[15px]; }
+      .nav-link-active { @apply bg-brand-50 text-brand-700 font-semibold hover:bg-brand-50 hover:text-brand-700; }
+    }
+    html { -webkit-tap-highlight-color: transparent; }
+    body { font-feature-settings: "tnum" 1; }
+    .htmx-request.btn, button.htmx-request { opacity: .6; pointer-events: none; }
+    #progress { transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
+    .htmx-request #progress, #progress.htmx-request { transform: scaleX(.7); }
+    .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    @media print { .no-print { display: none !important; } }
+  </style>
   <script src="{% static 'js/htmx.min.js' %}"></script>
+  {% block head %}{% endblock %}
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-900 antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-  {% with page=request.resolver_match.url_name %}
-  <header class="bg-slate-900 text-white h-[60px] px-7 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <a href="{% url 'floor' %}" class="flex items-center gap-2.5 mr-5 text-lg font-bold tracking-wide">
-        <span class="w-[30px] h-[30px] rounded-[9px] bg-amber-400 text-slate-900 grid place-items-center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8z"/><path d="M17 10h2a2 2 0 0 1 0 4h-2"/><path d="M8 3v2M12 3v2"/></svg>
-        </span>
-        CafePOS
-      </a>
-      <a href="{% url 'floor' %}"
-         class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'floor' or page == 'order_detail' or page == 'pay' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Зал</a>
-      {% if user.is_superuser or user.role == 'owner' or user.role == 'admin' %}
-        <a href="{% url 'reports' %}"
-           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'reports' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Отчёты</a>
-        <a href="{% url 'stock' %}"
-           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'stock' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">Склад</a>
-        <a href="{% url 'menu_qr' %}"
-           class="min-h-[44px] px-3.5 flex items-center rounded-[10px] text-[15px] {% if page == 'menu_qr' %}bg-slate-800 text-white{% else %}text-slate-300 hover:text-white{% endif %}">QR-меню</a>
-      {% endif %}
-    </div>
-    {% if user.is_authenticated %}
-    <form method="post" action="{% url 'logout' %}" class="flex items-center gap-3">
-      {% csrf_token %}
-      <span class="text-sm text-slate-300">{{ user.get_full_name|default:user.username }} · <b class="text-white font-semibold">{{ user.get_role_display }}</b></span>
-      <button class="min-h-[44px] px-3.5 rounded-[10px] border border-slate-700 text-slate-200 text-sm hover:bg-slate-800">Выйти</button>
-    </form>
+<body class="bg-canvas min-h-screen text-ink antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-indicator="#progress">
+<div id="progress" class="no-print fixed top-0 inset-x-0 h-0.5 bg-brand z-[70] pointer-events-none"></div>
+{% if user.is_authenticated %}
+  {# Боковая навигация: на широком экране — с подписями, на среднем — компактные иконки с короткой подписью #}
+  <aside class="no-print hidden md:flex fixed inset-y-0 left-0 z-40 w-[84px] xl:w-60 flex-col bg-white border-r border-line">
+    <a href="{% url 'floor' %}" class="flex items-center justify-center xl:justify-start gap-3 h-16 px-3 xl:px-5 border-b border-line shrink-0" title="{{ cafe.name }}">
+      <span class="grid place-items-center w-10 h-10 rounded-lg bg-brand text-white overflow-hidden shrink-0">
+        {% if cafe.logo %}<img src="{{ cafe.logo.url }}" alt="" class="w-full h-full object-cover">{% else %}{% icon "utensils" 20 %}{% endif %}
+      </span>
+      <span class="hidden xl:block min-w-0">
+        <span class="block font-bold leading-tight tracking-tight">CafePOS</span>
+        <span class="block text-xs text-muted truncate">{{ cafe.name }}</span>
+      </span>
+    </a>
+    {% if DEMO_MODE %}
+      <div class="mx-2 xl:mx-3 mt-3 rounded-md bg-orange-50 text-orange-800 text-[11px] xl:text-xs font-semibold px-2 py-1 text-center xl:text-left" title="{% translate 'учебные данные, рабочая база не используется' %}">{% translate 'Демо-режим' %}</div>
     {% endif %}
+    <nav class="flex-1 flex flex-col gap-0.5 px-2 xl:px-3 py-3 overflow-y-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
+      {% for item in nav_items %}
+        {% if item.post %}
+          <form method="post" action="{{ item.url }}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
+            <button class="nav-link {% if item.active %}nav-link-active{% endif %}" title="{% translate 'Новый заказ навынос' %}">{% icon item.icon 20 %}<span class="leading-none truncate max-w-full">{{ item.label }}</span></button>
+          </form>
+        {% else %}
+          <a href="{{ item.url }}" class="nav-link {% if item.active %}nav-link-active{% endif %}" {% if item.active %}aria-current="page"{% endif %}>
+            {% icon item.icon 20 %}<span class="leading-none truncate max-w-full">{{ item.label }}</span>
+            {% if item.name == 'stock' and low_stock_count %}<span class="absolute top-1.5 right-2 xl:static xl:ml-auto min-w-[20px] h-5 px-1.5 rounded-md bg-orange-100 text-orange-700 text-[11px] font-bold grid place-items-center" title="{% translate 'Мало на складе' %}">{{ low_stock_count }}</span>{% endif %}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </nav>
+    <div class="border-t border-line p-2 xl:p-3 space-y-2 shrink-0">
+      {% include "components/lang_switch.html" with short=True %}
+      <div class="flex flex-col xl:flex-row items-center gap-1 xl:gap-2">
+        <span class="grid place-items-center w-9 h-9 rounded-full bg-slate-100 text-slate-700 text-sm font-bold uppercase shrink-0" title="{{ user.get_full_name|default:user.username }}">{{ user.first_name|default:user.username|slice:":1" }}</span>
+        <span class="hidden xl:block flex-1 min-w-0">
+          <span class="block text-sm font-semibold truncate">{{ user.get_full_name|default:user.username }}</span>
+          <span class="block text-xs text-muted truncate">{% if user.is_superuser %}{% translate 'Суперпользователь' %}{% else %}{{ user.get_role_display }}{% endif %}</span>
+        </span>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="icon-btn w-9 h-9 border-0 hover:text-red-700" title="{% translate 'Выйти' %}" aria-label="{% translate 'Выйти' %}">{% icon "log-out" 18 %}</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  {# Верхняя панель для телефонов #}
+  <header class="no-print md:hidden sticky top-0 z-40 bg-white border-b border-line h-14 px-4 flex items-center justify-between gap-3">
+    <a href="{% url 'floor' %}" class="flex items-center gap-2 font-semibold min-w-0">
+      <span class="grid place-items-center w-8 h-8 rounded-lg bg-brand text-white shrink-0">{% icon "utensils" 18 %}</span>
+      <span class="truncate">CafePOS</span>
+      {% if DEMO_MODE %}<span class="badge bg-orange-50 text-orange-800">{% translate 'Демо-режим' %}</span>{% endif %}
+    </a>
+    <details class="relative">
+      <summary class="list-none icon-btn cursor-pointer" aria-label="{% translate 'Разделы' %}">{% icon "layout-grid" 20 %}</summary>
+      <div class="absolute right-0 mt-2 w-64 rounded-xl bg-white shadow-pop p-2 border border-line">
+        {% for item in nav_items %}
+          {% if item.post %}
+            <form method="post" action="{{ item.url }}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
+              <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50">{% icon item.icon 18 %}{{ item.label }}</button></form>
+          {% else %}
+            <a href="{{ item.url }}" class="flex items-center gap-3 px-3 min-h-[44px] rounded-lg {% if item.active %}bg-brand-50 text-brand-700 font-semibold{% else %}hover:bg-slate-50{% endif %}">{% icon item.icon 18 %}{{ item.label }}</a>
+          {% endif %}
+        {% endfor %}
+        <div class="border-t border-line my-2"></div>
+        <div class="px-1">{% include "components/lang_switch.html" %}</div>
+        <form method="post" action="{% url 'logout' %}" class="mt-1">{% csrf_token %}
+          <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-red-700">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
+        </form>
+      </div>
+    </details>
   </header>
-  {% endwith %}
-  <main class="px-7 py-6 max-w-7xl mx-auto">
+{% endif %}
+
+<div class="{% if user.is_authenticated %}md:pl-[84px] xl:pl-60{% endif %} min-h-screen flex flex-col">
+  {% if DEMO_MODE and not user.is_authenticated %}
+    <div class="no-print bg-orange-50 text-orange-900 text-[13px] px-4 py-1.5 text-center border-b border-orange-100">
+      <b>{% translate 'Демо-режим' %}</b> · {% translate 'учебные данные, рабочая база не используется' %}
+    </div>
+  {% endif %}
+  <main class="flex-1 {% block main_class %}px-4 py-5 lg:px-8 lg:py-6 max-w-[1600px] w-full mx-auto{% endblock %}">
     {% block content %}{% endblock %}
   </main>
+</div>
+
+<div id="modal"></div>
+<div id="toasts" class="no-print fixed z-[80] top-4 right-4 left-4 sm:left-auto sm:w-[380px] flex flex-col gap-2 pointer-events-none" aria-live="polite"></div>
+
+{% if messages %}
+  <script id="django-messages" type="application/json">[{% for m in messages %}{"text": "{{ m.message|escapejs }}", "kind": "{% if 'error' in m.tags %}error{% elif 'warning' in m.tags %}warning{% else %}success{% endif %}"}{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+{% endif %}
+<script>
+  (function () {
+    var ICONS = {
+      success: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+      error: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+      warning: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
+    };
+    var COLORS = { success: 'text-emerald-600', error: 'text-red-600', warning: 'text-orange-600' };
+    window.showToast = function (text, kind) {
+      kind = ICONS[kind] ? kind : 'success';
+      var box = document.getElementById('toasts');
+      var el = document.createElement('div');
+      el.className = 'pointer-events-auto flex items-start gap-3 rounded-xl bg-white border border-line shadow-pop px-4 py-3 text-sm font-medium text-ink transition duration-200 opacity-0 -translate-y-1';
+      el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+      el.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 ' + COLORS[kind] + '">' + ICONS[kind] + '</svg><span class="flex-1"></span>';
+      el.querySelector('span').textContent = text;
+      box.appendChild(el);
+      requestAnimationFrame(function () { el.classList.remove('opacity-0', '-translate-y-1'); });
+      setTimeout(function () { el.classList.add('opacity-0'); setTimeout(function () { el.remove(); }, 250); }, kind === 'error' ? 6000 : 3000);
+    };
+    window.closeModal = function () { document.getElementById('modal').innerHTML = ''; };
+    window.openNewOrder = function () { var m = document.getElementById('new-order-modal'); if (m) m.classList.remove('hidden'); };
+    window.closeNewOrder = function () { var m = document.getElementById('new-order-modal'); if (m) m.classList.add('hidden'); };
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeNewOrder(); } });
+    document.body.addEventListener('toast', function (e) { showToast(e.detail.message, e.detail.kind); });
+    document.body.addEventListener('htmx:responseError', function (e) {
+      var s = e.detail.xhr.status;
+      showToast(s === 403 ? '{% translate "Недостаточно прав для этого действия." as t %}{{ t|escapejs }}' : s === 404 ? '{% translate "Запись не найдена или уже изменена." as t %}{{ t|escapejs }}' : '{% translate "Ошибка сервера. Попробуйте ещё раз." as t %}{{ t|escapejs }}', 'error');
+    });
+    // Сессия истекла: фоновое обновление получило страницу входа — переходим на неё целиком
+    document.body.addEventListener('htmx:beforeSwap', function (e) {
+      var url = e.detail.xhr.responseURL || '';
+      if (url.indexOf('{% url "login" %}') !== -1) {
+        e.detail.shouldSwap = false;
+        window.location.href = '{% url "login" %}?next=' + encodeURIComponent(location.pathname + location.search);
+      }
+    });
+    // Пока нет связи, показываем одно уведомление, а не по одному на каждую попытку обновления
+    var offline = false;
+    document.body.addEventListener('htmx:sendError', function () {
+      if (offline) return;
+      offline = true;
+      showToast('{% translate "Нет связи с сервером. Проверьте сеть." as t %}{{ t|escapejs }}', 'error');
+    });
+    document.body.addEventListener('htmx:afterRequest', function (e) { if (e.detail.successful) offline = false; });
+    var data = document.getElementById('django-messages');
+    if (data) JSON.parse(data.textContent).forEach(function (m) { showToast(m.text, m.kind); });
+    // Обычные формы: защита от двойного нажатия на кнопку отправки
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (form.hasAttribute('hx-post') || form.hasAttribute('hx-get') || form.method.toLowerCase() === 'get') return;
+      setTimeout(function () { form.querySelectorAll('button').forEach(function (b) { b.disabled = true; }); }, 0);
+    });
+  })();
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

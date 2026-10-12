@@ -1,28 +1,73 @@
-<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {% for order in orders %}
-    <div class="bg-white rounded-[20px] border border-slate-200 shadow-sm p-5">
-      <div class="flex justify-between items-start mb-2 pb-3 border-b border-slate-100">
-        <div>
-          <div class="text-xl font-bold">Стол {{ order.table.number }}</div>
-          <div class="text-sm text-slate-500">{{ order.table.hall.name }}</div>
-        </div>
-        <span class="text-sm font-semibold rounded-full bg-amber-50 border border-amber-300 text-amber-900 px-3 py-1">№{{ order.id }}</span>
-      </div>
-      <ul class="divide-y divide-slate-100">
-        {% for item in order.cooking_items %}
-          <li class="py-3 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-lg font-semibold">{{ item.dish.name }} × {{ item.quantity }}</div>
-              {% for m in item.modifiers.all %}<div class="text-sm text-amber-800">+ {{ m.name }}</div>{% endfor %}
-              {% if item.comment %}<div class="text-sm text-slate-500">«{{ item.comment }}»</div>{% endif %}
-            </div>
-            <button hx-post="{% url 'mark_ready' item.id %}" hx-target="#tickets"
-                    class="min-h-[52px] px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-bold shrink-0">Готово</button>
-          </li>
+{% load i18n ui %}
+<div class="grid lg:grid-cols-3 gap-4 items-start">
+  {% for key, orders in columns.items %}
+    <section class="rounded-xl bg-slate-200/60 p-2.5 min-h-[200px]">
+      <h2 class="flex items-center justify-between px-2 pt-1 pb-2.5">
+        <span class="flex items-center gap-2 font-bold text-ink">
+          <i class="w-2.5 h-2.5 rounded-full {% if key == 'new' %}bg-slate-400{% elif key == 'cooking' %}bg-orange-500{% else %}bg-emerald-500{% endif %}"></i>
+          {% if key == 'new' %}{% translate 'Новые' %}{% elif key == 'cooking' %}{% translate 'Готовятся' %}{% else %}{% translate 'Готово к выдаче' %}{% endif %}
+        </span>
+        <span class="badge bg-white text-ink">{{ orders|length }}</span>
+      </h2>
+      <div class="space-y-2.5">
+        {% for order in orders %}
+          <article class="bg-white rounded-xl border-2 shadow-card overflow-hidden
+            {% if order.level == 'late' %}border-red-500{% elif order.level == 'warn' %}border-orange-400{% else %}border-transparent{% endif %}">
+            <header class="flex items-start justify-between gap-2 px-4 pt-3 pb-2 {% if order.level == 'late' %}bg-red-50{% elif order.level == 'warn' %}bg-orange-50{% endif %}">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xl font-extrabold">№{{ order.id }}</span>
+                  {% if order.order_type == 'dine_in' %}
+                    <span class="badge bg-slate-100 text-slate-700">{% icon "utensils" 12 %}{{ order.place_label }}</span>
+                  {% elif order.order_type == 'takeaway' %}
+                    <span class="badge bg-brand-100 text-brand-700">{% icon "shopping-bag" 12 %}{% translate 'Навынос' %}</span>
+                  {% else %}
+                    <span class="badge bg-slate-100 text-slate-700">{% icon "bike" 12 %}{% translate 'Доставка' %}</span>
+                  {% endif %}
+                  {% if order.status == 'paid' %}<span class="badge bg-emerald-50 text-emerald-700">{% translate 'Оплачен' %}</span>{% endif %}
+                </div>
+                <div class="text-xs text-muted mt-0.5">{{ order.waiter.first_name|default:order.waiter.username }}{% if order.customer_name %} · {{ order.customer_name }}{% endif %}</div>
+              </div>
+              <div class="text-right">
+                <div class="flex items-center gap-1 text-lg font-bold tabular-nums {% if order.level == 'late' %}text-red-700{% elif order.level == 'warn' %}text-orange-700{% else %}text-slate-700{% endif %}">
+                  {% icon "clock" 16 %}<span data-since="{{ order.since|date:'U' }}">{{ order.wait_minutes }}:00</span>
+                </div>
+                <div class="text-[11px] text-muted">{{ order.since|time:"H:i" }}</div>
+              </div>
+            </header>
+            {% if order.note %}<div class="mx-4 mb-1 text-sm text-orange-900 bg-orange-50 rounded-lg px-2 py-1">{% icon "message" 13 %} {{ order.note }}</div>{% endif %}
+            <ul class="px-2 pb-2">
+              {% for item in order.kitchen_items %}
+                <li class="flex items-center justify-between gap-2 px-2 py-2 rounded-lg {% if item.status == 'ready' %}opacity-60{% endif %}">
+                  <div class="min-w-0">
+                    <div class="text-[17px] font-semibold leading-snug {% if item.status == 'ready' %}line-through decoration-2{% endif %}">
+                      <span class="inline-grid place-items-center min-w-[28px] h-7 px-1 mr-1 rounded-md bg-ink text-white text-sm font-bold">{{ item.quantity }}</span>{{ item.dish|tr }}
+                    </div>
+                    {% for m in item.modifiers.all %}<div class="text-sm font-medium text-orange-800 pl-9">+ {{ m|tr }}</div>{% endfor %}
+                    {% if item.comment %}<div class="text-sm text-red-700 font-medium pl-9">«{{ item.comment }}»</div>{% endif %}
+                  </div>
+                  {% if item.status == 'queued' or item.status == 'cooking' %}
+                    <button hx-post="{% url 'mark_ready' item.id %}" hx-target="#tickets" class="icon-btn w-12 h-12 shrink-0 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300" title="{% translate 'Позиция готова' %}" aria-label="{% translate 'Позиция готова' %}">{% icon "check" 22 %}</button>
+                  {% else %}
+                    <span class="text-emerald-600 shrink-0 px-3">{% icon "check-circle" 22 %}</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+            <footer class="px-3 pb-3">
+              {% if key == 'new' %}
+                <button hx-post="{% url 'ticket_start' order.id %}" hx-target="#tickets" class="btn btn-warn btn-lg w-full text-lg">{% icon "play" 20 %}{% translate 'Начать готовить' %}</button>
+              {% elif key == 'cooking' %}
+                <button hx-post="{% url 'ticket_ready' order.id %}" hx-target="#tickets" class="btn btn-primary btn-lg w-full text-lg">{% icon "check" 20 %}{% translate 'Заказ готов' %}</button>
+              {% else %}
+                <button hx-post="{% url 'ticket_served' order.id %}" hx-target="#tickets" class="btn btn-lg w-full btn-secondary text-lg">{% icon "check-circle" 20 %}{% if order.order_type == 'dine_in' %}{% translate 'Отдано в зал' %}{% else %}{% translate 'Выдано клиенту' %}{% endif %}</button>
+              {% endif %}
+            </footer>
+          </article>
+        {% empty %}
+          <p class="text-center text-sm text-muted py-10">{% if key == 'new' %}{% translate 'Новых заказов нет' %}{% elif key == 'cooking' %}{% translate 'Сейчас ничего не готовится' %}{% else %}{% translate 'Нет готовых заказов' %}{% endif %}</p>
         {% endfor %}
-      </ul>
-    </div>
-  {% empty %}
-    <p class="text-slate-500 text-lg">Новых заказов нет</p>
+      </div>
+    </section>
   {% endfor %}
 </div>

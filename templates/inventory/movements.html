@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Движение склада' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Склад' %}</h1>
+  <p class="page-sub">{% translate 'История прихода, продаж, списаний и инвентаризаций' %}</p>
+</div>
+{% include "inventory/_tabs.html" %}
+<form method="get" class="flex flex-wrap gap-2 mb-4">
+  <select name="kind" class="input w-auto pr-8" onchange="this.form.submit()">
+    <option value="">{% translate 'Все операции' %}</option>
+    {% for value, label in kinds %}<option value="{{ value }}" {% if value == kind %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="product" class="input w-auto pr-8" onchange="this.form.submit()">
+    <option value="">{% translate 'Все продукты' %}</option>
+    {% for p in products %}<option value="{{ p.id }}" {% if p.id|stringformat:'d' == product_id %}selected{% endif %}>{{ p|tr }}</option>{% endfor %}
+  </select>
+</form>
+<div class="card overflow-hidden">
+  {% if page.object_list %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-line">
+          <tr><th class="table-head px-4 py-3">{% translate 'Дата' %}</th><th class="table-head px-4 py-3">{% translate 'Продукт' %}</th><th class="table-head px-4 py-3">{% translate 'Операция' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Количество' %}</th><th class="table-head px-4 py-3 hidden md:table-cell">{% translate 'Комментарий' %}</th><th class="table-head px-4 py-3 hidden lg:table-cell">{% translate 'Кто' %}</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for m in page.object_list %}
+            <tr>
+              <td class="px-4 py-2.5 whitespace-nowrap tabular-nums text-muted">{{ m.created_at|date:"d.m.Y H:i" }}</td>
+              <td class="px-4 py-2.5 font-medium">{{ m.product|tr }}</td>
+              <td class="px-4 py-2.5"><span class="badge {% if m.kind == 'income' %}bg-emerald-50 text-emerald-700{% elif m.kind == 'sale' %}bg-slate-100 text-slate-700{% elif m.kind == 'writeoff' %}bg-red-50 text-red-700{% else %}bg-slate-100 text-slate-700{% endif %}">{{ m.get_kind_display }}</span></td>
+              <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap {% if m.quantity < 0 %}text-red-600{% else %}text-emerald-700{% endif %}">{% if m.quantity > 0 %}+{% endif %}{{ m.quantity|qty }} {{ m.product.get_unit_display }}</td>
+              <td class="px-4 py-2.5 hidden md:table-cell text-muted">{% if m.order_id %}{% translate 'Заказ' %} №{{ m.order_id }}{% endif %}{% if m.kind != 'sale' %}{{ m.comment }}{% endif %}</td>
+              <td class="px-4 py-2.5 hidden lg:table-cell text-muted">{% if m.created_by %}{{ m.created_by.get_full_name|default:m.created_by.username }}{% else %}—{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.has_other_pages %}
+      <div class="flex items-center justify-between px-4 py-3 border-t border-line text-sm">
+        <span class="text-muted">{% blocktranslate trimmed with p=page.number n=page.paginator.num_pages %}Страница {{ p }} из {{ n }}{% endblocktranslate %}</span>
+        <div class="flex gap-2">
+          {% if page.has_previous %}<a class="btn btn-secondary btn-sm" href="{% query page=page.previous_page_number %}">{% icon "chevron-left" 16 %}</a>{% endif %}
+          {% if page.has_next %}<a class="btn btn-secondary btn-sm" href="{% query page=page.next_page_number %}">{% icon "chevron-right" 16 %}</a>{% endif %}
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    {% translate 'Движений не найдено' as t1 %}{% include "components/empty.html" with icon="package" title=t1 %}
+  {% endif %}
+</div>
+{% endblock %}

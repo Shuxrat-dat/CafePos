@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Модификаторы' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Меню' %}</h1>
+  <p class="page-sub">{% translate 'Варианты и добавки: размер, двойная порция, сироп' %}</p>
+</div>
+{% include "manage/_menu_tabs.html" %}
+<div class="grid lg:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr><th class="table-head px-4 py-3">{% translate 'Название' %}</th><th class="table-head px-4 py-3">{% translate 'Группа' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Доплата' %}</th><th class="table-head px-4 py-3 text-center">{% translate 'Блюд' %}</th><th class="px-4 py-3"></th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for m in modifiers %}
+          <tr>
+            <td class="px-4 py-2.5"><div class="font-semibold">{{ m.name }}</div><div class="text-xs text-muted">{{ m.name_uz|default:"—" }}{% if m.consumption_multiplier != 1 %} · {% translate 'расход' %} ×{{ m.consumption_multiplier|floatformat:"-2" }}{% endif %}</div></td>
+            <td class="px-4 py-2.5">{% if m.group %}<span class="badge bg-slate-100 text-slate-700">{% translate m.group %}</span>{% else %}<span class="text-muted">{% translate 'добавка' %}</span>{% endif %}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums">{% if m.price_delta %}+{{ m.price_delta|money }}{% else %}—{% endif %}</td>
+            <td class="px-4 py-2.5 text-center tabular-nums">{{ m.n }}</td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              <a href="{% url 'manage_modifiers_edit' m.id %}" class="icon-btn w-10 h-10 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</a>
+              <form method="post" action="{% url 'modifier_delete' m.id %}" class="inline" onsubmit="return confirm('{% translate "Удалить модификатор?" as t %}{{ t|escapejs }}')">{% csrf_token %}
+                <button class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button></form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">{% translate 'Модификаторов пока нет' as t1 %}{% include "components/empty.html" with title=t1 %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" class="card p-5 space-y-4 lg:sticky lg:top-4">
+    {% csrf_token %}
+    <h2 class="section-title">{% if instance %}{% translate 'Изменить модификатор' %}{% else %}{% translate 'Новый модификатор' %}{% endif %}</h2>
+    {% for field in form %}{% include "components/field.html" %}{% endfor %}
+    <div class="flex gap-2">
+      {% if instance %}<a href="{% url 'manage_modifiers' %}" class="btn btn-secondary flex-1">{% translate 'Отмена' %}</a>{% endif %}
+      <button class="btn btn-primary flex-1">{% translate 'Сохранить' %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

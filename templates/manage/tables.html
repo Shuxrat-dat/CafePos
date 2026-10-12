@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Залы и столы' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Залы и столы, которые видны на схеме зала' %}</p>
+</div>
+{% include "manage/_settings_tabs.html" %}
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <div class="space-y-4">
+    {% for hall in halls %}
+      <section class="card p-5">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <h2 class="section-title">{{ hall.name }}{% if hall.name_uz %} <span class="text-muted font-normal">/ {{ hall.name_uz }}</span>{% endif %}</h2>
+          {% if not hall.n %}
+            <form method="post" action="{% url 'hall_delete' hall.id %}">{% csrf_token %}<button class="btn btn-ghost btn-sm text-red-700">{% icon "trash" 16 %}{% translate 'Удалить зал' %}</button></form>
+          {% endif %}
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+          {% for t in hall.tables.all %}
+            <a href="{% url 'table_edit' t.id %}" class="rounded-xl border border-line hover:border-brand hover:bg-brand-50 p-3 text-center">
+              <div class="text-lg font-bold">{{ t.number }}</div>
+              <div class="text-xs text-muted">{{ t.seats }} {% translate 'мест' %}</div>
+            </a>
+          {% empty %}
+            <p class="text-sm text-muted col-span-full">{% translate 'Столов пока нет' %}</p>
+          {% endfor %}
+        </div>
+      </section>
+    {% empty %}
+      <div class="card">{% translate 'Залов пока нет' as t1 %}{% translate 'Создайте первый зал справа.' as t2 %}{% include "components/empty.html" with icon="layout-grid" title=t1 text=t2 %}</div>
+    {% endfor %}
+  </div>
+
+  <div class="space-y-4 lg:sticky lg:top-4">
+    {% if halls %}
+      <form method="post" class="card p-5 space-y-3">
+        {% csrf_token %}<input type="hidden" name="kind" value="table">
+        <h2 class="section-title">{% translate 'Новый стол' %}</h2>
+        {% for field in table_form %}{% include "components/field.html" %}{% endfor %}
+        <button class="btn btn-primary w-full">{% icon "plus" 18 %}{% translate 'Добавить стол' %}</button>
+      </form>
+    {% endif %}
+    <form method="post" class="card p-5 space-y-3">
+      {% csrf_token %}<input type="hidden" name="kind" value="hall">
+      <h2 class="section-title">{% translate 'Новый зал' %}</h2>
+      {% for field in hall_form %}{% include "components/field.html" %}{% endfor %}
+      <button class="btn btn-secondary w-full">{% icon "plus" 18 %}{% translate 'Добавить зал' %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

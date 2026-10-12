@@ -23,3 +23,14 @@ staticfiles/
 .idea/
 .DS_Store
 Thumbs.db
+
+# demo mode
+demo.sqlite3
+.demo_secret_key
+media/
+media_demo/
+media_test/
+!.env.example
+
+# local editor/agent config
+.claude/

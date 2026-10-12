@@ -1,0 +1,9 @@
+{% load ui %}
+{# Фото блюда или единая иллюстрация категории, если фото не загружено #}
+<span class="relative block overflow-hidden {{ cls|default:'w-full aspect-[4/3]' }}">
+  {% if dish.photo %}
+    <img src="{{ dish.photo.url }}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover">
+  {% else %}
+    {% illustration dish.category.icon size|default:40 %}
+  {% endif %}
+</span>

@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Страница не найдена{% endblock %}
+{% load i18n ui %}
+{% block title %}{% translate 'Страница не найдена' %}{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto mt-16 bg-white rounded-2xl shadow p-6 text-center">
-  <h1 class="text-2xl font-bold">Страница не найдена</h1>
-  <p class="text-slate-500 mt-2">Возможно, заказ уже закрыт или ссылка устарела.</p>
-  <a href="{% url 'floor' %}" class="mt-6 flex items-center justify-center h-14 rounded-xl bg-slate-900 text-white font-bold">На главную</a>
+<div class="max-w-md mx-auto mt-16 card p-8 text-center">
+  <span class="inline-grid place-items-center w-14 h-14 rounded-xl bg-slate-100 text-slate-500 mb-3">{% icon "search" 26 %}</span>
+  <h1 class="text-2xl font-bold">{% translate 'Страница не найдена' %}</h1>
+  <p class="text-muted mt-2">{% translate 'Возможно, заказ уже закрыт или ссылка устарела.' %}</p>
+  <a href="{% url 'floor' %}" class="mt-6 btn btn-dark btn-lg w-full">{% translate 'На главную' %}</a>
 </div>
 {% endblock %}

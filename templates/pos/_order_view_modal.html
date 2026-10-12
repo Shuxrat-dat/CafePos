@@ -1,0 +1,5 @@
+{% extends "components/modal.html" %}
+{% load i18n %}
+{% block width %}max-w-lg{% endblock %}
+{% block modal_title %}{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
+{% block modal_body %}{% include "pos/_order_card.html" %}{% endblock %}

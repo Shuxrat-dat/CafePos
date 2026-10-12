@@ -1,0 +1,37 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{% blocktranslate trimmed with n=table.number %}Стол {{ n }}{% endblocktranslate %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ table.hall|tr }} · {{ table.seats }} {% translate 'мест' %}</p>{% endblock %}
+{% block modal_body %}
+{% if table.is_reserved %}
+  <div class="rounded-xl bg-slate-100 border border-slate-200 p-4 mb-4">
+    <div class="text-sm text-slate-700">{% translate 'Забронирован' %}</div>
+    <div class="font-semibold text-lg">{{ table.reserved_for }}</div>
+    {% if table.reserved_at %}<div class="text-sm text-slate-600">{{ table.reserved_at|time:"H:i" }}</div>{% endif %}
+  </div>
+  <form method="post" action="{% url 'open_table' table.id %}" class="mb-2">
+    {% csrf_token %}
+    <button class="btn btn-primary btn-lg w-full">{% icon "utensils" 18 %}{% translate 'Гости пришли — открыть заказ' %}</button>
+  </form>
+  <form hx-post="{% url 'reserve_table' table.id %}" hx-target="#modal">
+    <input type="hidden" name="action" value="clear">
+    <button class="btn btn-danger w-full">{% translate 'Снять бронь' %}</button>
+  </form>
+{% else %}
+  <form hx-post="{% url 'reserve_table' table.id %}" hx-target="#modal" class="space-y-4">
+    {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+    <div>
+      <label class="label" for="r-name">{% translate 'На чьё имя' %}</label>
+      <input id="r-name" name="name" class="input" maxlength="100" value="{{ form.name|default:'' }}" placeholder="{% translate 'Например: Азиз, 4 гостя' %}" autofocus>
+    </div>
+    <div>
+      <label class="label" for="r-time">{% translate 'Время (сегодня)' %}</label>
+      <input id="r-time" name="time" type="time" class="input" value="{{ form.time|default:'' }}">
+    </div>
+    <div class="flex gap-2 pt-1">
+      <button type="button" class="btn btn-secondary flex-1" onclick="closeModal()">{% translate 'Отмена' %}</button>
+      <button class="btn btn-primary flex-1">{% icon "calendar" 18 %}{% translate 'Забронировать' %}</button>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}

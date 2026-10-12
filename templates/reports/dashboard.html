@@ -1,96 +1,204 @@
 {% extends "base.html" %}
-{% block title %}Отчёты{% endblock %}
+{% load i18n ui %}
+{% block title %}{% translate 'Отчёты' %}{% endblock %}
 {% block content %}
-<div class="mb-5">
-  <h1 class="text-[28px] font-bold tracking-tight">Отчёты</h1>
-  <p class="text-sm text-slate-500 mt-1">{{ date_from }} — {{ date_to }}</p>
-</div>
-
-<div class="flex flex-wrap items-end gap-3 mb-6">
-  <div class="flex flex-wrap gap-2">
-    {% for r in ranges %}
-      <a href="?from={{ r.start }}&to={{ r.end }}"
-         class="px-4 min-h-[44px] flex items-center rounded-xl font-semibold border {% if r.start == date_from and r.end == date_to %}bg-slate-900 border-slate-900 text-white{% else %}bg-white border-slate-200 text-slate-600 hover:text-slate-900{% endif %}">{{ r.label }}</a>
-    {% endfor %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Отчёты' %}</h1>
+    <p class="page-sub">{% if single_day %}{{ date_from }}{% else %}{{ date_from }} — {{ date_to }} · {% blocktranslate trimmed with n=days %}{{ n }} дн.{% endblocktranslate %}{% endif %}</p>
   </div>
-  <form method="get" class="flex items-end gap-2 ml-auto">
-    <div>
-      <label class="block text-xs text-slate-500 mb-1">С</label>
-      <input type="date" name="from" value="{{ date_from }}" class="border border-slate-300 rounded-xl px-3 min-h-[44px] bg-white">
+  <form method="get" class="flex flex-wrap items-end gap-2">
+    <div class="flex flex-wrap gap-2 mr-1">
+      {% for r in ranges %}
+        <a href="?from={{ r.start }}&to={{ r.end }}" class="chip {% if r.start == date_from and r.end == date_to %}chip-active{% endif %}">{{ r.label }}</a>
+      {% endfor %}
     </div>
-    <div>
-      <label class="block text-xs text-slate-500 mb-1">По</label>
-      <input type="date" name="to" value="{{ date_to }}" class="border border-slate-300 rounded-xl px-3 min-h-[44px] bg-white">
-    </div>
-    <button class="px-5 min-h-[44px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold">Показать</button>
+    <input type="date" name="from" value="{{ date_from }}" class="input w-auto" aria-label="{% translate 'С' %}">
+    <input type="date" name="to" value="{{ date_to }}" class="input w-auto" aria-label="{% translate 'По' %}">
+    <button class="btn btn-dark">{% translate 'Показать' %}</button>
   </form>
 </div>
 
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <div class="text-sm text-slate-500">Выручка</div>
-    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ revenue|floatformat:"0g" }} сум</div>
+{# ---------- Главные показатели ---------- #}
+<div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+  {% with change=revenue_change %}
+  <div class="card p-4">
+    <div class="text-sm text-muted flex items-center gap-1.5">{% icon "wallet" 16 %}{% translate 'Выручка' %}</div>
+    <div class="text-2xl font-extrabold tracking-tight tabular-nums mt-1">{{ revenue|money }}</div>
+    {% include "reports/_change.html" %}
   </div>
-  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <div class="text-sm text-slate-500">Заказов</div>
-    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ orders_count }}</div>
+  {% endwith %}
+  {% with change=orders_change %}
+  <div class="card p-4">
+    <div class="text-sm text-muted flex items-center gap-1.5">{% icon "receipt" 16 %}{% translate 'Заказов' %}</div>
+    <div class="text-2xl font-extrabold tracking-tight tabular-nums mt-1">{{ orders_count|num }}</div>
+    {% include "reports/_change.html" %}
   </div>
-  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <div class="text-sm text-slate-500">Средний чек</div>
-    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ avg_check|floatformat:"0g" }} сум</div>
+  {% endwith %}
+  {% with change=avg_change %}
+  <div class="card p-4">
+    <div class="text-sm text-muted flex items-center gap-1.5">{% icon "bar-chart" 16 %}{% translate 'Средний чек' %}</div>
+    <div class="text-2xl font-extrabold tracking-tight tabular-nums mt-1">{{ avg_check|money }}</div>
+    {% include "reports/_change.html" %}
   </div>
-  <div class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <div class="text-sm text-slate-500">Маржа ({{ margin_pct }}%)</div>
-    <div class="text-2xl font-extrabold tracking-tight mt-1">{{ margin|floatformat:"0g" }} сум</div>
-    <div class="text-xs text-slate-500 mt-1">Себестоимость {{ cost|floatformat:"0g" }}</div>
+  {% endwith %}
+  <div class="card p-4">
+    <div class="text-sm text-muted flex items-center gap-1.5">{% icon "trending-up" 16 %}{% translate 'Валовая прибыль' %}</div>
+    {% if has_cost %}
+      <div class="text-2xl font-extrabold tracking-tight tabular-nums mt-1">{{ margin|money }}</div>
+      <div class="text-xs text-muted mt-1">{% blocktranslate trimmed with p=margin_pct c=cost|money %}{{ p }}% · себестоимость {{ c }}{% endblocktranslate %}</div>
+    {% else %}
+      <div class="text-2xl font-extrabold tracking-tight mt-1 text-slate-300">—</div>
+      <div class="text-xs text-muted mt-1">{% translate 'Нет списаний по техкартам за период' %}</div>
+    {% endif %}
   </div>
 </div>
+<p class="text-xs text-muted -mt-2 mb-4">{% blocktranslate trimmed with a=prev_from|date:"d.m" b=prev_to|date:"d.m" %}Сравнение с предыдущим периодом такой же длины: {{ a }} — {{ b }}.{% endblocktranslate %}</p>
 
-<div class="grid lg:grid-cols-2 gap-4">
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <h2 class="text-xl font-bold mb-3">Оплата</h2>
-    {% for m in methods %}
-      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0"><span>{{ m.label }}</span><span class="font-semibold">{{ m.sum|floatformat:"0g" }} сум</span></div>
-    {% endfor %}
+<div class="grid xl:grid-cols-3 gap-4 mb-4">
+  {# ---------- Динамика ---------- #}
+  <section class="card p-5 xl:col-span-2">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="section-title">{% if single_day %}{% translate 'Выручка по часам' %}{% else %}{% translate 'Выручка по дням' %}{% endif %}</h2>
+      <span class="text-xs text-muted">{% translate 'макс.' %} {{ chart_max|money }}</span>
+    </div>
+    {% if revenue %}
+      <div class="flex items-end gap-1 h-52 border-b border-line">
+        {% for bar in chart %}
+          <div class="group relative flex-1 h-full flex items-end min-w-0">
+            <div class="w-full rounded-t-md {% if bar.weekend %}bg-brand/60{% else %}bg-brand{% endif %} group-hover:bg-brand-700 transition-colors" style="height: {{ bar.height }}%; min-height: {% if bar.sum %}2px{% else %}0{% endif %}"></div>
+            <div class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded-md bg-ink text-white text-xs px-2 py-1 z-10 tabular-nums">{{ bar.label }} · {{ bar.sum|money }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="flex gap-1 mt-1.5">
+        {% for bar in chart %}<div class="flex-1 min-w-0 text-center text-[10px] text-muted truncate">{% if chart|length <= 16 or forloop.counter0|divisibleby:3 %}{{ bar.label }}{% endif %}</div>{% endfor %}
+      </div>
+    {% else %}
+      {% translate 'Продаж за период нет' as t1 %}{% translate 'Выберите другой период или проведите оплату на кассе.' as t2 %}{% include "components/empty.html" with icon="bar-chart" title=t1 text=t2 %}
+    {% endif %}
   </section>
 
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <h2 class="text-xl font-bold mb-3">Официанты</h2>
-    {% for w in waiters %}
-      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0">
-        <span>{{ w.name }} · {{ w.orders }} зак.</span>
-        <span class="font-semibold">{{ w.revenue|floatformat:"0g" }} сум</span>
+  {# ---------- Оплаты ---------- #}
+  <section class="card p-5">
+    <h2 class="section-title mb-3">{% translate 'Способы оплаты' %}</h2>
+    {% if methods %}
+      <div class="flex h-3 rounded-full overflow-hidden bg-slate-100 mb-4">
+        {% for m in methods %}<div class="{% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% else %}bg-orange-400{% endif %}" style="width: {{ m.pct }}%"></div>{% endfor %}
       </div>
-    {% empty %}
-      <p class="text-slate-500">Нет данных за период</p>
-    {% endfor %}
+      <ul class="space-y-2.5 text-sm">
+        {% for m in methods %}
+          <li class="flex items-center justify-between gap-2">
+            <span class="flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full {% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% else %}bg-orange-400{% endif %}"></i>{{ m.label }} <span class="text-muted">· {{ m.count }}</span></span>
+            <span class="font-semibold tabular-nums">{{ m.sum|money }} <span class="text-muted font-normal">{{ m.pct }}%</span></span>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="mt-4 pt-3 border-t border-line grid grid-cols-2 gap-3 text-sm">
+        <div><div class="text-muted">{% translate 'Наличными в кассе' %}</div><div class="font-bold tabular-nums">{{ cash_total|money }}</div></div>
+        <div><div class="text-muted">{% translate 'По картам' %}</div><div class="font-bold tabular-nums">{{ card_total|money }}</div></div>
+      </div>
+    {% else %}
+      <p class="text-sm text-muted">{% translate 'Нет данных за период' %}</p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="grid lg:grid-cols-2 2xl:grid-cols-3 gap-4 mb-4">
+  <section class="card p-5">
+    <h2 class="section-title mb-3">{% translate 'Популярные блюда' %}</h2>
+    <ol class="space-y-2 text-sm">
+      {% for d in top_dishes %}
+        <li class="flex items-center gap-3">
+          <span class="w-6 text-muted tabular-nums">{{ forloop.counter }}</span>
+          <span class="flex-1 min-w-0 truncate">{{ d.obj|tr }}</span>
+          <span class="text-muted tabular-nums">× {{ d.qty }}</span>
+          <span class="w-28 text-right font-semibold tabular-nums">{{ d.revenue|money }}</span>
+        </li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Нет данных за период' %}</li>
+      {% endfor %}
+    </ol>
   </section>
 
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <h2 class="text-xl font-bold mb-3">Популярные блюда</h2>
-    {% for d in top_dishes %}
-      <div class="flex justify-between py-2 border-b border-slate-100 last:border-0">
-        <span>{{ d.name }} × {{ d.qty }}</span>
-        <span class="font-semibold">{{ d.revenue|floatformat:"0g" }} сум</span>
-      </div>
-    {% empty %}
-      <p class="text-slate-500">Нет данных за период</p>
-    {% endfor %}
+  <section class="card p-5">
+    <h2 class="section-title mb-3">{% translate 'Продажи по категориям' %}</h2>
+    <ul class="space-y-3 text-sm">
+      {% for c in categories %}
+        <li>
+          <div class="flex justify-between gap-2 mb-1"><span class="truncate">{{ c.obj|tr }}</span><span class="font-semibold tabular-nums whitespace-nowrap">{{ c.sum|money }} <span class="text-muted font-normal">{{ c.pct }}%</span></span></div>
+          <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: {{ c.pct }}%"></div></div>
+        </li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Нет данных за период' %}</li>
+      {% endfor %}
+    </ul>
+    {% if discounts or service %}
+      <p class="text-xs text-muted mt-4">{% blocktranslate trimmed with d=discounts|money s=service|money %}Суммы по позициям до скидок. Скидки за период: {{ d }}, обслуживание: {{ s }}.{% endblocktranslate %}</p>
+    {% endif %}
   </section>
 
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <h2 class="text-xl font-bold mb-3">Мало на складе</h2>
-    {% for p in low_stock %}
-      <div class="flex justify-between items-center py-2 {% if p.stock < 0 %}bg-red-50 rounded-lg px-2{% endif %}">
-        <span>
-          {{ p.name }}
-          {% if p.stock < 0 %}<span class="ml-1 text-xs font-bold text-red-700">в минусе</span>{% endif %}
-        </span>
-        <span class="font-semibold text-red-600">{{ p.stock|floatformat:"-3g" }} {{ p.get_unit_display }}</span>
-      </div>
-    {% empty %}
-      <p class="text-slate-500">Всё в норме</p>
-    {% endfor %}
+  <section class="card p-5">
+    <h2 class="section-title mb-3">{% translate 'Типы заказов' %}</h2>
+    <ul class="space-y-2.5 text-sm">
+      {% for t in types %}
+        <li class="flex items-center justify-between gap-2">
+          <span class="flex items-center gap-2">{% if t.key == 'delivery' %}{% icon "bike" 16 "text-slate-500" %}{% elif t.key == 'takeaway' %}{% icon "shopping-bag" 16 "text-slate-500" %}{% else %}{% icon "utensils" 16 "text-slate-500" %}{% endif %}{{ t.label }} <span class="text-muted">· {{ t.count }}</span></span>
+          <span class="font-semibold tabular-nums">{{ t.sum|money }} <span class="text-muted font-normal">{{ t.pct }}%</span></span>
+        </li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Нет данных за период' %}</li>
+      {% endfor %}
+    </ul>
+    <div class="mt-4 pt-3 border-t border-line text-sm flex justify-between">
+      <span class="text-muted">{% translate 'Отменено заказов' %}</span>
+      <span class="tabular-nums"><b>{{ cancelled_count }}</b>{% if cancelled_sum %} · {{ cancelled_sum|money }}{% endif %}</span>
+    </div>
+  </section>
+
+  <section class="card p-5">
+    <h2 class="section-title mb-3">{% translate 'Сотрудники' %}</h2>
+    <ul class="space-y-2 text-sm">
+      {% for w in waiters %}
+        <li class="flex justify-between gap-2"><span>{{ w.name }} <span class="text-muted">· {{ w.orders }}</span></span><span class="font-semibold tabular-nums">{{ w.revenue|money }}</span></li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Нет данных за период' %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="section-title">{% translate 'Последние оплаты' %}</h2>
+      <a href="{% url 'orders' %}?tab=done&from={{ date_from }}&to={{ date_to }}" class="text-sm text-brand font-medium hover:underline">{% translate 'Все' %}</a>
+    </div>
+    <ul class="divide-y divide-line text-sm">
+      {% for o in recent %}
+        <li class="py-2 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 -mx-2 px-2 rounded-lg" hx-get="{% url 'order_view' o.id %}" hx-target="#modal">
+          <span><b>№{{ o.id }}</b> <span class="text-muted">· {{ o.closed_at|date:"d.m H:i" }} · {{ o.place_label }}</span></span>
+          <span class="font-semibold tabular-nums">{{ o.total|money }}</span>
+        </li>
+      {% empty %}
+        <li class="py-2 text-muted">{% translate 'Нет данных за период' %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card p-5">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="section-title">{% translate 'Мало на складе' %}</h2>
+      <a href="{% url 'stock' %}?low=1" class="text-sm text-brand font-medium hover:underline">{% translate 'Склад' %}</a>
+    </div>
+    <ul class="space-y-1 text-sm">
+      {% for p in low_stock %}
+        <li class="flex justify-between items-center gap-2 py-1 {% if p.stock < 0 %}bg-red-50 rounded-lg px-2{% endif %}">
+          <span>{{ p|tr }}{% if p.stock < 0 %} <span class="badge bg-red-100 text-red-700">{% translate 'в минусе' %}</span>{% endif %}</span>
+          <span class="font-semibold text-red-600 tabular-nums whitespace-nowrap">{{ p.stock|qty }} {{ p.get_unit_display }}</span>
+        </li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Всё в норме' %}</li>
+      {% endfor %}
+    </ul>
   </section>
 </div>
 {% endblock %}

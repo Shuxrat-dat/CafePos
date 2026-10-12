@@ -1,0 +1,11 @@
+{% load i18n %}{% get_current_language as LANG %}{% get_available_languages as LANGUAGES %}
+{# Переключатель языка. В боковой панели — короткие коды, в остальных местах — полные названия #}
+<form method="post" action="{% url 'set_language' %}" class="seg" role="group" aria-label="{% translate 'Язык' %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% for code, name in LANGUAGES %}
+    <button name="language" value="{{ code }}" title="{{ name }}" class="seg-item min-h-[32px] {% if code == LANG %}seg-item-active{% endif %}">
+      {% if short %}<span class="uppercase text-xs">{{ code }}</span>{% else %}{{ name }}{% endif %}
+    </button>
+  {% endfor %}
+</form>

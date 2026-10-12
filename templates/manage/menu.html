@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Меню' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Меню' %}</h1>
+    <p class="page-sub">{% blocktranslate trimmed with n=total s=stop_count h=hidden_count %}Блюд: {{ n }} · в стоп-листе: {{ s }} · скрыто: {{ h }}{% endblocktranslate %}</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'public_menu' %}" target="_blank" class="btn btn-secondary">{% icon "eye" 18 %}{% translate 'Меню для гостей' %}</a>
+    <a href="{% url 'dish_create' %}" class="btn btn-primary">{% icon "plus" 18 %}{% translate 'Новое блюдо' %}</a>
+  </div>
+</div>
+{% include "manage/_menu_tabs.html" %}
+
+<form method="get" class="flex flex-wrap items-end gap-3 mb-4">
+  <div class="relative flex-1 min-w-[200px]">
+    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
+    <input name="q" value="{{ search }}" class="input pl-10" placeholder="{% translate 'Поиск по названию' %}" onchange="this.form.submit()">
+  </div>
+  <select name="category" class="input w-auto pr-8" onchange="this.form.submit()">
+    <option value="">{% translate 'Все категории' %}</option>
+    {% for c in categories %}<option value="{{ c.id }}" {% if c.id|stringformat:'d' == category_id %}selected{% endif %}>{{ c|tr }} ({{ c.n }})</option>{% endfor %}
+  </select>
+  <select name="status" class="input w-auto pr-8" onchange="this.form.submit()">
+    <option value="">{% translate 'Любой статус' %}</option>
+    <option value="on" {% if status == 'on' %}selected{% endif %}>{% translate 'В продаже' %}</option>
+    <option value="stop" {% if status == 'stop' %}selected{% endif %}>{% translate 'Стоп-лист' %}</option>
+    <option value="hidden" {% if status == 'hidden' %}selected{% endif %}>{% translate 'Скрытые' %}</option>
+  </select>
+</form>
+
+<div class="card overflow-hidden">
+  {% if dishes %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-line">
+          <tr>
+            <th class="table-head px-4 py-3">{% translate 'Блюдо' %}</th>
+            <th class="table-head px-4 py-3 hidden md:table-cell">{% translate 'Категория' %}</th>
+            <th class="table-head px-4 py-3 text-right">{% translate 'Цена' %}</th>
+            <th class="table-head px-4 py-3 text-center">{% translate 'В продаже' %}</th>
+            <th class="table-head px-4 py-3 text-center">{% translate 'На кассе' %}</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for dish in dishes %}{% include "manage/_dish_row.html" %}{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% translate 'Блюд не найдено' as t1 %}{% translate 'Измените фильтр или добавьте новое блюдо.' as t2 %}{% include "components/empty.html" with icon="book-open" title=t1 text=t2 %}
+  {% endif %}
+</div>
+{% endblock %}

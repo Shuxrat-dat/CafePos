@@ -1,35 +1,41 @@
 {% extends "base.html" %}
-{% block title %}QR для столов{% endblock %}
-{% block content %}
+{% load i18n ui %}
+{% block title %}{% translate 'QR для столов' %}{% endblock %}
+{% block head %}
 <style>
   .qr svg { width: 100%; height: auto; display: block; }
   @media print {
-    header, .no-print { display: none !important; }
     body { background: #fff !important; }
-    .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #000; }
+    .qr-card { break-inside: avoid; box-shadow: none !important; border: 1px solid #000 !important; }
   }
 </style>
-<h1 class="text-3xl font-bold mb-4 no-print">QR для столов</h1>
+{% endblock %}
+{% block content %}
+<div class="mb-4 no-print">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Гость сканирует код на столе и отправляет заказ официанту на подтверждение' %}</p>
+</div>
+<div class="no-print">{% include "manage/_settings_tabs.html" %}</div>
 
 {% if is_local %}
-  <p class="mb-4 p-4 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 no-print">
-    Вы открыли страницу через localhost, поэтому коды ведут на адрес, который с телефона не откроется.
-    Откройте эту страницу по IP компьютера (например, 192.168.1.6:8000/menu/qr/tables/) и обновите её.
-  </p>
+  <div class="alert-warn mb-4 no-print max-w-2xl">
+    {% icon "alert" 18 %}
+    <span>{% translate 'Страница открыта через localhost, поэтому коды ведут на адрес, который с телефона не откроется. Откройте эту страницу по IP-адресу компьютера в локальной сети и обновите её.' %}</span>
+  </div>
 {% endif %}
 
-<button type="button" onclick="window.print()" class="no-print mb-4 px-6 h-12 rounded-xl bg-slate-900 text-white font-bold">Печать всех кодов</button>
+<button type="button" onclick="window.print()" class="no-print mb-4 btn btn-dark">{% icon "printer" 18 %}{% translate 'Печать всех кодов' %}</button>
 
-<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
   {% for item in items %}
-    <div class="card bg-white rounded-2xl shadow p-4 text-center">
-      <div class="text-xl font-bold mb-2">{{ item.table }}</div>
-      <div class="qr max-w-[220px] mx-auto">{{ item.qr }}</div>
-      <div class="mt-2 text-sm text-slate-500">Наведите камеру и закажите</div>
+    <div class="qr-card card p-4 text-center">
+      <div class="text-lg font-bold">{{ item.table.hall|tr }} · {% blocktranslate trimmed with n=item.table.number %}стол {{ n }}{% endblocktranslate %}</div>
+      <div class="qr max-w-[200px] mx-auto my-2">{{ item.qr }}</div>
+      <div class="text-sm text-muted">{% translate 'Наведите камеру и закажите' %}</div>
       <div class="mt-1 text-xs text-slate-400 break-all no-print">{{ item.url }}</div>
     </div>
   {% empty %}
-    <p class="text-slate-500">Столов пока нет. Добавьте их в админке.</p>
+    <div class="card col-span-full">{% translate 'Столов пока нет' as t1 %}{% include "components/empty.html" with icon="layout-grid" title=t1 %}</div>
   {% endfor %}
 </div>
 {% endblock %}

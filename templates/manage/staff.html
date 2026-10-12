@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Персонал' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">{% translate 'Персонал' %}</h1>
+    <p class="page-sub">{% translate 'Сотрудники видят только разделы своей роли' %}</p>
+  </div>
+  <a href="{% url 'staff_create' %}" class="btn btn-primary">{% icon "plus" 18 %}{% translate 'Новый сотрудник' %}</a>
+</div>
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr><th class="table-head px-4 py-3">{% translate 'Сотрудник' %}</th><th class="table-head px-4 py-3">{% translate 'Роль' %}</th><th class="table-head px-4 py-3 hidden sm:table-cell">{% translate 'Последний вход' %}</th><th class="px-4 py-3"></th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for row in rows %}{% with u=row.user %}
+          <tr class="{% if not u.is_active %}text-slate-400{% endif %}">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <span class="grid place-items-center w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-bold uppercase">{{ u.first_name|default:u.username|slice:":1" }}</span>
+                <div><div class="font-semibold">{{ u.get_full_name|default:u.username }}</div><div class="text-xs text-muted">{{ u.username }}{% if not u.is_active %} · {% translate 'отключён' %}{% endif %}</div></div>
+              </div>
+            </td>
+            <td class="px-4 py-3"><span class="badge {% if u.role == 'owner' or u.role == 'admin' or u.is_superuser %}bg-brand-50 text-brand-700{% else %}bg-slate-100 text-slate-700{% endif %}">{% if u.is_superuser %}{% translate 'Суперпользователь' %}{% else %}{{ u.get_role_display }}{% endif %}</span></td>
+            <td class="px-4 py-3 hidden sm:table-cell text-muted tabular-nums">{{ u.last_login|date:"d.m.Y H:i"|default:"—" }}</td>
+            <td class="px-4 py-3 text-right">{% if row.editable %}<a href="{% url 'staff_edit' u.id %}" class="icon-btn w-10 h-10 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</a>{% else %}<span class="text-slate-300">{% icon "lock" 16 %}</span>{% endif %}</td>
+          </tr>
+        {% endwith %}{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <aside class="card p-5 text-sm space-y-3">
+    <h2 class="section-title">{% translate 'Что доступно ролям' %}</h2>
+    <div><b>{% translate 'Владелец' %}, {% translate 'Администратор' %}</b><p class="text-muted">{% translate 'Все разделы: касса, кухня, меню, склад, отчёты, персонал, настройки. Отмена заказов, уже отправленных на кухню.' %}</p></div>
+    <div><b>{% translate 'Кассир' %}</b><p class="text-muted">{% translate 'Зал и заказы всех официантов, скидки, приём оплаты, чеки.' %}</p></div>
+    <div><b>{% translate 'Официант' %}</b><p class="text-muted">{% translate 'Только свои заказы: создание, отправка на кухню, пречек. Без оплаты.' %}</p></div>
+    <div><b>{% translate 'Повар' %}</b><p class="text-muted">{% translate 'Только экран кухни.' %}</p></div>
+    <p class="text-xs text-muted">{% translate 'Права проверяются на сервере для каждой страницы и действия, а не только скрытием кнопок.' %}</p>
+  </aside>
+</div>
+{% endblock %}

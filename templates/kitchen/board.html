@@ -1,11 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Кухня{% endblock %}
+{% load i18n ui %}
+{% block title %}{% translate 'Кухня' %}{% endblock %}
+{% block main_class %}px-3 py-3 lg:px-5 lg:py-4 w-full{% endblock %}
 {% block content %}
-<div class="mb-5">
-  <h1 class="text-[28px] font-bold tracking-tight">Кухня</h1>
-  <p class="text-sm text-slate-500 mt-1">Обновляется автоматически каждые 5 секунд</p>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Кухня' %}</h1>
+    <p class="page-sub">{% blocktranslate trimmed with m=warn_minutes %}Обновляется автоматически. Заказ подсвечивается, если ждёт дольше {{ m }} мин.{% endblocktranslate %}</p>
+  </div>
+  <div class="text-3xl font-bold tabular-nums text-slate-700" id="kds-clock">{% now "H:i" %}</div>
 </div>
 <div id="tickets" hx-get="{% url 'kitchen_tickets' %}" hx-trigger="every 5s" hx-swap="innerHTML">
   {% include "kitchen/_tickets.html" %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    // Таймеры на карточках идут каждую секунду, данные обновляются раз в 5 секунд
+    function tick() {
+      var now = Date.now();
+      document.querySelectorAll('[data-since]').forEach(function (el) {
+        var s = Math.max(0, Math.floor(now / 1000 - parseInt(el.dataset.since, 10)));
+        var m = Math.floor(s / 60), r = s % 60;
+        el.textContent = m + ':' + (r < 10 ? '0' : '') + r;
+      });
+      var d = new Date();
+      document.getElementById('kds-clock').textContent = (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+    }
+    setInterval(tick, 1000);
+    tick();
+  })();
+</script>
 {% endblock %}

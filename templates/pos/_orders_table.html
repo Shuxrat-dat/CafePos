@@ -1,0 +1,68 @@
+{% load i18n ui %}
+{% if tab == 'done' and page.paginator.count %}
+  <p class="text-sm text-muted mb-2">{% blocktranslate trimmed with n=page.paginator.count s=period_total|money %}Найдено заказов: {{ n }} на сумму {{ s }}{% endblocktranslate %}</p>
+{% endif %}
+<div class="card overflow-hidden">
+  {% if page.object_list %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-line">
+          <tr>
+            <th class="table-head px-4 py-3">№</th>
+            <th class="table-head px-4 py-3">{% translate 'Время' %}</th>
+            <th class="table-head px-4 py-3">{% translate 'Где' %}</th>
+            <th class="table-head px-4 py-3 hidden md:table-cell">{% translate 'Состав' %}</th>
+            <th class="table-head px-4 py-3">{% translate 'Статус' %}</th>
+            <th class="table-head px-4 py-3 hidden sm:table-cell">{% if tab == 'cancelled' %}{% translate 'Причина' %}{% else %}{% translate 'Оплата' %}{% endif %}</th>
+            <th class="table-head px-4 py-3 text-right">{% translate 'Сумма' %}</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for o in page.object_list %}
+            <tr class="hover:bg-slate-50 cursor-pointer" hx-get="{% url 'order_view' o.id %}" hx-target="#modal" hx-trigger="click">
+              <td class="px-4 py-3 font-semibold tabular-nums">{{ o.id }}</td>
+              <td class="px-4 py-3 whitespace-nowrap tabular-nums">
+                {% if tab == 'active' %}{{ o.created_at|time:"H:i" }}<div class="text-xs text-muted">{{ o.created_at|duration }}</div>{% else %}{{ o.closed_at|date:"d.m H:i" }}{% endif %}
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="flex items-center gap-1.5">
+                  {% if o.order_type == 'delivery' %}{% icon "bike" 16 "text-slate-500" %}{% elif o.order_type == 'takeaway' %}{% icon "shopping-bag" 16 "text-slate-500" %}{% else %}{% icon "utensils" 16 "text-slate-500" %}{% endif %}
+                  {{ o.place_label }}
+                </span>
+                <div class="text-xs text-muted truncate max-w-[160px]">{{ o.customer_name|default:o.waiter.first_name|default:o.waiter.username }}</div>
+              </td>
+              <td class="px-4 py-3 hidden md:table-cell text-slate-600 max-w-[280px]">
+                <span class="line-clamp-2">{% for item in o.items.all %}{{ item.dish|tr }} ×{{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-1">
+                  {% include "components/stage_badge.html" with order=o %}
+                  {% if o.awaiting_payment %}<span class="badge bg-orange-50 text-orange-800">{% translate 'Счёт' %}</span>{% endif %}
+                  {% if o.status == 'paid' and o.stage != 'paid' %}<span class="badge bg-emerald-50 text-emerald-700">{% translate 'Оплачен' %}</span>{% endif %}
+                </div>
+              </td>
+              <td class="px-4 py-3 hidden sm:table-cell text-slate-600">
+                {% if tab == 'cancelled' %}<span class="line-clamp-1">{{ o.cancel_reason|default:"—" }}</span>{% else %}{{ o.get_payment_method_display|default:"—" }}{% endif %}
+              </td>
+              <td class="px-4 py-3 text-right font-semibold tabular-nums whitespace-nowrap">{% if tab == 'cancelled' %}<s class="text-muted">{{ o.subtotal|money }}</s>{% else %}{{ o.total|money }}{% endif %}</td>
+              <td class="px-2 py-3 text-slate-400">{% icon "chevron-right" 18 %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.has_other_pages %}
+      <div class="flex items-center justify-between px-4 py-3 border-t border-line text-sm">
+        <span class="text-muted">{% blocktranslate trimmed with p=page.number n=page.paginator.num_pages %}Страница {{ p }} из {{ n }}{% endblocktranslate %}</span>
+        <div class="flex gap-2">
+          {% if page.has_previous %}<a class="btn btn-secondary btn-sm" href="{% query page=page.previous_page_number %}">{% icon "chevron-left" 16 %}</a>{% endif %}
+          {% if page.has_next %}<a class="btn btn-secondary btn-sm" href="{% query page=page.next_page_number %}">{% icon "chevron-right" 16 %}</a>{% endif %}
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    {% if tab == 'active' %}{% translate 'Активных заказов нет' as t1 %}{% translate 'Новые заказы появятся здесь, как только их создадут в зале или на кассе.' as t2 %}{% else %}{% translate 'Заказов не найдено' as t1 %}{% translate 'Измените даты или условия поиска.' as t2 %}{% endif %}
+    {% include "components/empty.html" with icon="receipt" title=t1 text=t2 %}
+  {% endif %}
+</div>

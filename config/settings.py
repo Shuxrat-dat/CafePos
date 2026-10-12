@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
-from pathlib import Path
-
 import os
+import secrets
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -20,8 +20,24 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+# Демо-режим для презентаций: отдельная база demo.sqlite3, рабочая база не затрагивается.
+DEMO_MODE = os.environ.get("CAFEPOS_DEMO", "") == "1"
 
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
+def _demo_secret_key():
+    """Ключ для демо-запуска без .env: создаётся один раз и хранится локально (файл в .gitignore)."""
+    path = BASE_DIR / ".demo_secret_key"
+    if not path.exists():
+        path.write_text(secrets.token_urlsafe(50), encoding="utf-8")
+    return path.read_text(encoding="utf-8").strip()
+
+
+if "DJANGO_SECRET_KEY" in os.environ:
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+elif DEMO_MODE:
+    SECRET_KEY = _demo_secret_key()
+else:
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
 
@@ -35,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "core",
     "accounts",
     "menu",
     "pos",
@@ -45,13 +62,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.LanguageMiddleware',
     'accounts.middleware.RoleAccessMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -69,6 +85,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.i18n',
+                'core.context_processors.cafe',
             ],
         },
     },
@@ -80,7 +98,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-if os.environ.get("DJANGO_DB_NAME"):
+if DEMO_MODE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'demo.sqlite3',
+        }
+    }
+elif os.environ.get("DJANGO_DB_NAME"):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -122,7 +147,16 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
+# Основной язык интерфейса узбекский, дополнительный русский.
+# Исходные строки в коде на русском, узбекский перевод лежит в locale/uz.
+LANGUAGE_CODE = 'uz'
+LANGUAGES = [
+    ('uz', "Oʻzbekcha"),
+    ('ru', "Русский"),
+]
+LOCALE_PATHS = [BASE_DIR / 'locale']
+LANGUAGE_COOKIE_NAME = 'cafepos_language'
+LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365
 
 TIME_ZONE = 'Asia/Tashkent'
 
@@ -138,6 +172,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Загруженные файлы: фото блюд и логотип. У демо-базы своя папка.
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / ('media_demo' if DEMO_MODE else 'media')
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 
 # Email
@@ -162,8 +202,9 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 60 * 60 * 12  # сессия живёт 12 часов
 X_FRAME_OPTIONS = "DENY"
 
-# Быстрый хеш паролей только при запуске тестов (на боевом сервере не действует)
-import sys
-
+# Быстрый хеш паролей только при запуске тестов (на боевом сервере не действует).
+# Тесты проверяют исходные (русские) тексты, поэтому запускаются на русском.
 if "test" in sys.argv:
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    LANGUAGE_CODE = "ru"
+    MEDIA_ROOT = BASE_DIR / "media_test"

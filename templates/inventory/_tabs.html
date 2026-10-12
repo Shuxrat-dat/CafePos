@@ -1,0 +1,9 @@
+{% load i18n %}
+{% with page=request.resolver_match.url_name %}
+<div class="flex gap-1 border-b border-line mb-5 overflow-x-auto no-scrollbar">
+  <a href="{% url 'stock' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock' or page == 'product_create' or page == 'product_edit' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Остатки и приход' %}</a>
+  <a href="{% url 'stock_writeoff' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_writeoff' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Списание' %}</a>
+  <a href="{% url 'stock_count' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_count' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Инвентаризация' %}</a>
+  <a href="{% url 'stock_movements' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_movements' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Движение' %}</a>
+</div>
+{% endwith %}

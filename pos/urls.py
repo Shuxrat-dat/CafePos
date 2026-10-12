@@ -1,18 +1,32 @@
 from django.urls import path
 
-from . import guest_views, views
+from . import guest_views, orders_views, views
 
 urlpatterns = [
     path("", views.floor, name="floor"),
+    path("floor/grid/", views.floor_grid, name="floor_grid"),
+    path("orders/new/", views.new_order, name="new_order"),
+    path("orders/", orders_views.orders, name="orders"),
     path("tables/<int:table_id>/open/", views.open_table, name="open_table"),
+    path("tables/<int:table_id>/reserve/", views.reserve_table, name="reserve_table"),
     path("orders/<int:order_id>/", views.order_detail, name="order_detail"),
+    path("orders/<int:order_id>/view/", orders_views.order_view, name="order_view"),
+    path("orders/<int:order_id>/advance/", orders_views.advance, name="order_advance"),
     path("orders/<int:order_id>/panel/", views.order_panel, name="order_panel"),
     path("orders/<int:order_id>/dish/<int:dish_id>/form/", views.item_form, name="item_form"),
     path("orders/<int:order_id>/add/<int:dish_id>/", views.add_item, name="add_item"),
     path("orders/<int:order_id>/item/<int:item_id>/edit/", views.edit_item, name="edit_item"),
     path("orders/<int:order_id>/item/<int:item_id>/qty/", views.change_qty, name="change_qty"),
+    path("orders/<int:order_id>/item/<int:item_id>/remove/", views.remove_item, name="remove_item"),
     path("orders/<int:order_id>/send/", views.send_to_kitchen, name="send_to_kitchen"),
     path("orders/<int:order_id>/item/<int:item_id>/serve/", views.serve_item, name="serve_item"),
+    path("orders/<int:order_id>/serve-all/", views.serve_all, name="serve_all"),
+    path("orders/<int:order_id>/type/", views.set_type, name="set_type"),
+    path("orders/<int:order_id>/customer/", views.customer_form, name="customer_form"),
+    path("orders/<int:order_id>/discount/", views.discount_form, name="discount_form"),
+    path("orders/<int:order_id>/bill/", views.request_bill, name="request_bill"),
+    path("orders/<int:order_id>/precheck/", views.precheck, name="precheck"),
+    path("orders/<int:order_id>/cancel/form/", views.cancel_form, name="cancel_form"),
     path("orders/<int:order_id>/cancel/", views.cancel_order, name="cancel_order"),
     path("orders/<int:order_id>/move/", views.move_form, name="move_form"),
     path("orders/<int:order_id>/move/<int:table_id>/", views.move_order, name="move_order"),

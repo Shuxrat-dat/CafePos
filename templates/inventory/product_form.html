@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% if product %}{{ product|tr }}{% else %}{% translate 'Новый продукт' %}{% endif %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'stock' %}" class="icon-btn" aria-label="{% translate 'Назад' %}">{% icon "arrow-left" 20 %}</a>
+  <h1 class="page-title">{% if product %}{{ product|tr }}{% else %}{% translate 'Новый продукт' %}{% endif %}</h1>
+</div>
+<form method="post" class="card p-5 space-y-4 max-w-lg">
+  {% csrf_token %}
+  {% for field in form %}{% include "components/field.html" %}{% endfor %}
+  {% if product %}<p class="text-sm text-muted">{% blocktranslate trimmed with s=product.stock|qty u=product.get_unit_display %}Текущий остаток: {{ s }} {{ u }}. Остаток меняется только приходом, списанием или инвентаризацией.{% endblocktranslate %}</p>{% endif %}
+  <button class="btn btn-primary w-full">{% translate 'Сохранить' %}</button>
+</form>
+{% endblock %}

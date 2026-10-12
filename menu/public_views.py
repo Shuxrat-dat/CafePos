@@ -16,7 +16,7 @@ from .models import Category, Dish
 def public_menu(request):
     """Меню для гостей: без входа, только просмотр."""
     categories = Category.objects.filter(is_active=True).prefetch_related(
-        Prefetch("dishes", queryset=Dish.objects.filter(is_available=True), to_attr="available")
+        Prefetch("dishes", queryset=Dish.objects.filter(is_available=True, is_hidden=False), to_attr="available")
     )
     categories = [c for c in categories if c.available]
     return render(request, "menu/public_menu.html", {"categories": categories})

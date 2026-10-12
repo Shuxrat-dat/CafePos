@@ -1,45 +1,61 @@
-<div class="fixed inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center p-4">
-  <form class="bg-white rounded-[20px] shadow-xl w-full max-w-md p-6 space-y-5"
-        hx-post="{% if item %}{% url 'edit_item' order.id item.id %}{% else %}{% url 'add_item' order.id dish.id %}{% endif %}"
-        hx-target="#order-panel" hx-swap="innerHTML"
-        hx-on::after-request="if (event.detail.successful) document.getElementById('modal').innerHTML = ''">
-    <div>
-      <h2 class="text-[22px] font-bold tracking-tight">{{ dish.name }}</h2>
-      <p class="text-slate-500 mt-0.5">{{ dish.price }} сум</p>
-    </div>
-
-    {% if dish.modifiers.all %}
-      <div class="space-y-2">
-        {% for m in dish.modifiers.all %}
-          <label class="flex items-center justify-between gap-3 px-4 min-h-[52px] border border-slate-200 rounded-xl text-[17px] cursor-pointer hover:bg-slate-50">
-            <span class="flex items-center gap-3">
-              <input type="checkbox" name="modifiers" value="{{ m.id }}" class="w-5 h-5 accent-emerald-600" {% if m.id in selected %}checked{% endif %}>
-              {{ m.name }}
-            </span>
-            <span class="text-slate-500 text-base">{% if m.price_delta %}+{{ m.price_delta }}{% else %}бесплатно{% endif %}</span>
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{{ dish|tr }}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5 tabular-nums">{{ dish.price|money }}</p>{% endblock %}
+{% block modal_body %}
+<form hx-post="{% if item %}{% url 'edit_item' order.id item.id %}{% else %}{% url 'add_item' order.id dish.id %}{% endif %}"
+      hx-target="#order-panel" hx-swap="innerHTML"
+      hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
+      class="space-y-5">
+  {% for group, options in groups %}
+    <fieldset>
+      <legend class="label">{% translate group %}</legend>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {% for m in options %}
+          <label class="relative flex flex-col justify-center min-h-[56px] px-3 py-2 rounded-xl border border-line cursor-pointer hover:bg-slate-50 has-[:checked]:border-brand has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-brand">
+            <input type="radio" name="modifiers" value="{{ m.id }}" class="sr-only" {% if m.id in selected or forloop.first and not item and not selected %}checked{% endif %}>
+            <span class="font-semibold">{{ m|tr }}</span>
+            <span class="text-xs text-muted">{% if m.price_delta %}+{{ m.price_delta|money }}{% else %}{% translate 'без доплаты' %}{% endif %}</span>
           </label>
         {% endfor %}
       </div>
-    {% endif %}
+    </fieldset>
+  {% endfor %}
 
-    <div>
-      <label class="block text-sm text-slate-500 mb-1.5">Комментарий для повара</label>
-      <input name="comment" maxlength="200" value="{{ comment }}" placeholder="Например: без зелени"
-             class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-[17px] focus:outline-none focus:ring-2 focus:ring-emerald-400">
-    </div>
+  {% if extras %}
+    <fieldset>
+      <legend class="label">{% translate 'Добавки' %}</legend>
+      <div class="space-y-2">
+        {% for m in extras %}
+          <label class="flex items-center justify-between gap-3 px-3.5 min-h-[52px] rounded-xl border border-line cursor-pointer hover:bg-slate-50 has-[:checked]:border-brand has-[:checked]:bg-brand-50">
+            <span class="flex items-center gap-3">
+              <input type="checkbox" name="modifiers" value="{{ m.id }}" class="w-5 h-5 accent-[#0f766e]" {% if m.id in selected %}checked{% endif %}>
+              <span class="font-medium">{{ m|tr }}</span>
+            </span>
+            <span class="text-sm text-muted tabular-nums">{% if m.price_delta %}+{{ m.price_delta|money }}{% else %}{% translate 'бесплатно' %}{% endif %}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+  {% endif %}
 
-    <div>
-      <label class="block text-sm text-slate-500 mb-1.5">Количество</label>
-      <input name="quantity" type="number" min="1" max="50" value="{{ quantity }}" inputmode="numeric"
-             class="w-28 border border-slate-300 rounded-xl px-4 min-h-[52px] text-[17px] text-center focus:outline-none focus:ring-2 focus:ring-emerald-400">
-    </div>
+  <div>
+    <label class="label" for="item-comment">{% translate 'Комментарий для кухни' %}</label>
+    <input id="item-comment" name="comment" maxlength="200" value="{{ comment }}" placeholder="{% translate 'Например: без лука, острое' %}" class="input">
+  </div>
 
-    <div class="flex gap-3 pt-1">
-      <button type="button" onclick="document.getElementById('modal').innerHTML = ''"
-              class="flex-1 min-h-[52px] rounded-xl bg-slate-100 hover:bg-slate-200 text-[17px] font-semibold text-slate-700">Отмена</button>
-      <button class="flex-1 min-h-[52px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-[17px] font-bold">
-        {% if item %}Сохранить{% else %}Добавить{% endif %}
-      </button>
+  <div class="flex items-center justify-between">
+    <span class="label mb-0">{% translate 'Количество' %}</span>
+    <div class="flex items-center gap-2" data-qty>
+      <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.max(1,(+i.value||1)-1)" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
+      <input name="quantity" type="number" min="1" max="50" value="{{ quantity }}" inputmode="numeric" class="input w-20 text-center font-bold">
+      <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min(50,(+i.value||0)+1)" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
     </div>
-  </form>
-</div>
+  </div>
+
+  <div class="flex gap-2 pt-1">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
+    <button class="btn btn-primary btn-lg flex-1">{% if item %}{% translate 'Сохранить' %}{% else %}{% icon "plus" 18 %}{% translate 'Добавить' %}{% endif %}</button>
+  </div>
+</form>
+{% endblock %}

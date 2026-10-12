@@ -1,73 +1,99 @@
 {% extends "base.html" %}
-{% block title %}Склад{% endblock %}
+{% load i18n ui %}
+{% block title %}{% translate 'Склад' %}{% endblock %}
 {% block content %}
-<div class="mb-5">
-  <h1 class="text-[28px] font-bold tracking-tight">Склад</h1>
-  <p class="text-sm text-slate-500 mt-1">Приход товара, остатки и последние движения</p>
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Склад' %}</h1>
+    <p class="page-sub">{% blocktranslate trimmed with s=stock_value|money %}Продукты на складе на сумму {{ s }} по закупочным ценам{% endblocktranslate %}</p>
+  </div>
+  <a href="{% url 'product_create' %}" class="btn btn-secondary">{% icon "plus" 18 %}{% translate 'Новый продукт' %}</a>
 </div>
+{% include "inventory/_tabs.html" %}
 
-{% if ok %}<p class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800">Приход сохранён.</p>{% endif %}
-
-<div class="grid lg:grid-cols-2 gap-4">
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <h2 class="text-xl font-bold mb-3">Приход товара</h2>
-    {% if error %}<p class="mb-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium">{{ error }}</p>{% endif %}
-    <form method="post" class="space-y-3">
-      {% csrf_token %}
-      <div>
-        <label class="block text-sm text-slate-500 mb-1.5">Продукт</label>
-        <select name="product" class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
-          <option value="">Выберите...</option>
-          {% for p in products %}
-            <option value="{{ p.id }}" {% if form.product == p.id|stringformat:"d" %}selected{% endif %}>{{ p.name }} ({{ p.get_unit_display }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm text-slate-500 mb-1.5">Количество (в единицах продукта)</label>
-        <input name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
-      </div>
-      <div>
-        <label class="block text-sm text-slate-500 mb-1.5">Цена за 1 единицу, сум (необязательно)</label>
-        <input name="cost" value="{{ form.cost }}" inputmode="decimal" class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
-      </div>
-      <div>
-        <label class="block text-sm text-slate-500 mb-1.5">Комментарий (необязательно)</label>
-        <input name="comment" value="{{ form.comment }}" maxlength="200" class="w-full border border-slate-300 rounded-xl px-4 min-h-[52px] text-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
-      </div>
-      <button class="w-full min-h-[56px] rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-lg font-bold">Принять приход</button>
-    </form>
-  </section>
-
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-xl font-bold">Остатки</h2>
-      <a href="{% url 'stock_count' %}" class="px-4 min-h-[44px] flex items-center rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold">Пересчёт</a>
+{% if ok %}<div class="alert-ok mb-4">{% icon "check-circle" 18 %}{% translate 'Приход сохранён.' %}</div>{% endif %}
+{% if low_products %}
+  <div class="alert-warn mb-4">
+    {% icon "alert" 18 %}
+    <div><b>{% blocktranslate trimmed with n=low_products|length %}Заканчивается продуктов: {{ n }}{% endblocktranslate %}</b>
+      <span>— {% for p in low_products|slice:":6" %}{{ p|tr }} ({{ p.stock|qty }} {{ p.get_unit_display }}){% if not forloop.last %}, {% endif %}{% endfor %}{% if low_products|length > 6 %}…{% endif %}</span>
     </div>
-    {% for p in products %}
-      <div class="flex justify-between items-center py-2.5 border-b border-slate-100 last:border-0 {% if p.stock < 0 %}bg-red-50 rounded-lg px-2{% endif %}">
-        <span>
-          {{ p.name }}
-          {% if p.stock < 0 %}<span class="ml-1 text-xs font-bold text-red-700">в минусе</span>
-          {% elif p.stock <= p.min_stock %}<span class="ml-1 text-xs font-bold text-amber-700">мало</span>{% endif %}
-        </span>
-        <span class="font-semibold {% if p.stock <= p.min_stock %}text-red-600{% endif %}">{{ p.stock|floatformat:"-3g" }} {{ p.get_unit_display }}</span>
+  </div>
+{% endif %}
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
+  <section class="card overflow-hidden">
+    <form method="get" class="flex flex-wrap items-center gap-2 p-3 border-b border-line">
+      <div class="relative flex-1 min-w-[180px]">
+        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
+        <input name="q" value="{{ search }}" class="input pl-10" placeholder="{% translate 'Поиск продукта' %}">
       </div>
-    {% empty %}
-      <p class="text-slate-500">Продуктов пока нет. Добавьте их в админке.</p>
-    {% endfor %}
+      <label class="chip cursor-pointer {% if only_low %}chip-active{% endif %}"><input type="checkbox" name="low" value="1" class="sr-only" onchange="this.form.submit()" {% if only_low %}checked{% endif %}>{% translate 'Только заканчивающиеся' %}</label>
+    </form>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-line">
+          <tr><th class="table-head px-4 py-3">{% translate 'Продукт' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Остаток' %}</th><th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Минимум' %}</th><th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Цена за ед.' %}</th><th class="px-2 py-3"></th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for p in products %}
+            <tr class="{% if p.stock < 0 %}bg-red-50{% endif %}">
+              <td class="px-4 py-2.5">
+                <span class="font-medium">{{ p|tr }}</span>
+                {% if p.stock < 0 %}<span class="ml-1 badge bg-red-100 text-red-700">{% translate 'в минусе' %}</span>
+                {% elif p.is_low %}<span class="ml-1 badge bg-orange-100 text-orange-800">{% translate 'мало' %}</span>{% endif %}
+              </td>
+              <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap {% if p.is_low %}text-red-600{% endif %}">{{ p.stock|qty }} {{ p.get_unit_display }}</td>
+              <td class="px-4 py-2.5 text-right tabular-nums text-muted hidden sm:table-cell whitespace-nowrap">{{ p.min_stock|qty }} {{ p.get_unit_display }}</td>
+              <td class="px-4 py-2.5 text-right tabular-nums text-muted hidden md:table-cell whitespace-nowrap">{{ p.cost_per_unit|qty }} {% translate 'сум' %}</td>
+              <td class="px-2 py-2.5 text-right"><a href="{% url 'product_edit' p.id %}" class="icon-btn w-9 h-9 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 16 %}</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">{% translate 'Продуктов не найдено' as t1 %}{% include "components/empty.html" with icon="package" title=t1 %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <section class="bg-white border border-slate-200 rounded-[18px] shadow-sm p-5 lg:col-span-2">
-    <h2 class="text-xl font-bold mb-3">Последние движения</h2>
-    {% for m in movements %}
-      <div class="flex justify-between gap-3 py-2 text-sm border-b border-slate-100 last:border-0">
-        <span>{{ m.created_at|date:"d.m H:i" }} · {{ m.get_kind_display }} · {{ m.product.name }}</span>
-        <span class="font-semibold">{{ m.quantity|floatformat:"-3g" }}</span>
+  <div class="space-y-4 lg:sticky lg:top-4">
+    <section class="card p-5">
+      <h2 class="section-title mb-3">{% translate 'Приход товара' %}</h2>
+      {% if error %}<div class="alert-error mb-3">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+      <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <div>
+          <label class="label" for="in-product">{% translate 'Продукт' %}</label>
+          <select id="in-product" name="product" class="input">
+            <option value="">{% translate 'Выберите…' %}</option>
+            {% for p in all_products %}<option value="{{ p.id }}" {% if form.product == p.id|stringformat:"d" %}selected{% endif %}>{{ p|tr }} ({{ p.get_unit_display }})</option>{% endfor %}
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label" for="in-qty">{% translate 'Количество' %}</label><input id="in-qty" name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="input"></div>
+          <div><label class="label" for="in-cost">{% translate 'Цена за ед.' %}</label><input id="in-cost" name="cost" value="{{ form.cost }}" inputmode="decimal" class="input" placeholder="{% translate 'не менять' %}"></div>
+        </div>
+        <div><label class="label" for="in-comment">{% translate 'Комментарий' %}</label><input id="in-comment" name="comment" value="{{ form.comment }}" maxlength="200" class="input" placeholder="{% translate 'Поставщик, накладная' %}"></div>
+        <button class="btn btn-primary w-full">{% icon "arrow-down" 18 %}{% translate 'Принять приход' %}</button>
+      </form>
+    </section>
+
+    <section class="card p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="section-title">{% translate 'Последние движения' %}</h2>
+        <a href="{% url 'stock_movements' %}" class="text-sm text-brand font-medium hover:underline">{% translate 'Все' %}</a>
       </div>
-    {% empty %}
-      <p class="text-slate-500">Движений пока нет</p>
-    {% endfor %}
-  </section>
+      <ul class="divide-y divide-line text-sm">
+        {% for m in movements %}
+          <li class="py-2 flex justify-between gap-3">
+            <span class="min-w-0"><span class="block truncate">{{ m.product|tr }}</span><span class="text-xs text-muted">{{ m.created_at|date:"d.m H:i" }} · {{ m.get_kind_display }}</span></span>
+            <span class="font-semibold tabular-nums whitespace-nowrap {% if m.quantity < 0 %}text-red-600{% else %}text-emerald-700{% endif %}">{% if m.quantity > 0 %}+{% endif %}{{ m.quantity|qty }}</span>
+          </li>
+        {% empty %}
+          <li class="py-3 text-muted">{% translate 'Движений пока нет' %}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
 </div>
 {% endblock %}

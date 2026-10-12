@@ -1,0 +1,77 @@
+{% load i18n ui %}
+{# Подробности заказа: используется в модальном окне и на отдельной странице #}
+<div class="flex flex-wrap items-center gap-2 mb-3">
+  {% include "components/stage_badge.html" %}
+  {% if order.status == 'paid' and order.stage != 'paid' %}<span class="badge bg-emerald-50 text-emerald-700">{% translate 'Оплачен' %}</span>{% endif %}
+  {% if order.awaiting_payment %}<span class="badge bg-orange-50 text-orange-800">{% translate 'Ожидает оплаты' %}</span>{% endif %}
+  <span class="badge bg-slate-100 text-slate-700">{{ order.get_order_type_display }}</span>
+</div>
+
+<dl class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-4">
+  <dt class="text-muted">{% translate 'Где' %}</dt><dd class="text-right">{{ order.place_label }}</dd>
+  <dt class="text-muted">{% translate 'Официант' %}</dt><dd class="text-right">{{ order.waiter.get_full_name|default:order.waiter.username }}</dd>
+  <dt class="text-muted">{% translate 'Создан' %}</dt><dd class="text-right tabular-nums">{{ order.created_at|date:"d.m.Y H:i" }}</dd>
+  {% if sent_at %}<dt class="text-muted">{% translate 'На кухне с' %}</dt><dd class="text-right tabular-nums">{{ sent_at|time:"H:i" }}</dd>{% endif %}
+  {% if ready_at %}<dt class="text-muted">{% translate 'Приготовлен' %}</dt><dd class="text-right tabular-nums">{{ ready_at|time:"H:i" }}</dd>{% endif %}
+  {% if order.closed_at %}<dt class="text-muted">{% if order.status == 'cancelled' %}{% translate 'Отменён' %}{% else %}{% translate 'Оплачен' %}{% endif %}</dt><dd class="text-right tabular-nums">{{ order.closed_at|date:"d.m.Y H:i" }}</dd>{% endif %}
+  {% if order.cashier %}<dt class="text-muted">{% translate 'Кассир' %}</dt><dd class="text-right">{{ order.cashier.get_full_name|default:order.cashier.username }}</dd>{% endif %}
+  {% if order.customer_name or order.customer_phone %}<dt class="text-muted">{% translate 'Клиент' %}</dt><dd class="text-right">{{ order.customer_name }} {{ order.customer_phone }}</dd>{% endif %}
+  {% if order.delivery_address %}<dt class="text-muted">{% translate 'Адрес' %}</dt><dd class="text-right">{{ order.delivery_address }}</dd>{% endif %}
+  {% if order.note %}<dt class="text-muted">{% translate 'Комментарий' %}</dt><dd class="text-right">{{ order.note }}</dd>{% endif %}
+</dl>
+
+{% if order.status == 'cancelled' %}
+  <div class="alert-error mb-4">{% icon "x" 18 %}<span>{% translate 'Отменён' %}{% if order.cancelled_by %} · {{ order.cancelled_by.get_full_name|default:order.cancelled_by.username }}{% endif %}{% if order.cancel_reason %}: {{ order.cancel_reason }}{% endif %}</span></div>
+{% endif %}
+
+<ul class="divide-y divide-line border-y border-line">
+  {% for item in order_items %}
+    <li class="py-2.5 flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="font-medium">{{ item.dish|tr }} <span class="text-muted">× {{ item.quantity }}</span></div>
+        {% if item.modifiers.all or item.comment %}<div class="text-xs text-muted">{% for m in item.modifiers.all %}{{ m|tr }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if item.comment %} «{{ item.comment }}»{% endif %}</div>{% endif %}
+        <span class="badge mt-1 {% if item.status == 'ready' %}bg-emerald-100 text-emerald-800{% elif item.status == 'cooking' %}bg-orange-50 text-orange-900{% elif item.status == 'queued' %}bg-slate-100 text-slate-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ item.get_status_display }}</span>
+      </div>
+      <span class="font-semibold tabular-nums whitespace-nowrap">{{ item.line_total|money }}</span>
+    </li>
+  {% empty %}
+    <li class="py-4 text-muted text-sm">{% translate 'Позиций нет' %}</li>
+  {% endfor %}
+</ul>
+
+<dl class="mt-3 space-y-1 text-sm">
+  <div class="flex justify-between"><dt class="text-muted">{% translate 'Подытог' %}</dt><dd class="tabular-nums">{{ totals.subtotal|money }}</dd></div>
+  {% if totals.discount %}<div class="flex justify-between"><dt class="text-muted">{% translate 'Скидка' %}{% if order.discount_reason %} · {{ order.discount_reason }}{% endif %}</dt><dd class="tabular-nums text-red-600">−{{ totals.discount|money }}</dd></div>{% endif %}
+  {% if totals.service %}<div class="flex justify-between"><dt class="text-muted">{% translate 'Обслуживание' %}</dt><dd class="tabular-nums">{{ totals.service|money }}</dd></div>{% endif %}
+  <div class="flex justify-between text-lg font-bold pt-1"><dt>{% translate 'Итого' %}</dt><dd class="tabular-nums">{{ totals.total|money }}</dd></div>
+  {% if order.status == 'paid' %}
+    <div class="flex justify-between"><dt class="text-muted">{% translate 'Оплата' %}</dt><dd>{{ order.get_payment_method_display }}{% if order.payment_method == 'mixed' %} ({% translate 'карта' %} {{ order.card_amount|num }} + {% translate 'наличные' %} {{ order.cash_amount|num }}){% endif %}</dd></div>
+  {% endif %}
+</dl>
+
+{% if order.status != 'cancelled' %}
+  <div class="mt-5 grid grid-cols-2 gap-2">
+    {% if order.status == 'open' %}
+      <a href="{% url 'order_detail' order.id %}" class="btn btn-primary col-span-2">{% icon "pencil" 18 %}{% translate 'Открыть на кассе' %}</a>
+      {% if order.has_new_items %}
+        <form method="post" action="{% url 'order_advance' order.id %}" class="col-span-2">{% csrf_token %}<input type="hidden" name="action" value="send"><input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+          <button class="btn btn-warn w-full">{% icon "send" 18 %}{% translate 'Отправить на кухню' %}</button></form>
+      {% endif %}
+    {% endif %}
+    {% if can_kitchen and order.stage == 'new' and order.has_sent_items %}
+      <form method="post" action="{% url 'order_advance' order.id %}">{% csrf_token %}<input type="hidden" name="action" value="start">
+        <button class="btn btn-secondary w-full">{% icon "play" 16 %}{% translate 'Готовится' %}</button></form>
+    {% endif %}
+    {% if can_kitchen and order.stage in 'new cooking' and order.has_sent_items %}
+      <form method="post" action="{% url 'order_advance' order.id %}">{% csrf_token %}<input type="hidden" name="action" value="ready">
+        <button class="btn btn-secondary w-full">{% icon "check" 16 %}{% translate 'Готов' %}</button></form>
+    {% endif %}
+    {% if order.has_ready_items %}
+      <form method="post" action="{% url 'order_advance' order.id %}" class="col-span-2">{% csrf_token %}<input type="hidden" name="action" value="serve">
+        <button class="btn btn-secondary w-full">{% icon "check-circle" 18 %}{% if order.is_dine_in %}{% translate 'Подано' %}{% else %}{% translate 'Выдано клиенту' %}{% endif %}</button></form>
+    {% endif %}
+    {% if order.status == 'paid' and user.can_take_payment %}
+      <a href="{% url 'receipt' order.id %}" class="btn btn-secondary col-span-2">{% icon "printer" 18 %}{% translate 'Чек' %}</a>
+    {% endif %}
+  </div>
+{% endif %}

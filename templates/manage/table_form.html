@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% blocktranslate trimmed with n=table.number %}Стол {{ n }}{% endblocktranslate %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'manage_tables' %}" class="icon-btn" aria-label="{% translate 'Назад' %}">{% icon "arrow-left" 20 %}</a>
+  <h1 class="page-title">{% blocktranslate trimmed with n=table.number %}Стол {{ n }}{% endblocktranslate %}</h1>
+</div>
+<form method="post" class="card p-5 space-y-4 max-w-md">
+  {% csrf_token %}
+  {% for field in form %}{% include "components/field.html" %}{% endfor %}
+  <button class="btn btn-primary w-full">{% translate 'Сохранить' %}</button>
+</form>
+<form method="post" action="{% url 'table_delete' table.id %}" class="mt-4" onsubmit="return confirm('{% translate "Удалить стол?" as t %}{{ t|escapejs }}')">
+  {% csrf_token %}<button class="btn btn-danger">{% icon "trash" 18 %}{% translate 'Удалить стол' %}</button>
+</form>
+{% endblock %}

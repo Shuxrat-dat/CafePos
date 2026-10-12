@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Заказы' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div>
+    <h1 class="page-title">{% translate 'Заказы' %}</h1>
+    <p class="page-sub">{% translate 'Активные заказы, история и отмены' %}</p>
+  </div>
+</div>
+
+<div class="flex gap-1 border-b border-line mb-4 overflow-x-auto no-scrollbar">
+  <a href="?tab=active" class="px-4 min-h-[44px] flex items-center gap-2 border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'active' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Активные' %} <span class="badge bg-slate-100 text-slate-700">{{ counts.active }}</span></a>
+  <a href="?tab=done&from={{ date_from }}&to={{ date_to }}" class="px-4 min-h-[44px] flex items-center gap-2 border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'done' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Завершённые' %} <span class="badge bg-slate-100 text-slate-700">{{ counts.done }}</span></a>
+  <a href="?tab=cancelled&from={{ date_from }}&to={{ date_to }}" class="px-4 min-h-[44px] flex items-center gap-2 border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'cancelled' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Отменённые' %} <span class="badge bg-slate-100 text-slate-700">{{ counts.cancelled }}</span></a>
+</div>
+
+<form id="orders-filter" method="get" class="card p-3 mb-4 flex flex-wrap items-end gap-3"
+      hx-get="{% url 'orders' %}" hx-target="#orders-table" hx-trigger="change, input from:#orders-q delay:350ms" hx-push-url="true">
+  <input type="hidden" name="tab" value="{{ tab }}">
+  <div class="relative flex-1 min-w-[200px]">
+    <label class="label" for="orders-q">{% translate 'Поиск' %}</label>
+    <span class="absolute left-3.5 bottom-3.5 text-slate-400">{% icon "search" 18 %}</span>
+    <input id="orders-q" name="q" value="{{ search }}" class="input pl-10" placeholder="{% translate 'Номер, стол, клиент, телефон' %}" autocomplete="off">
+  </div>
+  <div>
+    <label class="label" for="f-type">{% translate 'Тип' %}</label>
+    <select id="f-type" name="type" class="input pr-8">
+      <option value="">{% translate 'Все типы' %}</option>
+      {% for value, label in types %}<option value="{{ value }}" {% if value == order_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if tab == 'active' %}
+    <div>
+      <label class="label" for="f-stage">{% translate 'Статус' %}</label>
+      <select id="f-stage" name="stage" class="input pr-8">
+        <option value="">{% translate 'Все статусы' %}</option>
+        {% for value, label in stages %}<option value="{{ value }}" {% if value == stage %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+  {% else %}
+    {% if tab == 'done' %}
+      <div>
+        <label class="label" for="f-method">{% translate 'Оплата' %}</label>
+        <select id="f-method" name="method" class="input pr-8">
+          <option value="">{% translate 'Любая' %}</option>
+          {% for value, label in methods %}<option value="{{ value }}" {% if value == method %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+    {% endif %}
+    <div>
+      <label class="label" for="f-from">{% translate 'С' %}</label>
+      <input id="f-from" type="date" name="from" value="{{ date_from }}" class="input">
+    </div>
+    <div>
+      <label class="label" for="f-to">{% translate 'По' %}</label>
+      <input id="f-to" type="date" name="to" value="{{ date_to }}" class="input">
+    </div>
+  {% endif %}
+  <noscript><button class="btn btn-primary">{% translate 'Показать' %}</button></noscript>
+</form>
+
+<div id="orders-table">{% include "pos/_orders_table.html" %}</div>
+{% endblock %}

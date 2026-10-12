@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% if target %}{{ target.get_full_name|default:target.username }}{% else %}{% translate 'Новый сотрудник' %}{% endif %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'manage_staff' %}" class="icon-btn" aria-label="{% translate 'Назад' %}">{% icon "arrow-left" 20 %}</a>
+  <h1 class="page-title">{% if target %}{{ target.get_full_name|default:target.username }}{% else %}{% translate 'Новый сотрудник' %}{% endif %}</h1>
+</div>
+<form method="post" class="card p-5 space-y-4 max-w-lg" autocomplete="off">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="grid sm:grid-cols-2 gap-4">
+    {% include "components/field.html" with field=form.first_name %}
+    {% include "components/field.html" with field=form.last_name %}
+  </div>
+  {% include "components/field.html" with field=form.username %}
+  {% include "components/field.html" with field=form.role %}
+  {% include "components/field.html" with field=form.password %}
+  {% include "components/field.html" with field=form.is_active %}
+  <button class="btn btn-primary btn-lg w-full">{% translate 'Сохранить' %}</button>
+</form>
+{% endblock %}

@@ -1,16 +1,17 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from .permissions import CANCEL_SENT_ROLES, PAYMENT_ROLES, SEE_ALL_ROLES
 
 
 class User(AbstractUser):
     class Role(models.TextChoices):
-        OWNER = "owner", "Владелец"
-        ADMIN = "admin", "Администратор"
-        WAITER = "waiter", "Официант"
-        CASHIER = "cashier", "Кассир"
-        COOK = "cook", "Повар"
+        OWNER = "owner", _("Владелец")
+        ADMIN = "admin", _("Администратор")
+        WAITER = "waiter", _("Официант")
+        CASHIER = "cashier", _("Кассир")
+        COOK = "cook", _("Повар")
 
     role = models.CharField("Роль", max_length=20, choices=Role.choices, default=Role.WAITER)
 

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Категории' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Меню' %}</h1>
+  <p class="page-sub">{% translate 'Категории определяют порядок и группы блюд на кассе' %}</p>
+</div>
+{% include "manage/_menu_tabs.html" %}
+<div class="grid lg:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start">
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr><th class="table-head px-4 py-3">{% translate 'Категория' %}</th><th class="table-head px-4 py-3 text-center">{% translate 'Порядок' %}</th><th class="table-head px-4 py-3 text-center">{% translate 'Блюд' %}</th><th class="px-4 py-3"></th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for c in categories %}
+          <tr class="{% if not c.is_active %}text-slate-400{% endif %}">
+            <td class="px-4 py-2.5">
+              <div class="flex items-center gap-3">
+                <span class="relative w-10 h-10 rounded-lg overflow-hidden">{% illustration c.icon 20 %}</span>
+                <div><div class="font-semibold">{{ c.name }}</div><div class="text-xs text-muted">{{ c.name_uz|default:"—" }}{% if not c.is_active %} · {% translate 'выключена' %}{% endif %}</div></div>
+              </div>
+            </td>
+            <td class="px-4 py-2.5 text-center tabular-nums">{{ c.sort_order }}</td>
+            <td class="px-4 py-2.5 text-center tabular-nums">{{ c.n }}</td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              <a href="{% url 'manage_categories_edit' c.id %}" class="icon-btn w-10 h-10 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</a>
+              {% if not c.n %}
+                <form method="post" action="{% url 'category_delete' c.id %}" class="inline" onsubmit="return confirm('{% translate "Удалить категорию?" as t %}{{ t|escapejs }}')">{% csrf_token %}
+                  <button class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button></form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">{% translate 'Категорий пока нет' as t1 %}{% include "components/empty.html" with title=t1 %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" class="card p-5 space-y-4 lg:sticky lg:top-4">
+    {% csrf_token %}
+    <h2 class="section-title">{% if instance %}{% translate 'Изменить категорию' %}{% else %}{% translate 'Новая категория' %}{% endif %}</h2>
+    {% for field in form %}{% include "components/field.html" %}{% endfor %}
+    <div class="flex gap-2">
+      {% if instance %}<a href="{% url 'manage_categories' %}" class="btn btn-secondary flex-1">{% translate 'Отмена' %}</a>{% endif %}
+      <button class="btn btn-primary flex-1">{% translate 'Сохранить' %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

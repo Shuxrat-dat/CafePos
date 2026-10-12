@@ -5,6 +5,7 @@ from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import REPORT_ROLES
@@ -24,7 +25,7 @@ def table_menu(request, table_id):
     """Меню стола для гостя: без входа, заказ уходит официанту на подтверждение."""
     table = get_object_or_404(Table, id=table_id)
     categories = Category.objects.filter(is_active=True).prefetch_related(
-        Prefetch("dishes", queryset=Dish.objects.filter(is_available=True), to_attr="available")
+        Prefetch("dishes", queryset=Dish.objects.filter(is_available=True, is_hidden=False), to_attr="available")
     )
     categories = [c for c in categories if c.available]
     dishes = {d.id: d for c in categories for d in c.available}
@@ -40,13 +41,13 @@ def table_menu(request, table_id):
         last = request.session.get("guest_last_order", 0)
         pending = GuestOrder.objects.filter(table=table, status=GuestOrder.Status.PENDING).count()
         if now - last < COOLDOWN_SECONDS:
-            error = "Подождите минуту перед следующим заказом."
+            error = _("Подождите минуту перед следующим заказом.")
         elif not picked:
-            error = "Выберите хотя бы одно блюдо."
+            error = _("Выберите хотя бы одно блюдо.")
         elif len(picked) > MAX_LINES:
-            error = "Слишком много разных блюд в одном заказе."
+            error = _("Слишком много разных блюд в одном заказе.")
         elif pending >= MAX_PENDING_PER_TABLE:
-            error = "Заказ этого стола уже ожидает официанта. Подождите, пожалуйста."
+            error = _("Заказ этого стола уже ожидает официанта. Подождите, пожалуйста.")
         else:
             with transaction.atomic():
                 guest = GuestOrder.objects.create(table=table)
@@ -76,7 +77,7 @@ def tables_qr(request):
         raise PermissionDenied
     host = request.get_host().split(":")[0]
     items = []
-    for table in Table.objects.select_related("hall"):
+    for table in Table.objects.select_related("hall").order_by("hall__sort_order", "hall_id", "number"):
         url = request.build_absolute_uri(reverse("table_menu", args=[table.id]))
         items.append({"table": table, "url": url, "qr": _qr_svg(url)})
     context = {"items": items, "is_local": host in ("localhost", "127.0.0.1")}
@@ -94,7 +95,7 @@ def accept_guest(request, order_id, guest_id):
         )
         if changed:
             for guest_item in guest.items.select_related("dish"):
-                if not guest_item.dish.is_available:
+                if not guest_item.dish.can_order:
                     continue
                 item = _find_same(order, guest_item.dish, [], "")
                 if item:

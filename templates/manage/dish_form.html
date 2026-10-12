@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% if dish %}{{ dish|tr }}{% else %}{% translate 'Новое блюдо' %}{% endif %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'manage_menu' %}" class="icon-btn" aria-label="{% translate 'К меню' %}">{% icon "arrow-left" 20 %}</a>
+  <h1 class="page-title">{% if dish %}{{ dish|tr }}{% else %}{% translate 'Новое блюдо' %}{% endif %}</h1>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+  {% csrf_token %}
+  <div class="space-y-4">
+    {% if form.non_field_errors %}<div class="alert-error">{{ form.non_field_errors }}</div>{% endif %}
+    <section class="card p-5 space-y-4">
+      <h2 class="section-title">{% translate 'Основное' %}</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {% include "components/field.html" with field=form.name %}
+        {% include "components/field.html" with field=form.name_uz %}
+        {% include "components/field.html" with field=form.category %}
+        {% include "components/field.html" with field=form.price %}
+        {% include "components/field.html" with field=form.description %}
+        {% include "components/field.html" with field=form.description_uz %}
+      </div>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="section-title mb-1">{% translate 'Модификаторы и добавки' %}</h2>
+      <p class="text-sm text-muted mb-3">{% translate 'Размер напитка, добавки, двойная порция. Новые варианты создаются во вкладке «Модификаторы».' %}</p>
+      <div class="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+        {% for choice in form.modifiers %}
+          <label class="flex items-center gap-3 py-1.5 cursor-pointer">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+        {% empty %}
+          <p class="text-sm text-muted">{% translate 'Модификаторов пока нет.' %}</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="section-title mb-1">{% translate 'Техкарта (списание со склада)' %}</h2>
+      <p class="text-sm text-muted mb-3">{% translate 'Расход продуктов на одну порцию. При оплате заказа продукты списываются со склада автоматически.' %}</p>
+      {{ recipe.management_form }}
+      {% if recipe.non_form_errors %}<div class="alert-error mb-3">{{ recipe.non_form_errors }}</div>{% endif %}
+      <div class="space-y-2">
+        {% for f in recipe %}
+          <div class="grid grid-cols-[1fr_140px_auto] gap-2 items-start">
+            {{ f.id }}
+            <div>{{ f.product }}{% for e in f.product.errors %}<p class="text-xs text-red-700 mt-1">{{ e }}</p>{% endfor %}</div>
+            <div>{{ f.quantity }}{% for e in f.quantity.errors %}<p class="text-xs text-red-700 mt-1">{{ e }}</p>{% endfor %}</div>
+            <label class="flex items-center gap-1.5 min-h-[46px] text-sm text-muted" title="{% translate 'Удалить строку' %}">{% if f.instance.pk %}{{ f.DELETE }}{% icon "trash" 16 %}{% endif %}</label>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="space-y-4 lg:sticky lg:top-4">
+    <section class="card p-5 space-y-3">
+      <h2 class="section-title">{% translate 'Фото' %}</h2>
+      {% if dish %}<div class="rounded-xl overflow-hidden border border-line">{% include "components/dish_image.html" %}</div>{% endif %}
+      {% include "components/field.html" with field=form.photo %}
+      <p class="text-xs text-muted">{% translate 'JPG, PNG или WEBP до 3 МБ. Без фото показывается иллюстрация категории.' %}</p>
+    </section>
+    <section class="card p-5 space-y-2">
+      <h2 class="section-title mb-1">{% translate 'Продажа' %}</h2>
+      {% include "components/field.html" with field=form.is_available %}
+      {% include "components/field.html" with field=form.is_hidden %}
+      {% include "components/field.html" with field=form.sort_order %}
+    </section>
+    <button class="btn btn-primary btn-lg w-full">{% icon "check" 18 %}{% translate 'Сохранить' %}</button>
+  </aside>
+</form>
+
+{% if dish %}
+  <form method="post" action="{% url 'dish_delete' dish.id %}" class="mt-6" onsubmit="return confirm('{% translate "Удалить блюдо? Если оно уже есть в заказах, оно будет скрыто." as t %}{{ t|escapejs }}')">
+    {% csrf_token %}
+    <button class="btn btn-danger">{% icon "trash" 18 %}{% translate 'Удалить блюдо' %}</button>
+  </form>
+{% endif %}
+{% endblock %}
