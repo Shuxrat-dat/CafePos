@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from core import audit
 from core.models import CafeSettings
 from inventory.services import write_off_order
 
@@ -146,6 +147,7 @@ def open_shift(user, initial_cash=0):
         initial = Decimal(0)
     if initial < 0:
         raise PaymentError(_("Начальный остаток не может быть отрицательным."))
+    audit.record(user, audit.A.SHIFT_OPEN, amount=initial, detail=_("Начальный остаток"))
     return CashShift.objects.create(
         cashier=user,
         initial_cash=initial,
@@ -170,7 +172,12 @@ def close_shift(shift, actual_cash, comment="", user=None):
         locked.status = CashShift.Status.CLOSED
         locked.closed_at = timezone.now()
         locked.save()
-        return locked
+    audit.record(
+        user, audit.A.SHIFT_CLOSE, amount=locked.difference or 0,
+        detail=_("Смена №%(id)s, по факту %(fact)s, расхождение %(diff)s") % {
+            "id": locked.id, "fact": actual, "diff": locked.difference or 0},
+    )
+    return locked
 
 
 def add_cash_movement(shift, kind, amount_raw, reason="", user=None):
@@ -187,13 +194,15 @@ def add_cash_movement(shift, kind, amount_raw, reason="", user=None):
                 "expected": shift.expected_cash,
             }
         )
-    return CashMovement.objects.create(
+    movement = CashMovement.objects.create(
         shift=shift,
         kind=kind,
         amount=amount,
         reason=(reason or "").strip()[:255],
         created_by=user,
     )
+    audit.record(user, audit.A.CASH_MOVE, amount=amount, detail=f"{movement.get_kind_display()}: {movement.reason}")
+    return movement
 
 
 def _split_off(order, items, selected, method, received, card, cashier, shift=None):
@@ -309,6 +318,9 @@ def cancel_order(order, user, reason):
     order.cancelled_by = user
     order.cancel_reason = reason.strip()[:200]
     order.save(update_fields=["status", "closed_at", "cancelled_by", "cancel_reason"])
+    if order.items.exists():  # пустые черновики в журнал не пишем
+        audit.record(user, audit.A.ORDER_CANCEL, order=order, amount=order.totals["total"],
+                     detail=order.cancel_reason or _("причина не указана"))
 
 
 def refund_order(order, user, reason, return_to_stock=True):
@@ -362,4 +374,5 @@ def refund_order(order, user, reason, return_to_stock=True):
                         created_by=user,
                     )
 
+    audit.record(user, audit.A.REFUND, order=locked, amount=locked.total, detail=refund_reason)
     return locked

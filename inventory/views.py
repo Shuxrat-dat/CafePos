@@ -11,6 +11,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
 from accounts.permissions import STOCK_ROLES, role_required
+from core import audit
 from core.forms import StyledModelForm
 
 from urllib.parse import quote
@@ -145,6 +146,11 @@ def stock_writeoff(request):
                 comment=comment,
                 created_by=request.user,
             )
+            audit.record(
+                request.user, audit.A.STOCK_WRITEOFF,
+                amount=quantity * product.cost_per_unit,
+                detail=f"{product.name}: {quantity.quantize(Decimal('0.001')).normalize():f} {product.get_unit_display()}. {comment}",
+            )
             messages.success(request, _("Списание сохранено."))
             return redirect("stock_movements")
     return render(
@@ -231,6 +237,12 @@ def stock_count(request):
                         comment=f"Инвентаризация: было {product.stock:f}, стало {fact:f}"[:200],
                         created_by=request.user,
                     )
+            if changes:
+                lost = sum((-diff * product.cost_per_unit for product, _fact, diff in changes if diff < 0), Decimal(0))
+                audit.record(
+                    request.user, audit.A.STOCK_COUNT, amount=lost,
+                    detail=_("Исправлено позиций: %(n)s, недостача на %(sum)s сум") % {"n": len(changes), "sum": f"{lost:.0f}"},
+                )
             return redirect(f"{reverse('stock_count')}?done={len(changes)}")
 
     done = request.GET.get("done", "")

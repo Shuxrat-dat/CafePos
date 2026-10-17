@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("settings/", views.manage_settings, name="manage_settings"),
     path("telegram/", views.manage_telegram, name="manage_telegram"),
+    path("audit/", views.manage_audit, name="manage_audit"),
     path("tables/", views.manage_tables, name="manage_tables"),
     path("tables/<int:table_id>/", views.table_edit, name="table_edit"),
     path("tables/<int:table_id>/delete/", views.table_delete, name="table_delete"),

@@ -7,6 +7,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import MANAGE_ROLES, role_required
+from core import audit
 
 from .forms import CategoryForm, DishForm, ModifierForm, RecipeFormSet
 from .models import Category, Dish, Modifier
@@ -45,6 +46,7 @@ def manage_menu(request):
 
 
 def _dish_form(request, dish=None):
+    old_price = dish.price if dish is not None else None  # до формы: она меняет объект при проверке
     form = DishForm(request.POST or None, request.FILES or None, instance=dish)
     recipe = RecipeFormSet(request.POST or None, instance=dish or Dish(), prefix="recipe")
     if request.method == "POST":
@@ -53,6 +55,11 @@ def _dish_form(request, dish=None):
                 saved = form.save()
                 recipe.instance = saved
                 recipe.save()
+            if old_price is not None and old_price != saved.price:
+                audit.record(
+                    request.user, audit.A.PRICE_CHANGE, amount=saved.price,
+                    detail=f"{saved.name}: {old_price:.0f} → {saved.price:.0f}",
+                )
             messages.success(request, _("Блюдо «%(name)s» сохранено.") % {"name": saved.name})
             return redirect("manage_menu")
         messages.error(request, _("Проверьте поля формы."))

@@ -228,6 +228,7 @@ class Command(BaseCommand):
             self._history(options["days"])
             self._active_orders()
             self._stock_income(options["days"])
+            self._audit_log(options["days"])
         self.stdout.write(self.style.SUCCESS(
             f"Демо-ресторан готов: заказов {Order.objects.count()}, блюд {Dish.objects.count()}, "
             f"продуктов {Product.objects.count()}. Пароль сотрудников: {PASSWORD}"
@@ -286,6 +287,44 @@ class Command(BaseCommand):
             self.dishes[key] = dish
             if weight:
                 self.weights[key] = weight
+
+    def _audit_log(self, days):
+        """История журнала действий. Второй официант отменяет заметно чаще остальных: на нём видно отчёт «Стоит проверить»."""
+        from core.models import AuditLog
+
+        A = AuditLog.Action
+        users = {u.username: u for u in User.objects.all()}
+        rng = random.Random(77)
+        orders = list(Order.objects.order_by("-id").values_list("id", flat=True)[:200])
+
+        def add(username, action, ago_hours, amount=None, detail="", order=True):
+            user = users.get(username)
+            if user is None:
+                return
+            entry = AuditLog.objects.create(
+                user=user, user_name=user.get_full_name() or user.username, action=action, amount=amount,
+                order_id=rng.choice(orders) if order and orders else None, detail=detail,
+            )
+            AuditLog.objects.filter(pk=entry.pk).update(created_at=self.now - timedelta(hours=ago_hours))
+
+        reasons = ["Гость передумал", "Долго ждал", "Ошибка в заказе", "Гость ушёл", "Не та позиция"]
+        for day in range(days):
+            base = day * 24
+            add("kassir", A.SHIFT_OPEN, base + 12, 200000, "Начальный остаток", order=False)
+            add("kassir", A.SHIFT_CLOSE, base + 2, 0, "Касса сошлась", order=False)
+            if rng.random() < 0.6:
+                add("ofitsiant", A.ORDER_CANCEL, base + rng.randint(3, 10), rng.randint(2, 8) * 10000, rng.choice(reasons))
+            for _i in range(rng.choice([0, 1, 2, 2, 3])):
+                add("ofitsiant2", A.ORDER_CANCEL, base + rng.randint(3, 10), rng.randint(3, 12) * 10000, rng.choice(reasons))
+            if rng.random() < 0.5:
+                add("ofitsiant2", A.ITEM_REMOVE, base + rng.randint(3, 10), rng.randint(1, 4) * 15000, "Блюдо с кухни убрано")
+            if rng.random() < 0.4:
+                add("kassir", A.DISCOUNT, base + rng.randint(3, 10), rng.randint(1, 4) * 5000, "Процент 10: постоянный гость")
+        add("admin", A.STOCK_WRITEOFF, 30, 18000, "Говядина: 600 г. Испортилась при хранении", order=False)
+        add("admin", A.STOCK_COUNT, 50, 42000, "Исправлено позиций: 4, недостача на 42000 сум", order=False)
+        add("owner", A.PRICE_CHANGE, 70, 45000, "Плов по-ташкентски: 42000 → 45000", order=False)
+        add("kassir", A.REFUND, 20, 85000, "Гостю принесли не то блюдо")
+        add("kassir", A.CASH_MOVE, 26, 500000, "Изъятие / Инкассация: сдача выручки", order=False)
 
     def _stock_items(self):
         self.products = {}

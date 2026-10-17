@@ -17,7 +17,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import DISCOUNT_ROLES, has_role
-from core import telegram
+from core import audit, telegram
 from core.models import CafeSettings
 from inventory.services import find_shortages
 from menu.models import Category, Dish
@@ -554,6 +554,9 @@ def remove_item(request, order_id, item_id):
     item = get_object_or_404(OrderItem, id=item_id, order=order)
     if item.status != OrderItem.Status.NEW and not request.user.can_cancel_sent_orders:
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
+    if item.status != OrderItem.Status.NEW:
+        audit.record(request.user, audit.A.ITEM_REMOVE, order=order, amount=item.line_total,
+                     detail=f"{item.dish.name} × {item.quantity}")
     item.delete()
     _order_changed(order)
     return _panel(request, order, _("Позиция удалена."))
@@ -638,6 +641,13 @@ def discount_form(request, order_id):
         if not error:
             if order.discount_kind:
                 telegram.notify_discount(order, request.user)
+                audit.record(
+                    request.user, audit.A.DISCOUNT, order=order,
+                    amount=order.discount_for(order.totals["subtotal"]),
+                    detail=f"{order.get_discount_kind_display()} {order.discount_value}: {order.discount_reason or '—'}",
+                )
+            else:
+                audit.record(request.user, audit.A.DISCOUNT, order=order, detail=_("Скидка снята"))
             message = _("Скидка снята.") if not order.discount_kind else _("Скидка применена.")
             return _panel(request, order, message)
         response = render(request, "pos/_discount_form.html", {"order": order, "error": error, "form": request.POST})

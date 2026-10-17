@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Журнал действий' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Кто и что делал в кассе: отмены, скидки, возвраты, смены, склад и цены.' %}</p>
+</div>
+{% include "manage/_settings_tabs.html" %}
+
+{% if suspects %}
+  <section class="card p-5 mb-4 border-orange-200 bg-orange-50/40">
+    <h2 class="section-title mb-1 flex items-center gap-2 text-orange-900">{% icon "alert" 18 %}{% translate 'Стоит проверить' %}</h2>
+    <p class="text-sm text-muted mb-3">{% translate 'За последние 30 дней у этих сотрудников заметно больше событий, чем у остальных. Это повод поговорить, а не обвинение.' %}</p>
+    <div class="grid md:grid-cols-2 gap-3">
+      {% for s in suspects %}
+        <article class="rounded-xl bg-white border border-line p-4">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <b class="text-ink">{{ s.user_name }}</b>
+            <a href="?user={{ s.user_id }}&days=30" class="text-xs font-semibold text-brand hover:underline">{% translate 'Смотреть журнал' %}</a>
+          </div>
+          <ul class="space-y-2 text-sm">
+            {% for f in s.flags %}
+              <li>
+                <div class="font-semibold text-ink">{{ f.label }}: {{ f.count }}{% if f.team_avg %} <span class="font-normal text-muted">· {% blocktranslate with a=f.team_avg %}у остальных в среднем {{ a }}{% endblocktranslate %}</span>{% endif %}</div>
+                <div class="text-xs text-muted">{{ f.hint }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+<form method="get" class="card p-3 mb-4 flex flex-wrap items-end gap-3">
+  <div>
+    <label class="label" for="f-action">{% translate 'Действие' %}</label>
+    <select id="f-action" name="action" class="input min-w-[200px]" onchange="this.form.submit()">
+      <option value="">{% translate 'Все' %}</option>
+      {% for value, label in actions %}<option value="{{ value }}" {% if sel_action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="label" for="f-user">{% translate 'Сотрудник' %}</label>
+    <select id="f-user" name="user" class="input min-w-[180px]" onchange="this.form.submit()">
+      <option value="">{% translate 'Все' %}</option>
+      {% for u in staff %}<option value="{{ u.id }}" {% if sel_user == u.id|stringformat:'d' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="label" for="f-days">{% translate 'Период' %}</label>
+    <select id="f-days" name="days" class="input" onchange="this.form.submit()">
+      <option value="1" {% if sel_days == '1' %}selected{% endif %}>{% translate 'Сегодня' %}</option>
+      <option value="7" {% if sel_days == '7' %}selected{% endif %}>{% translate '7 дней' %}</option>
+      <option value="30" {% if sel_days == '30' %}selected{% endif %}>{% translate '30 дней' %}</option>
+      <option value="90" {% if sel_days == '90' %}selected{% endif %}>{% translate '90 дней' %}</option>
+      <option value="all" {% if sel_days == 'all' %}selected{% endif %}>{% translate 'Всё время' %}</option>
+    </select>
+  </div>
+  {% if sel_action or sel_user %}<a href="{% url 'manage_audit' %}" class="btn btn-ghost btn-sm">{% translate 'Сбросить' %}</a>{% endif %}
+</form>
+
+<section class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr>
+          <th class="table-head px-4 py-3">{% translate 'Когда' %}</th>
+          <th class="table-head px-4 py-3">{% translate 'Сотрудник' %}</th>
+          <th class="table-head px-4 py-3">{% translate 'Действие' %}</th>
+          <th class="table-head px-4 py-3">{% translate 'Подробности' %}</th>
+          <th class="table-head px-4 py-3 text-right">{% translate 'Сумма' %}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for e in page %}
+          <tr class="{% if e.action == 'login_failed' %}bg-red-50/50{% endif %}">
+            <td class="px-4 py-2.5 whitespace-nowrap tabular-nums text-muted">{{ e.created_at|date:"d.m H:i" }}</td>
+            <td class="px-4 py-2.5 whitespace-nowrap font-medium">{{ e.user_name|default:"—" }}</td>
+            <td class="px-4 py-2.5 whitespace-nowrap">
+              <span class="badge {% if e.action == 'order_cancel' or e.action == 'refund' or e.action == 'item_remove' %}bg-orange-100 text-orange-800{% elif e.action == 'login_failed' %}bg-red-100 text-red-700{% else %}bg-stone-100 text-stone-700{% endif %}">{{ e.get_action_display }}</span>
+            </td>
+            <td class="px-4 py-2.5 text-stone-700">
+              {% if e.order_id %}<a href="{% url 'order_view' order_id=e.order_id %}" class="font-semibold text-brand hover:underline">#{{ e.order_id }}</a> {% endif %}{{ e.detail }}
+            </td>
+            <td class="px-4 py-2.5 text-right tabular-nums whitespace-nowrap">{% if e.amount is not None %}{{ e.amount|money }}{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">{% translate 'Записей нет' as t1 %}{% translate 'Попробуйте другой период или сбросьте фильтры.' as t2 %}{% include "components/empty.html" with icon="clock" title=t1 text=t2 %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.has_other_pages %}
+    <div class="flex items-center justify-between p-3 border-t border-line text-sm">
+      <span class="text-muted">{% blocktranslate with n=page.number total=page.paginator.num_pages %}Страница {{ n }} из {{ total }}{% endblocktranslate %}</span>
+      <div class="flex gap-2">
+        {% if page.has_previous %}<a class="btn btn-secondary btn-sm" href="?{{ query }}&page={{ page.previous_page_number }}">{% translate 'Назад' %}</a>{% endif %}
+        {% if page.has_next %}<a class="btn btn-secondary btn-sm" href="?{{ query }}&page={{ page.next_page_number }}">{% translate 'Дальше' %}</a>{% endif %}
+      </div>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

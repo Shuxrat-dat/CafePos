@@ -1,11 +1,15 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
+from django.core.paginator import Paginator
 from django.db.models import Count, ProtectedError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
@@ -13,9 +17,9 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import MANAGE_ROLES, role_required
 from pos.models import Hall, Table
 
-from . import telegram
+from . import audit, telegram
 from .forms import CafeSettingsForm, HallForm, StaffForm, TableForm, TelegramSettingsForm
-from .models import CafeSettings
+from .models import AuditLog, CafeSettings
 
 manager_only = role_required(MANAGE_ROLES)
 User = get_user_model()
@@ -55,6 +59,38 @@ def manage_settings(request):
             return redirect("manage_settings")
         messages.error(request, _("Проверьте поля формы."))
     return render(request, "manage/settings.html", {"form": form})
+
+
+@manager_only
+def manage_audit(request):
+    """Журнал действий и сотрудники, чьё поведение стоит проверить."""
+    action = request.GET.get("action", "")
+    user_id = request.GET.get("user", "")
+    days = request.GET.get("days", "7")
+    logs = AuditLog.objects.all()
+    if action in AuditLog.Action.values:
+        logs = logs.filter(action=action)
+    else:
+        action = ""
+    if user_id.isdigit():
+        logs = logs.filter(user_id=int(user_id))
+    else:
+        user_id = ""
+    if days.isdigit() and int(days) in (1, 7, 30, 90):
+        logs = logs.filter(created_at__gte=timezone.now() - timedelta(days=int(days)))
+    else:
+        days = "all"
+    page = Paginator(logs, 50).get_page(request.GET.get("page"))
+    query = request.GET.copy()
+    query.pop("page", None)
+    return render(request, "manage/audit.html", {
+        "page": page,
+        "actions": AuditLog.Action.choices,
+        "staff": User.objects.filter(is_active=True).order_by("username"),
+        "sel_action": action, "sel_user": user_id, "sel_days": days,
+        "suspects": audit.suspicious_report(),
+        "query": query.urlencode(),
+    })
 
 
 @manager_only

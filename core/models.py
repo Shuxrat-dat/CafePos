@@ -11,6 +11,50 @@ def default_language():
     return settings.LANGUAGE_CODE
 
 
+class AuditLog(models.Model):
+    """Кто и что сделал в системе. Записи только добавляются, из интерфейса их не изменить и не удалить."""
+
+    class Action(models.TextChoices):
+        ORDER_CANCEL = "order_cancel", _("Отмена заказа")
+        ITEM_REMOVE = "item_remove", _("Удалено блюдо с кухни")
+        DISCOUNT = "discount", _("Скидка")
+        REFUND = "refund", _("Возврат")
+        SHIFT_OPEN = "shift_open", _("Открытие смены")
+        SHIFT_CLOSE = "shift_close", _("Закрытие смены")
+        CASH_MOVE = "cash_move", _("Внесение или изъятие наличных")
+        STOCK_WRITEOFF = "stock_writeoff", _("Списание продуктов")
+        STOCK_COUNT = "stock_count", _("Инвентаризация")
+        PRICE_CHANGE = "price_change", _("Изменение цены")
+        LOGIN_FAILED = "login_failed", _("Неудачный вход")
+
+    created_at = models.DateTimeField(_("Время"), auto_now_add=True, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name=_("Сотрудник"), null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="+",
+    )
+    user_name = models.CharField(_("Имя сотрудника"), max_length=150, blank=True)
+    action = models.CharField(_("Действие"), max_length=20, choices=Action.choices, db_index=True)
+    order_id = models.PositiveIntegerField(_("Заказ"), null=True, blank=True)
+    amount = models.DecimalField(_("Сумма"), max_digits=14, decimal_places=0, null=True, blank=True)
+    detail = models.CharField(_("Подробности"), max_length=300, blank=True)
+
+    class Meta:
+        verbose_name = "Запись журнала"
+        verbose_name_plural = "Журнал действий"
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.created_at:%d.%m %H:%M} {self.user_name} {self.get_action_display()}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise PermissionError("Записи журнала не изменяются.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("Записи журнала не удаляются.")
+
+
 class CafeSettings(models.Model):
     """Настройки заведения. В базе всегда одна запись, берите её через CafeSettings.get()."""
 
