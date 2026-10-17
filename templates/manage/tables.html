@@ -8,25 +8,70 @@
 </div>
 {% include "manage/_settings_tabs.html" %}
 
+{# Сводка по всем залам #}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Свободно' %}</div>
+    <div class="text-2xl font-black text-emerald-600 mt-1">{{ summary.free }}</div>
+  </div>
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Занято' %}</div>
+    <div class="text-2xl font-black text-brand mt-1">{{ summary.busy }}</div>
+  </div>
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Забронировано' %}</div>
+    <div class="text-2xl font-black text-blue-600 mt-1">{{ summary.reserved }}</div>
+  </div>
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Всего мест' %}</div>
+    <div class="text-2xl font-black text-ink mt-1">{{ summary.seats }}</div>
+  </div>
+</div>
+
 <div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
   <div class="space-y-4">
     {% for hall in halls %}
       <section class="card p-5">
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <h2 class="section-title">{{ hall.name }}{% if hall.name_uz %} <span class="text-muted font-normal">/ {{ hall.name_uz }}</span>{% endif %}</h2>
-          {% if not hall.n %}
-            <form method="post" action="{% url 'hall_delete' hall.id %}">{% csrf_token %}<button class="btn btn-ghost btn-sm text-red-700">{% icon "trash" 16 %}{% translate 'Удалить зал' %}</button></form>
-          {% endif %}
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h2 class="section-title">{{ hall.name }}{% if hall.name_uz %} <span class="text-muted font-normal">/ {{ hall.name_uz }}</span>{% endif %}</h2>
+            <p class="text-xs text-muted mt-0.5">
+              {{ hall.n }} {% translate 'столов' %} · {{ hall.stats.seats }} {% translate 'мест' %}
+            </p>
+          </div>
+          <div class="flex items-center gap-3 text-[11px] font-semibold text-stone-500">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>{% translate 'Свободен' %}</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-brand"></span>{% translate 'Занят' %}</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>{% translate 'Бронь' %}</span>
+            {% if not hall.n %}
+              <form method="post" action="{% url 'hall_delete' hall.id %}">{% csrf_token %}<button class="btn btn-ghost btn-sm text-red-700">{% icon "trash" 16 %}{% translate 'Удалить зал' %}</button></form>
+            {% endif %}
+          </div>
         </div>
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+
+        <div class="rounded-2xl bg-[#FAF8F5] border border-line/70 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6">
           {% for t in hall.tables.all %}
-            <a href="{% url 'table_edit' t.id %}" class="rounded-xl border border-line hover:border-brand hover:bg-brand-50 p-3 text-center">
-              <div class="text-lg font-bold">{{ t.number }}</div>
-              <div class="text-xs text-muted">{{ t.seats }} {% translate 'мест' %}</div>
+            <a href="{% url 'table_edit' t.id %}" class="group flex flex-col items-center gap-1.5 focus:outline-none" title="{% translate 'Изменить стол' %} {{ t.number }}">
+              <div class="flex gap-1.5">
+                {% for chair in t.chairs_top %}<span class="w-3.5 h-1.5 rounded-full {% if t.state == 'busy' %}bg-brand/50{% elif t.state == 'reserved' %}bg-blue-300{% else %}bg-emerald-300{% endif %}"></span>{% endfor %}
+              </div>
+              <div class="w-full max-w-[120px] aspect-[4/3] rounded-2xl border-2 flex flex-col items-center justify-center transition shadow-sm group-hover:shadow-md group-hover:-translate-y-0.5 group-focus-visible:ring-2 group-focus-visible:ring-brand/40
+                {% if t.state == 'busy' %}bg-[#FDF4EB] border-brand/60 text-brand{% elif t.state == 'reserved' %}bg-blue-50 border-blue-300 text-blue-700{% else %}bg-white border-emerald-300 text-ink{% endif %}">
+                <span class="text-xl font-black leading-none">{{ t.number }}</span>
+                <span class="mt-1 text-[11px] font-semibold opacity-70">{{ t.seats }} {% translate 'мест' %}</span>
+              </div>
+              <div class="flex gap-1.5">
+                {% for chair in t.chairs_bottom %}<span class="w-3.5 h-1.5 rounded-full {% if t.state == 'busy' %}bg-brand/50{% elif t.state == 'reserved' %}bg-blue-300{% else %}bg-emerald-300{% endif %}"></span>{% endfor %}
+              </div>
+              <span class="text-[10px] font-bold uppercase tracking-wide {% if t.state == 'busy' %}text-brand{% elif t.state == 'reserved' %}text-blue-600{% else %}text-emerald-600{% endif %}">
+                {% if t.state == 'busy' %}{% translate 'Занят' %}{% elif t.state == 'reserved' %}{% translate 'Бронь' %}{% else %}{% translate 'Свободен' %}{% endif %}
+              </span>
             </a>
-          {% empty %}
-            <p class="text-sm text-muted col-span-full">{% translate 'Столов пока нет' %}</p>
           {% endfor %}
+          <a href="?hall={{ hall.id }}#new-table" class="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line text-stone-400 hover:text-brand hover:border-brand/50 hover:bg-white transition min-h-[96px]">
+            {% icon "plus" 22 %}
+            <span class="text-xs font-semibold">{% translate 'Добавить стол' %}</span>
+          </a>
         </div>
       </section>
     {% empty %}
@@ -36,7 +81,7 @@
 
   <div class="space-y-4 lg:sticky lg:top-4">
     {% if halls %}
-      <form method="post" class="card p-5 space-y-3">
+      <form method="post" id="new-table" class="card p-5 space-y-3">
         {% csrf_token %}<input type="hidden" name="kind" value="table">
         <h2 class="section-title">{% translate 'Новый стол' %}</h2>
         {% for field in table_form %}{% include "components/field.html" %}{% endfor %}

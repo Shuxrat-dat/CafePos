@@ -75,8 +75,27 @@ def manage_tables(request):
                 messages.success(request, _("Стол добавлен."))
                 return redirect("manage_tables")
         messages.error(request, _("Проверьте поля формы."))
-    halls = Hall.objects.prefetch_related("tables").annotate(n=Count("tables"))
-    return render(request, "manage/tables.html", {"halls": halls, "hall_form": hall_form, "table_form": table_form})
+    if request.method == "GET" and request.GET.get("hall", "").isdigit():
+        table_form = TableForm(prefix="table", initial={"hall": int(request.GET["hall"])})
+    from pos.views import _busy_table_ids  # локальный импорт: pos.views сам зависит от core
+
+    busy = _busy_table_ids()
+    halls = list(Hall.objects.prefetch_related("tables").annotate(n=Count("tables")))
+    summary = {"free": 0, "busy": 0, "reserved": 0, "seats": 0}
+    for hall in halls:
+        hall.stats = {"free": 0, "busy": 0, "reserved": 0, "seats": 0}
+        for table in hall.tables.all():
+            table.state = "busy" if table.id in busy else "reserved" if table.is_reserved else "free"
+            top = (table.seats + 1) // 2
+            table.chairs_top = range(top)
+            table.chairs_bottom = range(table.seats - top)
+            hall.stats[table.state] += 1
+            hall.stats["seats"] += table.seats
+        for key, value in hall.stats.items():
+            summary[key] += value
+    return render(request, "manage/tables.html", {
+        "halls": halls, "hall_form": hall_form, "table_form": table_form, "summary": summary,
+    })
 
 
 @manager_only
