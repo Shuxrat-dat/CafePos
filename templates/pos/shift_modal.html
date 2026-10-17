@@ -1,0 +1,189 @@
+{% load i18n ui %}
+<div id="shift-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onclick="if(event.target===this)closeShiftModal()">
+  <div class="card w-full max-w-lg p-6 bg-white shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto no-scrollbar relative animate-in fade-in zoom-in duration-200">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-line">
+      <div class="flex items-center gap-2">
+        <span class="grid place-items-center w-8 h-8 rounded-lg bg-[#FDF4EB] text-brand">
+          {% icon "wallet" 18 %}
+        </span>
+        <h2 class="text-base font-bold text-ink">
+          {% if shift %}
+            {% translate 'Кассовая смена' %} №{{ shift.id }}
+          {% else %}
+            {% translate 'Открытие смены' %}
+          {% endif %}
+        </h2>
+      </div>
+      <button type="button" onclick="closeShiftModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-ink hover:bg-stone-100 transition">
+        {% icon "x" 18 %}
+      </button>
+    </div>
+
+    {% if shift %}
+      {# Информация об открытой смене (X-отчёт) #}
+      <div class="bg-[#FAF8F5] border border-line rounded-xl p-3.5 mb-4 text-xs space-y-2">
+        <div class="flex justify-between text-stone-500">
+          <span>{% translate 'Кассир:' %}</span>
+          <span class="font-bold text-ink">{{ shift.cashier.get_full_name|default:shift.cashier.username }}</span>
+        </div>
+        <div class="flex justify-between text-stone-500">
+          <span>{% translate 'Время открытия:' %}</span>
+          <span class="font-medium text-ink">{{ shift.opened_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="flex justify-between text-stone-500">
+          <span>{% translate 'Начальный размен:' %}</span>
+          <span class="font-bold text-ink">{{ shift.initial_cash|money }}</span>
+        </div>
+        <div class="flex justify-between text-stone-500">
+          <span>{% translate 'Выручка (наличные):' %}</span>
+          <span class="font-bold text-emerald-600">+{{ shift.cash_sales|money }}</span>
+        </div>
+        <div class="flex justify-between text-stone-500">
+          <span>{% translate 'Выручка (карты):' %}</span>
+          <span class="font-bold text-blue-600">{{ shift.card_sales|money }}</span>
+        </div>
+        {% if shift.cash_refunds %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Возвраты (наличные):' %}</span>
+            <span class="font-bold text-red-600">-{{ shift.cash_refunds|money }}</span>
+          </div>
+        {% endif %}
+        {% if shift.cash_deposits %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Внесения наличных:' %}</span>
+            <span class="font-bold text-emerald-600">+{{ shift.cash_deposits|money }}</span>
+          </div>
+        {% endif %}
+        {% if shift.cash_withdrawals %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Инкассация / изъятия:' %}</span>
+            <span class="font-bold text-stone-700">-{{ shift.cash_withdrawals|money }}</span>
+          </div>
+        {% endif %}
+        <div class="pt-2 border-t border-line flex justify-between items-baseline text-sm font-bold">
+          <span class="text-ink">{% translate 'Ожидаемый остаток в кассе:' %}</span>
+          <span class="text-base text-brand font-black">{{ shift.expected_cash|money }}</span>
+        </div>
+      </div>
+
+      {# Быстрые операции: Внесение / Изъятие #}
+      <div class="mb-5 flex gap-2">
+        <button type="button" onclick="document.getElementById('deposit-form').classList.toggle('hidden'); document.getElementById('close-shift-box').classList.add('hidden');" class="flex-1 py-2 px-3 rounded-xl border border-line bg-white hover:bg-stone-50 text-xs font-semibold text-stone-700 flex items-center justify-center gap-1.5 shadow-sm transition">
+          {% icon "plus" 14 %}
+          <span>{% translate 'Внесение' %}</span>
+        </button>
+        <button type="button" onclick="document.getElementById('withdrawal-form').classList.toggle('hidden'); document.getElementById('close-shift-box').classList.add('hidden');" class="flex-1 py-2 px-3 rounded-xl border border-line bg-white hover:bg-stone-50 text-xs font-semibold text-stone-700 flex items-center justify-center gap-1.5 shadow-sm transition">
+          {% icon "minus" 14 %}
+          <span>{% translate 'Инкассация' %}</span>
+        </button>
+      </div>
+
+      {# Форма внесения #}
+      <form id="deposit-form" method="post" action="{% url 'shift_movement' %}" class="hidden p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl mb-4 text-xs space-y-2.5">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="deposit">
+        <div class="font-bold text-emerald-900">{% translate 'Внесение наличных в кассу' %}</div>
+        <div>
+          <label class="block text-stone-600 mb-1">{% translate 'Сумма (сум):' %}</label>
+          <input type="number" name="amount" min="1" required class="input w-full bg-white text-xs font-bold px-2 py-1.5">
+        </div>
+        <div>
+          <label class="block text-stone-600 mb-1">{% translate 'Основание / Примечание:' %}</label>
+          <input type="text" name="reason" placeholder="Дополнительный разменный фонд" class="input w-full bg-white text-xs px-2 py-1.5">
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="this.closest('form').classList.add('hidden')" class="btn btn-secondary text-xs py-1 px-3">{% translate 'Отмена' %}</button>
+          <button type="submit" class="btn bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-1 px-3">{% translate 'Внести' %}</button>
+        </div>
+      </form>
+
+      {# Форма инкассации #}
+      <form id="withdrawal-form" method="post" action="{% url 'shift_movement' %}" class="hidden p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl mb-4 text-xs space-y-2.5">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="withdrawal">
+        <div class="font-bold text-amber-900">{% translate 'Инкассация / Изъятие наличных' %}</div>
+        <div>
+          <label class="block text-stone-600 mb-1">{% translate 'Сумма (сум):' %}</label>
+          <input type="number" name="amount" min="1" max="{{ shift.expected_cash }}" required class="input w-full bg-white text-xs font-bold px-2 py-1.5">
+        </div>
+        <div>
+          <label class="block text-stone-600 mb-1">{% translate 'Причина / Инкассатор:' %}</label>
+          <input type="text" name="reason" placeholder="Инкассация в банк" class="input w-full bg-white text-xs px-2 py-1.5">
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="this.closest('form').classList.add('hidden')" class="btn btn-secondary text-xs py-1 px-3">{% translate 'Отмена' %}</button>
+          <button type="submit" class="btn bg-amber-600 hover:bg-amber-700 text-white text-xs py-1 px-3">{% translate 'Изъять' %}</button>
+        </div>
+      </form>
+
+      {# Форма закрытия смены (Z-отчёт) #}
+      <div id="close-shift-box" class="space-y-3 pt-2">
+        <form method="post" action="{% url 'shift_close' %}" class="space-y-3">
+          {% csrf_token %}
+          <div>
+            <label class="block text-xs font-bold text-stone-700 mb-1">
+              {% translate 'Фактическая сумма наличных в ящике кассы (сум):' %}
+            </label>
+            <input type="number" name="actual_cash" required placeholder="{{ shift.expected_cash|stringformat:'d' }}" class="input w-full font-black text-sm px-3 py-2 bg-white border border-stone-300">
+            <span class="text-[11px] text-stone-400">{% translate 'Пересчитайте купюры в денежном ящике перед закрытием.' %}</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-stone-600 mb-1">
+              {% translate 'Комментарий (причины расхождения, если есть):' %}
+            </label>
+            <input type="text" name="comment" placeholder="Смена сдана без замечаний" class="input w-full text-xs px-3 py-1.5 bg-white">
+          </div>
+
+          <label class="flex items-center gap-2 text-xs text-stone-600 cursor-pointer pt-1">
+            <input type="checkbox" name="logout_after" value="1" checked class="rounded border-line text-brand focus:ring-brand">
+            <span>{% translate 'Выйти из системы после закрытия смены' %}</span>
+          </label>
+
+          <div class="pt-2 flex flex-col gap-2">
+            <button type="submit" class="btn bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+              {% icon "lock" 14 %}
+              <span>{% translate 'Закрыть смену (Z-отчёт)' %}</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="pt-2 border-t border-line flex items-center justify-between">
+          <form method="post" action="{% url 'logout' %}" class="m-0">
+            {% csrf_token %}
+            <button class="text-xs text-stone-500 hover:text-stone-800 underline">
+              {% translate 'Просто выйти (без закрытия смены)' %}
+            </button>
+          </form>
+          <button type="button" onclick="closeShiftModal()" class="text-xs text-stone-500 hover:text-stone-800">
+            {% translate 'Отмена' %}
+          </button>
+        </div>
+      </div>
+
+    {% else %}
+      {# Форма открытия смены, если смена не открыта #}
+      <form method="post" action="{% url 'shift_open' %}" class="space-y-4">
+        {% csrf_token %}
+        <p class="text-xs text-stone-600">
+          {% translate 'На данный момент кассовая смена не открыта. Укажите начальную сумму разменного фонда для открытия.' %}
+        </p>
+        <div>
+          <label class="block text-xs font-bold text-stone-700 mb-1">
+            {% translate 'Начальный разменный фонд (сум):' %}
+          </label>
+          <input type="number" name="initial_cash" value="0" min="0" required class="input w-full font-black text-sm px-3 py-2 bg-white">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeShiftModal()" class="btn btn-secondary text-xs py-2 px-4">
+            {% translate 'Отмена' %}
+          </button>
+          <button type="submit" class="btn bg-brand hover:bg-brand-600 text-white font-bold text-xs py-2 px-4">
+            {% translate 'Открыть смену' %}
+          </button>
+        </div>
+      </form>
+    {% endif %}
+
+  </div>
+</div>

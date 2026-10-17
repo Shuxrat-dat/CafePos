@@ -5,6 +5,8 @@ from . import guest_views, orders_views, views
 urlpatterns = [
     path("", views.floor, name="floor"),
     path("floor/grid/", views.floor_grid, name="floor_grid"),
+    path("quick-add/<int:dish_id>/", views.quick_add, name="quick_add"),
+    path("orders/<int:order_id>/toggle-stage/", views.toggle_order_stage, name="toggle_order_stage"),
     path("orders/new/", views.new_order, name="new_order"),
     path("orders/", orders_views.orders, name="orders"),
     path("tables/<int:table_id>/open/", views.open_table, name="open_table"),
@@ -32,6 +34,11 @@ urlpatterns = [
     path("orders/<int:order_id>/move/<int:table_id>/", views.move_order, name="move_order"),
     path("orders/<int:order_id>/pay/", views.pay, name="pay"),
     path("orders/<int:order_id>/receipt/", views.receipt, name="receipt"),
+    path("orders/<int:order_id>/refund/", views.refund_order_view, name="refund_order"),
     path("orders/<int:order_id>/guest/<int:guest_id>/accept/", guest_views.accept_guest, name="accept_guest"),
     path("orders/<int:order_id>/guest/<int:guest_id>/reject/", guest_views.reject_guest, name="reject_guest"),
+    path("shifts/current/", views.shift_current, name="shift_current"),
+    path("shifts/open/", views.shift_open, name="shift_open"),
+    path("shifts/close/", views.shift_close, name="shift_close"),
+    path("shifts/movement/", views.shift_movement, name="shift_movement"),
 ]

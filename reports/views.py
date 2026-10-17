@@ -10,7 +10,7 @@ from django.utils.translation import gettext as _
 
 from accounts.permissions import REPORT_ROLES, role_required
 from inventory.models import Product, StockMovement
-from pos.models import Order
+from pos.models import CashShift, Order
 
 reports_only = role_required(REPORT_ROLES)
 
@@ -205,5 +205,6 @@ def dashboard(request):
         "cancelled_count": len(cancelled),
         "cancelled_sum": sum((o.subtotal for o in cancelled), Decimal(0)),
         "low_stock": Product.objects.filter(stock__lte=F("min_stock")).order_by("stock"),
+        "shifts": CashShift.objects.filter(opened_at__gte=start, opened_at__lt=end).select_related("cashier").order_by("-opened_at")[:10],
     }
     return render(request, "reports/dashboard.html", context)

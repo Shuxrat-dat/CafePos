@@ -1,112 +1,367 @@
 {% extends "base.html" %}
 {% load i18n ui %}
-{% block title %}{% translate 'Зал' %}{% endblock %}
+{% block title %}{% translate 'Заказы' %}{% endblock %}
+
 {% block content %}
-<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-  <div class="min-w-0">
-    <h1 class="page-title">{% translate 'Зал' %}</h1>
-    <p class="page-sub"><span id="floor-hall-name">{% translate 'Все залы' %}</span> · <b class="text-ink" data-sum="free">{{ counts.free }}</b> / <span data-sum="total">{{ counts.total }}</span> {% translate 'столов свободно' %}</p>
-  </div>
-  <div class="flex flex-wrap items-center gap-2">
-    <div class="relative">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 16 %}</span>
-      <input id="table-search" type="search" inputmode="numeric" autocomplete="off" class="input w-40 pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" aria-label="{% translate 'Найти стол' %}">
-    </div>
-    {# Навынос и доставка доступны, но второстепенны по сравнению со столами #}
-    <form method="post" action="{% url 'new_order' %}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
-      <button class="btn btn-secondary min-h-[40px]">{% icon "shopping-bag" 18 %}{% translate 'Навынос' %}</button>
-    </form>
-    <form method="post" action="{% url 'new_order' %}">{% csrf_token %}<input type="hidden" name="type" value="delivery">
-      <button class="btn btn-secondary min-h-[40px]">{% icon "bike" 18 %}{% translate 'Доставка' %}</button>
-    </form>
-  </div>
-</div>
-
-<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-  {% if halls|length > 1 %}
-    <div id="hall-filter" class="seg w-auto flex-wrap" role="group" aria-label="{% translate 'Зал' %}">
-      <button type="button" data-hall="" data-name="{% translate 'Все залы' %}" class="seg-item flex-none px-3 seg-item-active">{% translate 'Все залы' %}</button>
-      {% for hall in halls %}
-        <button type="button" data-hall="{{ hall.id }}" data-name="{{ hall|tr }}" class="seg-item flex-none px-3">{{ hall|tr }}</button>
+<div class="flex flex-col xl:flex-row gap-5 max-w-[1750px] mx-auto">
+  
+  {# ЛЕВАЯ И ЦЕНТРАЛЬНАЯ ЧАСТЬ (Категории, Текущие заказы, Быстрые позиции) #}
+  <div class="flex-1 flex flex-col min-w-0">
+    
+    {# 1. ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ КАТЕГОРИЙ #}
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 mb-5">
+      <button type="button" data-cat-filter="all" class="cat-pill active flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shrink-0 bg-brand text-white">
+        {% icon "layout-grid" 16 %}
+        <span>{% translate 'Все' %}</span>
+      </button>
+      {% for cat in categories %}
+        <button type="button" data-cat-filter="{{ cat.id }}" class="cat-pill flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-line text-stone-700 hover:border-brand/40 transition shadow-sm shrink-0">
+          {% if cat.icon == 'coffee' %}
+            {% icon "coffee" 16 %}
+          {% elif cat.icon == 'drink' %}
+            {% icon "leaf" 16 %}
+          {% elif cat.icon == 'plate' %}
+            {% icon "utensils" 16 %}
+          {% elif cat.icon == 'cake' %}
+            {% icon "dish-cake" 16 %}
+          {% elif cat.icon == 'burger' %}
+            {% icon "dish-burger" 16 %}
+          {% elif cat.icon == 'bowl' %}
+            {% icon "dish-bowl" 16 %}
+          {% else %}
+            {% icon "dish-plate" 16 %}
+          {% endif %}
+          <span>{{ cat.name }}</span>
+        </button>
       {% endfor %}
+      <button type="button" class="w-8 h-8 rounded-xl bg-white border border-line flex items-center justify-center text-stone-500 hover:text-ink shadow-sm shrink-0">
+        {% icon "chevron-right" 16 %}
+      </button>
     </div>
-  {% else %}<div id="hall-filter"></div>{% endif %}
-  {# Строка состояний: показывает количество и работает как фильтр #}
-  <div id="state-filter" class="flex flex-wrap gap-2" role="group" aria-label="{% translate 'Статус' %}">
-    <button type="button" data-state="free" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-emerald-500"></i>{% translate 'Свободно' %} <b class="text-ink" data-count="free">{{ counts.free }}</b></button>
-    <button type="button" data-state="busy" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-brand"></i>{% translate 'Занято' %} <b class="text-ink" data-count="busy">{{ counts.busy }}</b></button>
-    <button type="button" data-state="bill" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-orange-500"></i>{% translate 'Ожидает оплаты' %} <b class="text-ink" data-count="bill">{{ counts.bill }}</b></button>
-    <button type="button" data-state="reserved" class="chip min-h-[36px]"><i class="w-2 h-2 rounded-sm bg-slate-400"></i>{% translate 'Забронировано' %} <b class="text-ink" data-count="reserved">{{ counts.reserved }}</b></button>
-  </div>
-</div>
 
-<div id="floor-grid" hx-get="{% url 'floor_grid' %}" hx-trigger="every 15s" hx-swap="innerHTML">
-  {% include "pos/_floor_grid.html" %}
+    {# 2. РАЗДЕЛ: ТЕКУЩИЕ ЗАКАЗЫ #}
+    <div class="mb-6">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2.5">
+          <h2 class="text-[17px] font-bold text-ink tracking-tight">{% translate 'Текущие заказы' %}</h2>
+          <span class="px-2 py-0.5 rounded-full bg-[#FDF4EB] text-brand font-bold text-xs">{{ current_orders|length }}</span>
+        </div>
+        <div class="flex items-center bg-[#F5F2ED] p-1 rounded-xl gap-1 text-xs font-semibold">
+          <button type="button" class="px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
+          <button type="button" class="px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
+          <button type="button" class="px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
+        </div>
+      </div>
+
+      {# Сетка заказов #}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {% for o in current_orders %}
+          <div class="card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
+               onclick="window.location.href='?order_id={{ o.id }}'">
+            <div>
+              {# Шапка карточки: #ID, таймер, стол, гости #}
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xl font-black text-ink tracking-tight">#{{ o.id }}</span>
+                {% if o.status_color == 'orange' %}
+                  <span class="px-2.5 py-1 rounded-full bg-[#FFF3ED] text-[#EA580C] text-xs font-bold">{{ o.timer_display }}</span>
+                {% elif o.status_color == 'blue' %}
+                  <span class="px-2.5 py-1 rounded-full bg-[#EFF6FF] text-[#2563EB] text-xs font-bold">{{ o.timer_display }}</span>
+                {% else %}
+                  <span class="px-2.5 py-1 rounded-full bg-[#ECFDF5] text-[#059669] text-xs font-bold">{{ o.timer_display }}</span>
+                {% endif %}
+              </div>
+              <div class="flex items-center gap-3 text-xs text-stone-500 mb-3 font-medium">
+                <span class="flex items-center gap-1">
+                  {% icon "table" 14 %}
+                  <b>{{ o.place_label }}</b>
+                </span>
+                <span class="flex items-center gap-1">
+                  {% icon "user" 14 %}
+                  <span>{{ o.customer_name|default:'Гости' }}</span>
+                </span>
+              </div>
+
+              {# Список позиций в карточке заказа #}
+              <div class="space-y-2 mb-4">
+                {% for item in o.items.all|slice:":3" %}
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl overflow-hidden bg-stone-100 shrink-0">
+                      {% if item.dish.photo %}
+                        <img src="{{ item.dish.photo.url }}" class="w-full h-full object-cover">
+                      {% else %}
+                        <div class="w-full h-full grid place-items-center text-stone-400">{% icon "utensils" 16 %}</div>
+                      {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-baseline justify-between gap-1">
+                        <span class="text-[13px] font-bold text-ink truncate">{{ item.dish.name }}</span>
+                        <span class="text-xs text-stone-500 font-semibold shrink-0">{{ item.quantity }} шт</span>
+                      </div>
+                      {% for m in item.modifiers.all %}
+                        <div class="text-[11px] text-stone-400 truncate">• {{ m.name }}</div>
+                      {% empty %}
+                        {% if item.comment %}
+                          <div class="text-[11px] text-stone-400 truncate">• {{ item.comment }}</div>
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div>
+              {# Цветная полоса прогресса #}
+              <div class="w-full h-1 rounded-full mb-3 {% if o.status_color == 'orange' %}bg-[#F97316]{% elif o.status_color == 'blue' %}bg-[#3B82F6]{% else %}bg-[#10B981]{% endif %}"></div>
+
+              {# Кнопки действия #}
+              <div class="flex items-center gap-2">
+                <button type="button" class="w-10 h-9 rounded-xl bg-[#FAF8F5] border border-line flex items-center justify-center text-stone-600 hover:bg-[#F5F2ED] transition shrink-0" title="Отметить">
+                  {% icon "check" 16 %}
+                </button>
+                <form method="post" action="{% url 'toggle_order_stage' order_id=o.id %}" class="flex-1 m-0">
+                  {% csrf_token %}
+                  {% if o.status_color == 'orange' %}
+                    <button class="w-full h-9 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                      {% icon "chef-hat" 16 %}
+                      <span>{{ o.action_label }}</span>
+                    </button>
+                  {% elif o.status_color == 'blue' %}
+                    <button class="w-full h-9 rounded-xl bg-[#E0EDFF] hover:bg-[#CCE2FF] text-[#2563EB] font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                      {% icon "clock" 16 %}
+                      <span>{{ o.action_label }}</span>
+                    </button>
+                  {% else %}
+                    <button class="w-full h-9 rounded-xl bg-[#D1FAE5] hover:bg-[#A7F3D0] text-[#059669] font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                      {% icon "check" 16 %}
+                      <span>{{ o.action_label }}</span>
+                    </button>
+                  {% endif %}
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# 3. РАЗДЕЛ: БЫСТРЫЕ ПОЗИЦИИ #}
+    <div>
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h2 class="text-[17px] font-bold text-ink tracking-tight">{% translate 'Быстрые позиции' %}</h2>
+        <a href="{% url 'manage_menu' %}" class="text-xs font-semibold text-stone-500 hover:text-brand flex items-center gap-1 transition">
+          <span>{% translate 'Все позиции' %}</span>
+          {% icon "chevron-right" 14 %}
+        </a>
+      </div>
+
+      {# Сетка из 10 карточек блюд (5 колонок x 2 ряда) #}
+      <div id="quick-items-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        {% for dish in quick_dishes %}
+          <div class="card p-3 flex flex-col justify-between hover:shadow-md transition text-left group" data-category="{{ dish.category_id }}">
+            <div>
+              <div class="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2.5 bg-[#FAF8F5] flex items-center justify-center">
+                {% if dish.photo %}
+                  <img src="{{ dish.photo.url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                {% else %}
+                  <div class="w-full h-full grid place-items-center text-stone-300">{% icon "utensils" 24 %}</div>
+                {% endif %}
+              </div>
+              <h3 class="text-[13px] font-bold text-ink leading-tight truncate">{{ dish.name }}</h3>
+            </div>
+            <div class="flex items-center justify-between mt-2 pt-1 border-t border-line/60">
+              <span class="text-[13px] font-black text-ink">{{ dish.price|num }} <span class="text-[11px] font-medium text-stone-400">сум</span></span>
+              <form method="post" action="{% url 'quick_add' dish_id=dish.id %}" class="m-0">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ selected_order.id|default:'' }}">
+                <button type="submit" class="w-7 h-7 rounded-lg bg-[#FDF4EB] hover:bg-brand hover:text-white border border-brand/20 flex items-center justify-center text-brand font-bold text-sm transition shadow-sm" title="Добавить в заказ">
+                  {% icon "plus" 14 %}
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  {# ПРАВАЯ КОЛОНКА (Очередь на столы + Детали активного заказа #215) #}
+  <div class="w-full xl:w-[380px] shrink-0 flex flex-col gap-4">
+    
+    {# 1. КАРТОЧКА: ОЧЕРЕДЬ НА СТОЛЫ #}
+    <div class="card p-4">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <h3 class="text-[15px] font-bold text-ink tracking-tight">{% translate 'Очередь на столы' %}</h3>
+        <form method="post" action="{% url 'new_order' %}" class="m-0">
+          {% csrf_token %}
+          <input type="hidden" name="type" value="takeaway">
+          <button class="bg-brand hover:bg-brand-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+            {% icon "plus" 14 %}
+            <span>{% translate 'Новый заказ' %}</span>
+          </button>
+        </form>
+      </div>
+
+      {# Вкладки статусов столов #}
+      <div class="flex items-center gap-1 p-1 bg-[#F5F2ED] rounded-xl text-xs font-semibold mb-3">
+        <button type="button" class="flex-1 py-1 rounded-lg bg-white text-ink shadow-sm text-center">Ожидают (3)</button>
+        <button type="button" class="flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">Готовятся (2)</button>
+        <button type="button" class="flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">Готовы (1)</button>
+      </div>
+
+      {# Список столов #}
+      <div class="space-y-2">
+        {% for item in table_queue %}
+          <div class="flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF8F5] transition border border-line/60">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-[#FDF4EB] text-brand grid place-items-center">
+                {% icon "table" 16 %}
+              </span>
+              <div>
+                <div class="text-[13px] font-bold text-ink leading-tight">{% translate 'Номер стола' %}: {{ item.number }}</div>
+                {% if item.guest_pending %}
+                  <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">{% translate 'Заявка гостя' %}</span>
+                {% else %}
+                  <div class="text-[11px] text-stone-400 font-medium">{{ item.seats }} гостя</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-stone-500 font-medium flex items-center gap-1">
+                {% icon "clock" 13 %}
+                <span>{{ item.wait }}</span>
+              </span>
+              {% if item.table_id %}
+                <form method="post" action="{% url 'open_table' table_id=item.table_id %}" class="m-0">
+                  {% csrf_token %}
+                  <button class="bg-[#9C5323] hover:bg-[#85431A] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
+                    {% translate 'Принять' %}
+                  </button>
+                </form>
+              {% else %}
+                <button class="bg-[#9C5323] hover:bg-[#85431A] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
+                  {% translate 'Принять' %}
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# 2. КАРТОЧКА: ДЕТАЛИ И ОПЛАТА АКТИВНОГО ЗАКАЗА #}
+    {% if selected_order %}
+      <div class="card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-line mb-3">
+          <span class="text-xl font-black text-ink">#{{ selected_order.id }}</span>
+          <div class="flex items-center gap-3">
+            <a href="{% url 'order_detail' order_id=selected_order.id %}" class="text-blue-600 hover:text-blue-700 text-xs font-bold">
+              {% translate 'Редактировать' %}
+            </a>
+            <form method="post" action="{% url 'cancel_order' order_id=selected_order.id %}" onsubmit="return confirm('Отменить этот заказ?');" class="m-0">
+              {% csrf_token %}
+              <button class="text-red-500 hover:text-red-700 p-1" title="Отменить заказ">
+                {% icon "trash" 16 %}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {# Позиции выбранного заказа #}
+        <div class="space-y-2.5 mb-5 max-h-52 overflow-y-auto pr-1 no-scrollbar">
+          {% for item in selected_order.items.all %}
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-ink flex-1 truncate pr-2">{{ item.dish.name }}</span>
+              <span class="font-semibold text-stone-500 w-8 text-center">{{ item.quantity }}</span>
+              <span class="font-black text-ink w-20 text-right">{{ item.line_total|num }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        {# Расчет сумм #}
+        <div class="space-y-1.5 py-3 border-t border-line text-xs font-medium text-stone-500">
+          <div class="flex justify-between">
+            <span>{% translate 'Подытог' %}</span>
+            <span class="font-bold text-ink">{{ selected_order.custom_totals.subtotal|num }} сум</span>
+          </div>
+          {% if selected_order.custom_totals.service %}
+            <div class="flex justify-between">
+              <span>{% translate 'Обслуживание' %}{% if selected_order.service_percent %} ({{ selected_order.service_percent|num }}%){% endif %}</span>
+              <span class="font-bold text-ink">{{ selected_order.custom_totals.service|num }} сум</span>
+            </div>
+          {% endif %}
+          {% if selected_order.custom_totals.tax %}
+            <div class="flex justify-between">
+              <span>{% translate 'НДС' %}{% if cafe.vat_percent %} ({{ cafe.vat_percent|num }}%){% endif %}</span>
+              <span class="font-bold text-ink">{{ selected_order.custom_totals.tax|num }} сум</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {# Итого #}
+        <div class="flex items-baseline justify-between pt-3 pb-5 border-t border-line">
+          <span class="text-base font-bold text-ink">{% translate 'Итого:' %}</span>
+          <span class="text-2xl font-black text-ink tracking-tight">{{ selected_order.custom_totals.total|num }} <span class="text-sm font-bold text-stone-500">сум</span></span>
+        </div>
+
+        {# Кнопки: Печать чека / Оплата #}
+        <div class="flex items-center gap-2">
+          <a href="{% url 'precheck' order_id=selected_order.id %}" target="_blank" class="flex-1 min-h-[42px] rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
+            {% icon "printer" 16 %}
+            <span>{% translate 'Печать чека' %}</span>
+          </a>
+          <a href="{% url 'pay' order_id=selected_order.id %}" class="flex-1 min-h-[42px] rounded-xl bg-brand hover:bg-brand-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
+            {% icon "credit-card" 16 %}
+            <span>{% translate 'Оплата' %}</span>
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   (function () {
-    var hall = '', state = '', query = '';
-    try { hall = sessionStorage.getItem('floorHall') || ''; } catch (e) {}
-    var hallFilter = document.getElementById('hall-filter');
-    if (!hallFilter.querySelector('[data-hall="' + hall + '"]')) hall = '';
+    // Фильтрация быстрых позиций по выбранной категории
+    const pills = document.querySelectorAll('.cat-pill');
+    const items = document.querySelectorAll('#quick-items-grid [data-category]');
 
-    function apply() {
-      hallFilter.querySelectorAll('[data-hall]').forEach(function (b) {
-        var on = b.dataset.hall === hall;
-        b.classList.toggle('seg-item-active', on);
-        if (on) document.getElementById('floor-hall-name').textContent = b.dataset.name;
-      });
-      document.querySelectorAll('#state-filter [data-state]').forEach(function (b) {
-        b.classList.toggle('chip-active', b.dataset.state === state);
-      });
-      var counts = { free: 0, busy: 0, bill: 0, reserved: 0, locked: 0 }, total = 0;
-      document.querySelectorAll('#floor-grid [data-hall-section]').forEach(function (section) {
-        var hallOk = hall === '' || section.dataset.hallSection === hall;
-        var visible = 0;
-        section.querySelectorAll('[data-table]').forEach(function (t) {
-          if (hallOk) {
-            total += 1;
-            counts[t.dataset.state] = (counts[t.dataset.state] || 0) + 1;
-          }
-          var ok = hallOk && (state === '' || t.dataset.state === state || (state === 'busy' && t.dataset.state === 'locked'))
-            && (query === '' || t.dataset.table.toLowerCase().indexOf(query) === 0);
-          t.classList.toggle('hidden', !ok);
-          if (ok) visible += 1;
+    pills.forEach(pill => {
+      pill.addEventListener('click', function () {
+        pills.forEach(p => {
+          p.classList.remove('active', 'bg-brand', 'text-white');
+          p.classList.add('bg-white', 'text-stone-700', 'border', 'border-line');
         });
-        section.classList.toggle('hidden', visible === 0);
+        this.classList.add('active', 'bg-brand', 'text-white');
+        this.classList.remove('bg-white', 'text-stone-700', 'border', 'border-line');
+
+        const cat = this.dataset.catFilter;
+        items.forEach(item => {
+          if (cat === 'all' || item.dataset.category === cat) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
       });
-      counts.busy += counts.locked;
-      Object.keys(counts).forEach(function (k) {
-        var el = document.querySelector('[data-count="' + k + '"]');
-        if (el) el.textContent = counts[k];
+    });
+
+    // Живой поиск в шапке
+    const searchInput = document.getElementById('global-pos-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', function (e) {
+        const q = e.target.value.toLowerCase().trim();
+        items.forEach(item => {
+          const text = item.innerText.toLowerCase();
+          item.style.display = (q === '' || text.includes(q)) ? 'flex' : 'none';
+        });
       });
-      document.querySelector('[data-sum="free"]').textContent = counts.free;
-      document.querySelector('[data-sum="total"]').textContent = total;
-      var empty = document.getElementById('floor-empty');
-      if (empty) empty.classList.toggle('hidden', !!document.querySelector('#floor-grid [data-table]:not(.hidden)'));
     }
-    hallFilter.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-hall]');
-      if (!b) return;
-      hall = b.dataset.hall;
-      try { sessionStorage.setItem('floorHall', hall); } catch (err) {}
-      apply();
-    });
-    document.getElementById('state-filter').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-state]');
-      if (!b) return;
-      state = state === b.dataset.state ? '' : b.dataset.state;
-      apply();
-    });
-    document.getElementById('table-search').addEventListener('input', function (e) {
-      query = e.target.value.trim().toLowerCase();
-      apply();
-    });
-    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target.id === 'floor-grid') apply(); });
-    apply();
   })();
 </script>
 {% endblock %}

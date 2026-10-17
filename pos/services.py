@@ -8,7 +8,7 @@ from django.utils.translation import gettext as _
 from core.models import CafeSettings
 from inventory.services import write_off_order
 
-from .models import Order, OrderItem
+from .models import CashMovement, CashShift, Order, OrderItem, Payment
 
 MAX_SUM = Decimal(1_000_000_000)
 
@@ -128,7 +128,75 @@ def check_payment(due, method, received_raw, card_raw, allowed):
     return received, card
 
 
-def _split_off(order, items, selected, method, received, card, cashier):
+# ---------- кассовые смены ----------
+
+def get_current_shift():
+    """Возвращает текущую открытую кассовую смену или None."""
+    return CashShift.objects.filter(status=CashShift.Status.OPEN).select_related("cashier").first()
+
+
+def open_shift(user, initial_cash=0):
+    """Открывает новую кассовую смену."""
+    existing = get_current_shift()
+    if existing:
+        raise PaymentError(_("Кассовая смена уже открыта (№%(id)s).") % {"id": existing.id})
+    try:
+        initial = Decimal(initial_cash or 0).quantize(Decimal("1"))
+    except (InvalidOperation, TypeError):
+        initial = Decimal(0)
+    if initial < 0:
+        raise PaymentError(_("Начальный остаток не может быть отрицательным."))
+    return CashShift.objects.create(
+        cashier=user,
+        initial_cash=initial,
+        status=CashShift.Status.OPEN,
+    )
+
+
+def close_shift(shift, actual_cash, comment="", user=None):
+    """Сверяет кассу, закрывает смену и фиксирует расхождение."""
+    with transaction.atomic():
+        locked = CashShift.objects.select_for_update().get(pk=shift.pk)
+        if locked.status == CashShift.Status.CLOSED:
+            return locked
+        try:
+            actual = Decimal(actual_cash).quantize(Decimal("1"))
+        except (InvalidOperation, TypeError):
+            raise PaymentError(_("Введите фактическую сумму наличных числом."))
+        if actual < 0:
+            raise PaymentError(_("Фактическая сумма не может быть отрицательной."))
+        locked.actual_cash = actual
+        locked.closing_comment = (comment or "").strip()[:255]
+        locked.status = CashShift.Status.CLOSED
+        locked.closed_at = timezone.now()
+        locked.save()
+        return locked
+
+
+def add_cash_movement(shift, kind, amount_raw, reason="", user=None):
+    """Внесение или изъятие наличных в открытой смене."""
+    if shift.status != CashShift.Status.OPEN:
+        raise PaymentError(_("Нельзя вносить или изымать средства в закрытой смене."))
+    amount = parse_money(amount_raw)
+    if not amount or amount <= 0:
+        raise PaymentError(_("Введите сумму операции больше нуля."))
+    if kind == CashMovement.Kind.WITHDRAWAL and amount > shift.expected_cash:
+        raise PaymentError(
+            _("Сумма изъятия (%(amount)s сум) превышает ожидаемый остаток в кассе (%(expected)s сум).") % {
+                "amount": amount,
+                "expected": shift.expected_cash,
+            }
+        )
+    return CashMovement.objects.create(
+        shift=shift,
+        kind=kind,
+        amount=amount,
+        reason=(reason or "").strip()[:255],
+        created_by=user,
+    )
+
+
+def _split_off(order, items, selected, method, received, card, cashier, shift=None):
     """Переносит выбранные позиции в новый оплаченный заказ, остальное остаётся в открытом.
     Процентная скидка и обслуживание переходят в оплачиваемую часть, скидка суммой остаётся на остатке."""
     percent = order.discount_kind == Order.DiscountKind.PERCENT
@@ -148,6 +216,7 @@ def _split_off(order, items, selected, method, received, card, cashier):
         cash_received=received,
         card_amount=card,
         cashier=cashier,
+        shift=shift,
         closed_at=timezone.now(),
     )
     for item in items:
@@ -168,33 +237,129 @@ def _split_off(order, items, selected, method, received, card, cashier):
     return target
 
 
-def pay_order(order, cashier, method, received, card, items=None, selected=None):
-    """Закрывает заказ (или его часть) оплатой и списывает продукты по техкартам.
-    Неотправленные позиции перед оплатой уходят на кухню: оплаченное должно быть приготовлено."""
+def pay_order(order, cashier, method, received, card, items=None, selected=None, idempotency_key=None):
+    """Закрывает заказ (или его часть) оплатой, регистрирует Payment в текущей смене и списывает продукты."""
+    # Серверная защита от повторных списаний (идемпотентность)
+    if idempotency_key:
+        existing_payment = Payment.objects.filter(idempotency_key=idempotency_key).select_related("order").first()
+        if existing_payment:
+            return existing_payment.order
+
     with transaction.atomic():
         locked = Order.objects.select_for_update().get(pk=order.pk)
         if locked.status != Order.Status.OPEN:
             raise PaymentError(_("Заказ уже закрыт."))
+
+        shift = get_current_shift()
+        if not shift:
+            shift = open_shift(cashier, initial_cash=0)
+
         send_to_kitchen(locked)
         if selected:
             items = [i for i in locked.items.select_related("dish").prefetch_related("modifiers")]
-            target = _split_off(locked, items, selected, method, received, card, cashier)
+            target = _split_off(locked, items, selected, method, received, card, cashier, shift=shift)
         else:
             target = locked
             target.payment_method = method
             target.cash_received = received
             target.card_amount = card
             target.cashier = cashier
+            target.shift = shift
             target.status = Order.Status.PAID
             target.closed_at = timezone.now()
             target.save()
+
+        # Расчёт сумм платежа
+        total = target.total
+        if method == Order.PaymentMethod.CASH:
+            cash_amount = total
+            card_amount = Decimal(0)
+            change = (received - total) if received is not None else Decimal(0)
+        elif method == Order.PaymentMethod.CARD:
+            cash_amount = Decimal(0)
+            card_amount = total
+            change = Decimal(0)
+        else:  # MIXED
+            card_amount = card or Decimal(0)
+            cash_amount = total - card_amount
+            change = (received - cash_amount) if received is not None else Decimal(0)
+
+        Payment.objects.create(
+            order=target,
+            shift=shift,
+            payment_method=method,
+            amount=total,
+            cash_amount=cash_amount,
+            card_amount=card_amount,
+            cash_received=received,
+            change=max(Decimal(0), change),
+            cashier=cashier,
+            idempotency_key=idempotency_key or None,
+            is_refund=False,
+        )
+
         write_off_order(target)
     return target
 
 
 def cancel_order(order, user, reason):
+    """Отменяет открытый заказ."""
     order.status = Order.Status.CANCELLED
     order.closed_at = timezone.now()
     order.cancelled_by = user
     order.cancel_reason = reason.strip()[:200]
     order.save(update_fields=["status", "closed_at", "cancelled_by", "cancel_reason"])
+
+
+def refund_order(order, user, reason, return_to_stock=True):
+    """Оформляет возврат ранее оплаченного заказа."""
+    with transaction.atomic():
+        locked = Order.objects.select_for_update().get(pk=order.pk)
+        if locked.status != Order.Status.PAID:
+            raise PaymentError(_("Возврат возможен только для оплаченных заказов."))
+
+        shift = get_current_shift()
+        if not shift:
+            shift = open_shift(user, initial_cash=0)
+
+        refund_reason = (reason or "").strip()[:200]
+        if not refund_reason:
+            raise PaymentError(_("Укажите причину возврата."))
+
+        cash_refund = locked.cash_amount
+        card_refund = locked.card_paid
+
+        Payment.objects.create(
+            order=locked,
+            shift=shift,
+            payment_method=locked.payment_method,
+            amount=locked.total,
+            cash_amount=cash_refund,
+            card_amount=card_refund,
+            cashier=user,
+            is_refund=True,
+            refund_reason=refund_reason,
+        )
+
+        locked.status = Order.Status.CANCELLED
+        locked.cancelled_by = user
+        locked.cancel_reason = f"Возврат: {refund_reason}"
+        locked.save(update_fields=["status", "cancelled_by", "cancel_reason"])
+
+        if return_to_stock:
+            from inventory.models import RecipeItem, StockMovement
+            for item in locked.items.select_related("dish").prefetch_related("modifiers"):
+                factor = Decimal(1)
+                for modifier in item.modifiers.all():
+                    factor *= modifier.consumption_multiplier
+                for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
+                    StockMovement.objects.create(
+                        product=recipe.product,
+                        kind=StockMovement.Kind.INCOME,
+                        quantity=recipe.quantity * item.quantity * factor,
+                        order=locked,
+                        comment=f"Возврат по чеку #{locked.id}: {refund_reason}",
+                        created_by=user,
+                    )
+
+    return locked

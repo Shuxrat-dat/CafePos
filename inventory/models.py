@@ -93,4 +93,5 @@ class StockMovement(models.Model):
             self.unit_cost = self.product.cost_per_unit
         with transaction.atomic():
             super().save(*args, **kwargs)
+            list(Product.objects.filter(pk=self.product_id).select_for_update())
             Product.objects.filter(pk=self.product_id).update(stock=F("stock") + self.quantity)

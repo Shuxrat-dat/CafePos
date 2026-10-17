@@ -2,6 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from menu.models import Dish, Modifier
@@ -45,6 +46,96 @@ class Table(models.Model):
     @property
     def is_reserved(self):
         return bool(self.reserved_for or self.reserved_at)
+
+
+class CashShift(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", _("Открыта")
+        CLOSED = "closed", _("Закрыта")
+
+    cashier = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("Кассир"),
+        on_delete=models.PROTECT,
+        related_name="cash_shifts",
+    )
+    opened_at = models.DateTimeField(_("Время открытия"), default=timezone.now)
+    closed_at = models.DateTimeField(_("Время закрытия"), null=True, blank=True)
+    initial_cash = models.DecimalField(_("Начальный остаток (размен)"), max_digits=14, decimal_places=0, default=0)
+    actual_cash = models.DecimalField(_("Фактический остаток"), max_digits=14, decimal_places=0, null=True, blank=True)
+    closing_comment = models.CharField(_("Комментарий к закрытию"), max_length=255, blank=True)
+    status = models.CharField(_("Статус"), max_length=10, choices=Status.choices, default=Status.OPEN)
+
+    class Meta:
+        verbose_name = "Кассовая смена"
+        verbose_name_plural = "Кассовые смены"
+        ordering = ["-opened_at"]
+
+    def __str__(self):
+        cashier_name = self.cashier.get_full_name() or self.cashier.username
+        return f"Смена #{self.id} ({cashier_name}) - {self.get_status_display()}"
+
+    @property
+    def is_open(self):
+        return self.status == self.Status.OPEN
+
+    @property
+    def cash_sales(self):
+        """Сумма поступлений наличными за заказы в этой смене."""
+        from django.db.models import Sum
+        val = self.payments.filter(is_refund=False).aggregate(total=Sum("cash_amount"))["total"]
+        if val is None:
+            val = sum((o.cash_amount for o in self.orders.filter(status=Order.Status.PAID)), Decimal(0))
+        return val or Decimal(0)
+
+    @property
+    def card_sales(self):
+        from django.db.models import Sum
+        val = self.payments.filter(is_refund=False).aggregate(total=Sum("card_amount"))["total"]
+        if val is None:
+            val = sum((o.card_paid for o in self.orders.filter(status=Order.Status.PAID)), Decimal(0))
+        return val or Decimal(0)
+
+    @property
+    def total_revenue(self):
+        return self.cash_sales + self.card_sales
+
+    @property
+    def cash_refunds(self):
+        from django.db.models import Sum
+        val = self.payments.filter(is_refund=True).aggregate(total=Sum("cash_amount"))["total"]
+        return val or Decimal(0)
+
+    @property
+    def card_refunds(self):
+        from django.db.models import Sum
+        val = self.payments.filter(is_refund=True).aggregate(total=Sum("card_amount"))["total"]
+        return val or Decimal(0)
+
+    @property
+    def cash_deposits(self):
+        from django.db.models import Sum
+        val = self.cash_movements.filter(kind=CashMovement.Kind.DEPOSIT).aggregate(total=Sum("amount"))["total"]
+        return val or Decimal(0)
+
+    @property
+    def cash_withdrawals(self):
+        from django.db.models import Sum
+        val = self.cash_movements.filter(kind=CashMovement.Kind.WITHDRAWAL).aggregate(total=Sum("amount"))["total"]
+        return val or Decimal(0)
+
+    @property
+    def expected_cash(self):
+        """Ожидаемые наличные в кассе по формуле инварианта:
+        Начальный остаток + Наличная выручка - Возвраты наличными + Внесения - Изъятия
+        """
+        return self.initial_cash + self.cash_sales - self.cash_refunds + self.cash_deposits - self.cash_withdrawals
+
+    @property
+    def difference(self):
+        if self.actual_cash is None:
+            return None
+        return self.actual_cash - self.expected_cash
 
 
 class Order(models.Model):
@@ -101,6 +192,10 @@ class Order(models.Model):
     cashier = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name=_("Кассир"), on_delete=models.SET_NULL,
         null=True, blank=True, related_name="cashed_orders",
+    )
+    shift = models.ForeignKey(
+        CashShift, verbose_name=_("Кассовая смена"), on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="orders",
     )
 
     bill_requested_at = models.DateTimeField(_("Пречек выдан"), null=True, blank=True)
@@ -309,3 +404,50 @@ class GuestOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.dish.name} x{self.quantity}"
+
+
+class CashMovement(models.Model):
+    class Kind(models.TextChoices):
+        DEPOSIT = "deposit", _("Внесение")
+        WITHDRAWAL = "withdrawal", _("Изъятие / Инкассация")
+
+    shift = models.ForeignKey(CashShift, verbose_name=_("Смена"), on_delete=models.CASCADE, related_name="cash_movements")
+    kind = models.CharField(_("Тип"), max_length=15, choices=Kind.choices)
+    amount = models.DecimalField(_("Сумма"), max_digits=14, decimal_places=0)
+    reason = models.CharField(_("Причина / Назначение"), max_length=255, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Сотрудник"), on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(_("Время"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Движение наличных в смене"
+        verbose_name_plural = "Движения наличных в смене"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.amount} сум ({self.shift})"
+
+
+class Payment(models.Model):
+    order = models.ForeignKey(Order, verbose_name=_("Заказ"), on_delete=models.CASCADE, related_name="payments")
+    shift = models.ForeignKey(CashShift, verbose_name=_("Кассовая смена"), on_delete=models.PROTECT, null=True, blank=True, related_name="payments")
+    payment_method = models.CharField(_("Способ оплаты"), max_length=10, choices=Order.PaymentMethod.choices)
+    amount = models.DecimalField(_("Сумма платежа"), max_digits=14, decimal_places=0)
+    cash_amount = models.DecimalField(_("Из них наличными"), max_digits=14, decimal_places=0, default=0)
+    card_amount = models.DecimalField(_("Из них картой"), max_digits=14, decimal_places=0, default=0)
+    cash_received = models.DecimalField(_("Получено наличных"), max_digits=14, decimal_places=0, null=True, blank=True)
+    change = models.DecimalField(_("Сдача"), max_digits=14, decimal_places=0, default=0)
+    cashier = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Кассир"), on_delete=models.SET_NULL, null=True, blank=True, related_name="processed_payments")
+    idempotency_key = models.CharField(_("Ключ идемпотентности"), max_length=64, unique=True, null=True, blank=True)
+    is_refund = models.BooleanField(_("Возврат"), default=False)
+    refund_reason = models.CharField(_("Причина возврата"), max_length=255, blank=True)
+    created_at = models.DateTimeField(_("Время платежа"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Платёж"
+        verbose_name_plural = "Платежи"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        kind = "Возврат" if self.is_refund else "Оплата"
+        return f"{kind} #{self.id} по заказу #{self.order_id}: {self.amount} сум ({self.get_payment_method_display()})"
+

@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from .models import RecipeItem, StockMovement
+from .models import Product, RecipeItem, StockMovement
 
 
 def write_off_order(order):
@@ -10,6 +10,13 @@ def write_off_order(order):
     if StockMovement.objects.filter(order=order, kind=StockMovement.Kind.SALE).exists():
         return
     with transaction.atomic():
+        dish_ids = [item.dish_id for item in order.items.all()]
+        product_ids = sorted(list(
+            RecipeItem.objects.filter(dish_id__in=dish_ids).values_list("product_id", flat=True).distinct()
+        ))
+        if product_ids:
+            list(Product.objects.filter(id__in=product_ids).select_for_update())
+
         for item in order.items.select_related("dish").prefetch_related("modifiers"):
             factor = Decimal(1)
             for modifier in item.modifiers.all():

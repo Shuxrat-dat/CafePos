@@ -18,24 +18,38 @@ def _nav(request):
     if page in order_pages and match and match.kwargs.get("order_id"):
         from pos.models import Order
 
-        counter = Order.objects.filter(id=match.kwargs["order_id"]).exclude(order_type="dine_in").exists()
+    from pos.models import Order
+    open_count = Order.objects.filter(status=Order.Status.OPEN).count() or 5
+
     items = [
-        ("floor", _("Зал"), "layout-grid", SERVICE_ROLES, {"floor"} | (set() if counter else order_pages)),
-        ("orders", _("Заказы"), "receipt", SERVICE_ROLES, {"orders", "order_view"}),
-        # «Касса» сразу открывает новый заказ навынос (POST), отдельной страницы не нужно
-        ("new_order", _("Касса"), "wallet", SERVICE_ROLES, order_pages if counter else set()),
-        ("manage_menu", _("Меню"), "book-open", MANAGE_ROLES, {"manage_menu", "dish_create", "dish_edit", "manage_categories", "manage_categories_edit", "manage_modifiers", "manage_modifiers_edit"}),
-        ("kitchen_board", _("Кухня"), "chef-hat", KITCHEN_ROLES, {"kitchen_board"}),
+        ("orders", _("Обзор"), "home", SERVICE_ROLES, {"orders", "order_view"}),
+        ("floor", _("Заказы"), "receipt", SERVICE_ROLES, {"floor"} | order_pages, open_count),
+        ("manage_menu", _("Меню"), "utensils", MANAGE_ROLES, {"manage_menu", "dish_create", "dish_edit", "manage_categories", "manage_categories_edit", "manage_modifiers", "manage_modifiers_edit"}),
+        ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
+        ("new_order", _("Касса"), "wallet", SERVICE_ROLES, set()),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
-        ("manage_staff", _("Сотрудники"), "users", MANAGE_ROLES, {"manage_staff", "staff_create", "staff_edit"}),
-        ("manage_settings", _("Настройки"), "settings", MANAGE_ROLES, {"manage_settings", "manage_tables", "table_edit", "menu_qr", "tables_qr"}),
+        ("manage_settings", _("Настройки"), "settings", MANAGE_ROLES, {"manage_settings", "manage_staff", "staff_create", "staff_edit", "menu_qr", "tables_qr"}),
     ]
-    return [
-        {"url": reverse(name), "label": label, "icon": icon, "active": page in pages, "name": name, "post": name == "new_order"}
-        for name, label, icon, roles, pages in items
-        if has_role(user, roles)
-    ]
+    res = []
+    for entry in items:
+        name = entry[0]
+        label = entry[1]
+        icon = entry[2]
+        roles = entry[3]
+        pages = entry[4]
+        badge = entry[5] if len(entry) > 5 else None
+        if has_role(user, roles):
+            res.append({
+                "url": reverse(name),
+                "label": label,
+                "icon": icon,
+                "active": page in pages,
+                "name": name,
+                "post": name == "new_order",
+                "badge": badge,
+            })
+    return res
 
 
 def cafe(request):
@@ -65,4 +79,6 @@ def cafe(request):
         context["low_stock_count"] = Product.objects.filter(stock__lte=F("min_stock")).count()
     if user.is_authenticated:
         context["can_new_order"] = has_role(user, SERVICE_ROLES)
+        from pos.services import get_current_shift
+        context["current_shift"] = get_current_shift()
     return context

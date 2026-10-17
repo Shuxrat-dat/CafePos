@@ -167,6 +167,59 @@
     </ul>
   </section>
 
+  {# ---------- Кассовые смены ---------- #}
+  <section class="card p-5 xl:col-span-3">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="section-title">{% translate 'Кассовые смены (Z-отчёты)' %}</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="table-clean w-full text-sm">
+        <thead>
+          <tr class="text-left text-xs text-muted border-b border-line">
+            <th class="py-2">{% translate 'Смена' %}</th>
+            <th class="py-2">{% translate 'Кассир' %}</th>
+            <th class="py-2">{% translate 'Время' %}</th>
+            <th class="py-2 text-right">{% translate 'Выручка' %}</th>
+            <th class="py-2 text-right">{% translate 'Ожидалось' %}</th>
+            <th class="py-2 text-right">{% translate 'Факт кассы' %}</th>
+            <th class="py-2 text-right">{% translate 'Разница' %}</th>
+            <th class="py-2 text-center">{% translate 'Статус' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for s in shifts %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2 font-bold text-ink">№{{ s.id }}</td>
+              <td class="py-2 text-stone-700">{{ s.cashier.get_full_name|default:s.cashier.username }}</td>
+              <td class="py-2 text-xs text-muted">{{ s.opened_at|date:"d.m H:i" }}{% if s.closed_at %} — {{ s.closed_at|date:"H:i" }}{% endif %}</td>
+              <td class="py-2 text-right font-semibold tabular-nums text-ink">{{ s.total_revenue|money }}</td>
+              <td class="py-2 text-right tabular-nums text-stone-600">{{ s.expected_cash|money }}</td>
+              <td class="py-2 text-right tabular-nums text-stone-600">{% if s.actual_cash %}{{ s.actual_cash|money }}{% else %}—{% endif %}</td>
+              <td class="py-2 text-right tabular-nums font-bold {% if s.difference < 0 %}text-red-600{% elif s.difference > 0 %}text-emerald-600{% else %}text-stone-400{% endif %}">
+                {% if s.difference is not None %}
+                  {% if s.difference > 0 %}+{% endif %}{{ s.difference|money }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td class="py-2 text-center">
+                {% if s.is_open %}
+                  <span class="badge bg-emerald-100 text-emerald-800">{% translate 'Открыта' %}</span>
+                {% else %}
+                  <span class="badge bg-slate-100 text-slate-600">{% translate 'Закрыта' %}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="py-4 text-center text-muted">{% translate 'За выбранный период кассовых смен не найдено' %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="card p-5">
     <div class="flex items-center justify-between mb-3">
       <h2 class="section-title">{% translate 'Последние оплаты' %}</h2>
