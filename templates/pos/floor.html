@@ -2,11 +2,6 @@
 {% load i18n ui %}
 {% block title %}{% translate 'Заказы' %}{% endblock %}
 
-{% block header_search %}
-  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">{% icon "search" 18 %}</span>
-  <input id="global-pos-search" type="search" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}" class="w-full bg-white border border-line rounded-xl pl-10 pr-4 py-2 text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand shadow-sm">
-{% endblock %}
-
 {% block content %}
 <div class="flex flex-col xl:flex-row gap-5 max-w-[1750px] mx-auto">
 
@@ -59,7 +54,7 @@
       </div>
 
       {# Сетка заказов #}
-      <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div id="orders-grid" data-tour="2" data-tour-title="{% translate 'Текущие заказы' %}" data-tour-text="{% translate 'Кнопка на карточке двигает заказ по этапам: приготовить, выдать, оплатить. Нажмите на саму карточку, чтобы увидеть детали справа.' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {% for o in current_orders %}
           <div class="order-card card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
                data-id="{{ o.id }}" data-age="{{ o.age_seconds }}" data-stage="{{ o.stage_rank }}" data-place="{{ o.place_label }}"

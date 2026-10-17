@@ -338,6 +338,30 @@ def floor(request):
 
 
 @login_required
+def global_search(request):
+    """Поиск из шапки: заказы и столы. Права те же, что везде: официант видит только свои заказы."""
+    from django.db.models import Q
+
+    user = request.user
+    q = request.GET.get("q", "").strip()[:40]
+    orders, tables = [], []
+    if q and has_role(user, {"owner", "admin", "waiter", "cashier"}):
+        cond = Q(table__number__icontains=q) | Q(customer_name__icontains=q) | Q(customer_phone__icontains=q)
+        if q.lstrip("#").isdigit():
+            cond |= Q(id=int(q.lstrip("#")))
+        found = Order.objects.filter(cond).select_related("table", "waiter").order_by("-created_at")
+        if not user.sees_all_orders:
+            found = found.filter(waiter=user)
+        orders = list(found[:8])
+        busy = {o.table_id: o for o in _open_orders().exclude(table=None)}
+        for table in Table.objects.select_related("hall").filter(number__icontains=q)[:6]:
+            table.open_order = busy.get(table.id)
+            table.locked = bool(table.open_order) and not user.sees_all_orders and table.open_order.waiter_id != user.id
+            tables.append(table)
+    return render(request, "pos/_search_results.html", {"q": q, "orders": orders, "tables": tables})
+
+
+@login_required
 def floor_grid(request):
     return render(request, "pos/_floor_grid.html", _floor_context(request))
 

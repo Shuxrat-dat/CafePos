@@ -92,7 +92,7 @@
     {% if DEMO_MODE %}
       <div class="mx-2 xl:mx-3 mt-3 rounded-lg bg-orange-50 text-orange-800 text-[11px] xl:text-xs font-semibold px-2 py-1 text-center xl:text-left">{% translate 'Демо-режим' %}</div>
     {% endif %}
-    <nav class="flex-1 flex flex-col gap-1 px-2 xl:px-3 py-4 overflow-y-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
+    <nav data-tour="3" data-tour-title="{% translate 'Разделы' %}" data-tour-text="{% translate 'Заказы, меню, столы, касса, склад и отчёты. Показаны только те, что доступны вашей роли.' %}" class="flex-1 flex flex-col gap-1 px-2 xl:px-3 py-4 overflow-y-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
       {% for item in nav_items %}
         {% if item.post %}
           <form method="post" action="{{ item.url }}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
@@ -128,7 +128,7 @@
             <span class="block text-[13px] font-bold text-ink truncate leading-tight">{{ user.first_name|default:user.username }}</span>
           </div>
         </div>
-        <button type="button" onclick="openShiftModal()" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Кассовая смена' %}">
+        <button type="button" onclick="openShiftModal()" data-tour="4" data-tour-title="{% translate 'Кассовая смена и выход' %}" data-tour-text="{% translate 'Здесь открывают и закрывают смену, а кнопка «Выйти» ниже завершает вашу сессию.' %}" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Кассовая смена' %}">
           {% icon "wallet" 16 %}
           <span class="hidden xl:inline">{% translate 'Кассовая смена' %}</span>
         </button>
@@ -182,9 +182,18 @@
   {% if user.is_authenticated %}
     <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
       <div class="flex-1 max-w-xl relative">
-        {% block header_search %}{% endblock %}
+        {% if user.is_superuser or user.role != 'cook' %}
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">{% icon "search" 18 %}</span>
+          <input id="global-pos-search" name="q" type="search" autocomplete="off"
+                 data-tour="1" data-tour-title="{% translate 'Поиск' %}" data-tour-text="{% translate 'Введите номер заказа, стола или имя гостя. Поиск работает на любом экране.' %}"
+                 placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
+                 hx-get="{% url 'global_search' %}" hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-swap="innerHTML" hx-indicator="#progress"
+                 class="w-full bg-white border border-line rounded-xl pl-10 pr-4 py-2 text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand shadow-sm">
+          <div id="search-results" class="absolute left-0 right-0 top-full mt-2 z-50"></div>
+        {% endif %}
       </div>
       <div class="flex items-center gap-3 shrink-0">
+        <button type="button" onclick="startTour()" class="icon-btn w-9 h-9 text-sm font-bold" title="{% translate 'Показать подсказки' %}" aria-label="{% translate 'Показать подсказки' %}">?</button>
         <div class="text-right text-xs leading-tight pr-1">
           <div id="live-date" class="text-stone-500 font-medium">--</div>
           <div id="live-time" class="text-ink font-bold text-[13px]">--:--</div>
@@ -239,7 +248,9 @@
     window.closeNewOrder = function () { var m = document.getElementById('new-order-modal'); if (m) m.classList.add('hidden'); };
     window.openShiftModal = function () { var m = document.getElementById('shift-modal-container'); if (m) m.classList.remove('hidden'); };
     window.closeShiftModal = function () { var m = document.getElementById('shift-modal-container'); if (m) m.classList.add('hidden'); };
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeNewOrder(); closeShiftModal(); } });
+    function clearSearch() { var r = document.getElementById('search-results'); if (r) r.innerHTML = ''; }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeNewOrder(); closeShiftModal(); clearSearch(); } });
+    document.addEventListener('click', function (e) { if (!e.target.closest('#global-pos-search, #search-results')) clearSearch(); });
     document.body.addEventListener('toast', function (e) { showToast(e.detail.message, e.detail.kind); });
     document.body.addEventListener('htmx:responseError', function (e) {
       var s = e.detail.xhr.status;
@@ -286,6 +297,13 @@
     setInterval(updateClock, 10000);
   })();
 </script>
+{% if user.is_authenticated %}
+<script>
+  window.TOUR_I18N = { next: '{% translate "Далее" as t %}{{ t|escapejs }}', done: '{% translate "Готово" as t %}{{ t|escapejs }}', skip: '{% translate "Пропустить" as t %}{{ t|escapejs }}', of: '{% translate "из" as t %}{{ t|escapejs }}' };
+  window.TOUR_KEY = 'cafepos_tour_{{ user.id }}';
+</script>
+<script src="{% static 'js/tour.js' %}"></script>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

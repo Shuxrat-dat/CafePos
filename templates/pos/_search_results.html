@@ -1,0 +1,42 @@
+{% load i18n ui %}
+{% if q %}
+<div class="rounded-2xl bg-white border border-line shadow-pop overflow-hidden max-h-[70vh] overflow-y-auto">
+  {% if orders %}
+    <div class="px-4 pt-3 pb-1 text-xs font-bold text-muted">{% translate 'Заказы' %}</div>
+    {% for o in orders %}
+      <a href="{% if o.status == 'open' %}{% url 'order_detail' order_id=o.id %}{% elif o.status == 'paid' %}{% url 'receipt' order_id=o.id %}{% else %}{% url 'order_view' order_id=o.id %}{% endif %}"
+         class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-canvas transition">
+        <span class="flex items-center gap-2 min-w-0">
+          <span class="font-black text-ink">#{{ o.id }}</span>
+          <span class="text-sm text-stone-600 truncate">{{ o.place_label }}{% if o.customer_name %} · {{ o.customer_name }}{% endif %}</span>
+        </span>
+        <span class="text-xs font-semibold text-muted shrink-0">{{ o.get_status_display }}</span>
+      </a>
+    {% endfor %}
+  {% endif %}
+
+  {% if tables %}
+    <div class="px-4 pt-3 pb-1 text-xs font-bold text-muted {% if orders %}border-t border-line mt-1{% endif %}">{% translate 'Столы' %}</div>
+    {% for t in tables %}
+      <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+        <span class="text-sm text-ink"><b>{{ t.number }}</b> <span class="text-muted">· {{ t.hall.name }}, {{ t.seats }} {% translate 'мест' %}</span></span>
+        {% if t.open_order %}
+          {% if t.locked %}
+            <span class="text-xs font-semibold text-stone-400">{% translate 'Чужой стол' %}</span>
+          {% else %}
+            <a href="{% url 'order_detail' order_id=t.open_order.id %}" class="btn btn-secondary btn-sm">{% translate 'Открыть заказ' %}</a>
+          {% endif %}
+        {% else %}
+          <form method="post" action="{% url 'open_table' table_id=t.id %}" class="m-0">{% csrf_token %}
+            <button class="btn btn-primary btn-sm">{% translate 'Открыть стол' %}</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if not orders and not tables %}
+    <div class="px-4 py-5 text-sm text-muted text-center">{% translate 'Ничего не найдено. Попробуйте номер заказа, стола или имя гостя.' %}</div>
+  {% endif %}
+</div>
+{% endif %}
