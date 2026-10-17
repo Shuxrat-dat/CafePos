@@ -6,11 +6,14 @@ from decimal import Decimal
 from django.db.models import F
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 from accounts.permissions import REPORT_ROLES, role_required
 from inventory.models import Product, StockMovement
 from pos.models import CashShift, Order
+
+from . import insights
 
 reports_only = role_required(REPORT_ROLES)
 
@@ -147,9 +150,40 @@ def dashboard(request):
     cancelled = Order.objects.filter(status=Order.Status.CANCELLED, closed_at__gte=start, closed_at__lt=end)
     cancelled = [o for o in cancelled.prefetch_related("items__modifiers") if o.items.all()]
 
+    # ---------- выводы простыми словами ----------
+    if single_day:
+        week_ago = date_from - timedelta(days=7)
+        week_revenue = sum((o.total for o in _paid_orders(*_bounds(week_ago, week_ago))), Decimal(0))
+        compare_change = _change(revenue, week_revenue)
+        compare_label = _("К тому же дню прошлой недели (%(wd)s)") % {"wd": date_format(week_ago, "l")}
+        best_key = max(buckets, key=lambda k: buckets[k]["sum"], default=None)
+        best_label = f"{best_key:02d}:00" if best_key is not None else ""
+    else:
+        compare_change = _change(revenue, prev_revenue)
+        compare_label = _("К предыдущим %(n)s дням") % {"n": days}
+        best_key = max(buckets, key=lambda k: buckets[k]["sum"], default=None)
+        best_label = best_key.strftime("%d.%m") if best_key is not None else ""
+    best_sum = buckets[best_key]["sum"] if best_key is not None else 0
+    best_dish = max(dishes.items(), key=lambda kv: kv[1]["qty"], default=None)
+    low_stock_count = Product.objects.filter(stock__lte=F("min_stock")).count()
+    sold_rows = [{"obj": obj, **data} for obj, data in dishes.items()]
+    margin_rows = [r for r in insights.dish_margins(sold_rows) if r["margin"] is not None]
+    summary = insights.headline(
+        revenue=revenue, orders_count=orders_count, avg_check=avg_check, single_day=single_day,
+        compare_label=compare_label, compare_change=compare_change, best_label=best_label, best_sum=best_sum,
+        top_dish={"name": best_dish[0].name, "n": best_dish[1]["qty"]} if best_dish else None,
+        margin=margin, margin_pct_value=round(margin / revenue * 100) if revenue else 0, has_cost=cost > 0,
+        cancelled_count=len(cancelled), cancelled_sum=sum((o.subtotal for o in cancelled), Decimal(0)),
+        low_stock_count=low_stock_count,
+    )
+
     method_labels = dict(Order.PaymentMethod.choices)
     type_labels = dict(Order.OrderType.choices)
     context = {
+        "summary": summary,
+        "profit_rows": sorted(margin_rows, key=lambda r: -r["profit"])[:8],
+        "poor_rows": sorted((r for r in margin_rows if r["margin"] < 30), key=lambda r: r["margin"])[:6],
+        "advice": insights.menu_advice(),
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),
         "days": days,

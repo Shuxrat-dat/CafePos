@@ -19,6 +19,19 @@
   </form>
 </div>
 
+{# ---------- Коротко простыми словами ---------- #}
+<section class="card p-5 mb-4">
+  <h2 class="section-title mb-2">{% translate 'Коротко' %}</h2>
+  <ul class="space-y-1.5 text-[15px]">
+    {% for s in summary %}
+      <li class="flex items-start gap-2.5">
+        <span class="mt-1.5 w-2 h-2 rounded-full shrink-0 {% if s.kind == 'good' %}bg-sage{% elif s.kind == 'bad' %}bg-red-500{% else %}bg-stone-300{% endif %}"></span>
+        <span class="{% if s.kind == 'bad' %}text-red-800{% elif s.kind == 'good' %}text-emerald-900{% else %}text-ink{% endif %}">{{ s.text }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
 {# ---------- Главные показатели ---------- #}
 <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
   {% with change=revenue_change %}
@@ -254,4 +267,74 @@
     </ul>
   </section>
 </div>
+
+{# ---------- Маржа по блюдам ---------- #}
+{% if profit_rows %}
+<div class="grid xl:grid-cols-2 gap-4 mt-4">
+  <section class="card p-5">
+    <h2 class="section-title mb-1">{% translate 'Что приносит больше всего прибыли' %}</h2>
+    <p class="text-xs text-muted mb-3">{% translate 'Выручка минус себестоимость по техкарте за выбранный период.' %}</p>
+    <ol class="space-y-2 text-sm">
+      {% for r in profit_rows %}
+        <li class="flex items-center gap-3">
+          <span class="w-6 text-muted tabular-nums">{{ forloop.counter }}</span>
+          <span class="flex-1 min-w-0 truncate">{{ r.obj|tr }} <span class="text-muted">× {{ r.qty }}</span></span>
+          <span class="badge {% if r.margin >= 60 %}bg-sage-100 text-sage{% else %}bg-stone-100 text-stone-700{% endif %}">{{ r.margin }}%</span>
+          <span class="w-28 text-right font-semibold tabular-nums">{{ r.profit|money }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="card p-5">
+    <h2 class="section-title mb-1">{% translate 'Продаётся почти без прибыли' %}</h2>
+    <p class="text-xs text-muted mb-3">{% translate 'Наценка ниже 30%. Красным отмечены блюда, которые приносят убыток.' %}</p>
+    <ul class="space-y-2 text-sm">
+      {% for r in poor_rows %}
+        <li class="flex items-center gap-3 {% if r.profit < 0 %}bg-red-50 rounded-lg px-2 py-1{% endif %}">
+          <span class="flex-1 min-w-0 truncate">{{ r.obj|tr }} <span class="text-muted">× {{ r.qty }}</span></span>
+          <span class="badge {% if r.margin < 15 %}bg-red-100 text-red-700{% else %}bg-orange-100 text-orange-800{% endif %}">{{ r.margin }}%</span>
+          <span class="w-28 text-right font-semibold tabular-nums {% if r.profit < 0 %}text-red-600{% endif %}">{{ r.profit|money }}</span>
+        </li>
+      {% empty %}
+        <li class="text-muted">{% translate 'Все проданные блюда с нормальной наценкой.' %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endif %}
+
+{# ---------- Советы по меню ---------- #}
+<section class="card p-5 mt-4">
+  <h2 class="section-title mb-1">{% translate 'Что сделать с меню' %}</h2>
+  {% if advice.enough %}
+    <p class="text-xs text-muted mb-4">{% blocktranslate trimmed with d=advice.days %}По продажам за последние {{ d }} дней. Решение остаётся за вами.{% endblocktranslate %}</p>
+    {% if advice.loss or advice.remove or advice.promote %}
+      <div class="grid lg:grid-cols-3 gap-4 text-sm">
+        <div>
+          <h3 class="font-bold text-red-800 mb-2">{% translate 'Исправить цену' %}</h3>
+          <ul class="space-y-2.5">
+            {% for e in advice.loss %}<li><b>{{ e.dish|tr }}</b><div class="text-xs text-muted">{{ e.reason }}</div></li>{% empty %}<li class="text-muted">{% translate 'Таких блюд нет' %}</li>{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-bold text-orange-800 mb-2">{% translate 'Подумать об уборке из меню' %}</h3>
+          <ul class="space-y-2.5">
+            {% for e in advice.remove %}<li><b>{{ e.dish|tr }}</b><div class="text-xs text-muted">{{ e.reason }}</div></li>{% empty %}<li class="text-muted">{% translate 'Таких блюд нет' %}</li>{% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-bold text-emerald-800 mb-2">{% translate 'Продвигать' %}</h3>
+          <ul class="space-y-2.5">
+            {% for e in advice.promote %}<li><b>{{ e.dish|tr }}</b><div class="text-xs text-muted">{{ e.reason }}</div></li>{% empty %}<li class="text-muted">{% translate 'Таких блюд нет' %}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-sm text-muted">{% translate 'Меню сбалансировано: явных проблем не видно.' %}</p>
+    {% endif %}
+  {% else %}
+    <p class="text-sm text-muted">{% translate 'Советы появятся, когда накопится хотя бы неделя продаж.' %}</p>
+  {% endif %}
+</section>
 {% endblock %}
