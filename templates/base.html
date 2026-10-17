@@ -117,10 +117,16 @@
             <span class="block text-[13px] font-bold text-ink truncate leading-tight">{{ user.first_name|default:user.username }}</span>
           </div>
         </div>
-        <button type="button" onclick="openShiftModal()" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-red-700 hover:bg-white transition-colors" title="{% translate 'Кассовая смена / Завершить' %}">
-          {% icon "log-out" 16 %}
-          <span class="hidden xl:inline">{% translate 'Завершить смену' %}</span>
+        <button type="button" onclick="openShiftModal()" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Кассовая смена' %}">
+          {% icon "wallet" 16 %}
+          <span class="hidden xl:inline">{% translate 'Кассовая смена' %}</span>
         </button>
+        <form method="post" action="{% url 'logout' %}" class="m-0">{% csrf_token %}
+          <button class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-red-700 hover:bg-white transition-colors" title="{% translate 'Выйти' %}">
+            {% icon "log-out" 16 %}
+            <span class="hidden xl:inline">{% translate 'Выйти' %}</span>
+          </button>
+        </form>
       </div>
       <div class="mt-2 text-center">
         {% include "components/lang_switch.html" with short=True %}
