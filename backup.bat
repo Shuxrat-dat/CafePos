@@ -1,3 +1,3 @@
 @echo off
-cd /d D:\cafepos
+cd /d "%~dp0"
 .venv\Scripts\python.exe manage.py backup_db

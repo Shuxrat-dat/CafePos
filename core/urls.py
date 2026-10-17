@@ -1,11 +1,14 @@
 from django.urls import include, path
 
-from . import views
+from . import setup_views, views
 
 urlpatterns = [
     path("settings/", views.manage_settings, name="manage_settings"),
     path("telegram/", views.manage_telegram, name="manage_telegram"),
     path("audit/", views.manage_audit, name="manage_audit"),
+    path("setup/", setup_views.setup_wizard, name="setup_wizard"),
+    path("setup/menu-template.csv", setup_views.setup_menu_template, name="setup_menu_template"),
+    path("backup/", setup_views.manage_backup, name="manage_backup"),
     path("tables/", views.manage_tables, name="manage_tables"),
     path("tables/<int:table_id>/", views.table_edit, name="table_edit"),
     path("tables/<int:table_id>/delete/", views.table_delete, name="table_delete"),

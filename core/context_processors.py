@@ -77,6 +77,12 @@ def cafe(request):
         from inventory.models import Product
 
         context["low_stock_count"] = Product.objects.filter(stock__lte=F("min_stock")).count()
+    if has_role(user, MANAGE_ROLES) and not cafe_settings.setup_done:
+        from menu.models import Dish
+        from pos.models import Hall
+
+        # Подсказка нужна только пустой установке: где уже есть залы и меню, мастер не навязываем
+        context["setup_needed"] = not (Hall.objects.exists() and Dish.objects.exists())
     if user.is_authenticated:
         context["can_new_order"] = has_role(user, SERVICE_ROLES)
         from pos.services import get_current_shift

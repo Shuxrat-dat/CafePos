@@ -209,6 +209,12 @@
       </div>
     </header>
   {% endif %}
+  {% if setup_needed and request.resolver_match.url_name != 'setup_wizard' %}
+    <div class="no-print bg-brand-50 border-b border-brand-200 px-4 lg:px-6 py-2.5 text-sm flex flex-wrap items-center justify-between gap-2">
+      <span><b>{% translate 'Настройте заведение за пять минут' %}</b> · {% translate 'залы, меню и сотрудники' %}</span>
+      <a href="{% url 'setup_wizard' %}" class="btn btn-primary btn-sm">{% translate 'Открыть мастер' %}</a>
+    </div>
+  {% endif %}
   <main class="flex-1 {% block main_class %}px-4 py-4 lg:px-6 lg:py-5 w-full mx-auto{% endblock %}">
     {% block content %}{% endblock %}
   </main>

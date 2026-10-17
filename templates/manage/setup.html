@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Быстрая настройка' %}{% endblock %}
+{% block content %}
+<div class="mb-5 max-w-3xl">
+  <h1 class="page-title">{% translate 'Быстрая настройка' %}</h1>
+  <p class="page-sub">{% translate 'Четыре шага, и можно принимать первые заказы. Каждый шаг сохраняется сразу, к ним можно вернуться позже.' %}</p>
+</div>
+
+{% if import_errors %}
+  <div class="alert-warn mb-4 max-w-3xl">
+    {% icon "alert" 18 %}
+    <div>
+      <b>{% translate 'Некоторые строки пропущены:' %}</b>
+      <ul class="mt-1 list-disc pl-5">{% for line, reason in import_errors %}<li>{% blocktranslate %}строка {{ line }}: {{ reason }}{% endblocktranslate %}</li>{% endfor %}</ul>
+    </div>
+  </div>
+{% endif %}
+
+<ol class="space-y-4 max-w-3xl">
+  {# Шаг 1 #}
+  <li class="card p-5">
+    <div class="flex items-center gap-3 mb-3">
+      <span class="grid place-items-center w-8 h-8 rounded-full font-bold text-sm {% if status.cafe_done %}bg-sage text-white{% else %}bg-brand text-white{% endif %}">{% if status.cafe_done %}{% icon "check" 16 %}{% else %}1{% endif %}</span>
+      <h2 class="section-title">{% translate 'Ваше заведение' %}</h2>
+    </div>
+    <form method="post" class="grid sm:grid-cols-2 gap-3">
+      {% csrf_token %}<input type="hidden" name="action" value="cafe">
+      <div class="sm:col-span-2">{% include "components/field.html" with field=form.name %}</div>
+      {% include "components/field.html" with field=form.address %}
+      {% include "components/field.html" with field=form.phone %}
+      {% include "components/field.html" with field=form.default_language %}
+      <div class="sm:col-span-2"><button class="btn btn-primary">{% translate 'Сохранить' %}</button></div>
+    </form>
+  </li>
+
+  {# Шаг 2 #}
+  <li class="card p-5">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="grid place-items-center w-8 h-8 rounded-full font-bold text-sm {% if status.tables_done %}bg-sage text-white{% else %}bg-brand text-white{% endif %}">{% if status.tables_done %}{% icon "check" 16 %}{% else %}2{% endif %}</span>
+      <h2 class="section-title">{% translate 'Зал и столы' %}</h2>
+    </div>
+    <p class="text-sm text-muted mb-3">{% if status.tables_done %}{% blocktranslate trimmed with h=status.halls t=status.tables %}Сейчас: залов {{ h }}, столов {{ t }}. Можно добавить ещё зал.{% endblocktranslate %}{% else %}{% translate 'Создайте первый зал: столы нумеруются сами.' %}{% endif %}</p>
+    <form method="post" class="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+      {% csrf_token %}<input type="hidden" name="action" value="tables">
+      <div class="col-span-2"><label class="label" for="hall_name">{% translate 'Название зала' %}</label><input id="hall_name" name="hall_name" class="input" placeholder="{% translate 'Основной зал' %}" maxlength="100"></div>
+      <div><label class="label" for="count">{% translate 'Столов' %}</label><input id="count" name="count" type="number" min="1" max="60" value="8" class="input"></div>
+      <div><label class="label" for="seats">{% translate 'Мест за столом' %}</label><input id="seats" name="seats" type="number" min="1" max="30" value="4" class="input"></div>
+      <div class="col-span-2 sm:col-span-4"><button class="btn btn-primary">{% icon "plus" 16 %}{% translate 'Создать столы' %}</button></div>
+    </form>
+  </li>
+
+  {# Шаг 3 #}
+  <li class="card p-5">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="grid place-items-center w-8 h-8 rounded-full font-bold text-sm {% if status.menu_done %}bg-sage text-white{% else %}bg-brand text-white{% endif %}">{% if status.menu_done %}{% icon "check" 16 %}{% else %}3{% endif %}</span>
+      <h2 class="section-title">{% translate 'Меню' %}</h2>
+    </div>
+    <p class="text-sm text-muted mb-3">{% if status.menu_done %}{% blocktranslate trimmed with d=status.dishes c=status.categories %}Сейчас: блюд {{ d }} в {{ c }} категориях. Можно добавить ещё из шаблона или файла.{% endblocktranslate %}{% else %}{% translate 'Начните с готового меню и поправьте цены, или загрузите своё из Excel.' %}{% endif %}</p>
+
+    <form method="post" class="space-y-3">
+      {% csrf_token %}<input type="hidden" name="action" value="template">
+      <div class="grid sm:grid-cols-3 gap-3">
+        {% for key, title, text, count in templates %}
+          <label class="cursor-pointer">
+            <input type="radio" name="template" value="{{ key }}" class="peer sr-only" {% if forloop.first %}required{% endif %}>
+            <span class="block h-full rounded-xl border border-line p-3.5 transition peer-checked:border-brand peer-checked:bg-brand-50 peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40 hover:border-stone-300">
+              <b class="block text-ink">{{ title }}</b>
+              <span class="block text-xs text-muted mt-0.5">{{ text }}</span>
+              <span class="block text-xs font-semibold text-brand mt-2">{% blocktranslate with n=count %}{{ n }} блюд{% endblocktranslate %}</span>
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+      <button class="btn btn-primary">{% translate 'Добавить это меню' %}</button>
+    </form>
+
+    <div class="mt-5 pt-4 border-t border-line">
+      <h3 class="font-semibold text-sm mb-1">{% translate 'Или загрузите своё меню' %}</h3>
+      <p class="text-xs text-muted mb-2">{% translate 'Файл Excel (.xlsx) или CSV. Колонки: категория, название, цена; необязательно: название по-узбекски, минуты, описание.' %} <a class="text-brand font-semibold hover:underline" href="{% url 'setup_menu_template' %}">{% translate 'Скачать образец' %}</a></p>
+      <form method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+        {% csrf_token %}<input type="hidden" name="action" value="import">
+        <input type="file" name="file" accept=".xlsx,.csv,text/csv" required class="block text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:text-ink">
+        <button class="btn btn-secondary">{% icon "arrow-down" 16 %}{% translate 'Загрузить' %}</button>
+      </form>
+    </div>
+  </li>
+
+  {# Шаг 4 #}
+  <li class="card p-5">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="grid place-items-center w-8 h-8 rounded-full font-bold text-sm {% if status.staff_done %}bg-sage text-white{% else %}bg-brand text-white{% endif %}">{% if status.staff_done %}{% icon "check" 16 %}{% else %}4{% endif %}</span>
+      <h2 class="section-title">{% translate 'Сотрудники' %}</h2>
+    </div>
+    <p class="text-sm text-muted mb-3">{% if status.staff_done %}{% blocktranslate trimmed with n=status.staff %}Сотрудников в системе: {{ n }}.{% endblocktranslate %}{% else %}{% translate 'Добавьте официантов, кассира и повара: у каждого свой вход и свои права.' %}{% endif %}</p>
+    <a href="{% url 'staff_create' %}" class="btn btn-secondary">{% icon "plus" 16 %}{% translate 'Добавить сотрудника' %}</a>
+    <a href="{% url 'manage_staff' %}" class="btn btn-ghost">{% translate 'Список сотрудников' %}</a>
+  </li>
+
+  {# Готово #}
+  <li class="card p-5 bg-brand-50/60">
+    <h2 class="section-title mb-1">{% translate 'Всё готово?' %}</h2>
+    <p class="text-sm text-muted mb-3">{% translate 'Нажмите, когда закончите. Подсказка о настройке исчезнет, к мастеру можно вернуться из настроек.' %}</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="finish"><button class="btn btn-primary btn-lg">{% icon "check-circle" 20 %}{% translate 'Начать работу' %}</button></form>
+  </li>
+</ol>
+{% endblock %}

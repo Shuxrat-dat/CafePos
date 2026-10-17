@@ -54,6 +54,20 @@ class CafeSettingsForm(StyledModelForm):
         return data
 
 
+class CafeBasicsForm(StyledModelForm):
+    """Короткая форма для мастера быстрой настройки: только то, что нужно в первую минуту."""
+
+    class Meta:
+        model = CafeSettings
+        fields = ["name", "address", "phone", "default_language"]
+
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip()
+        if not name:
+            raise forms.ValidationError(_("Укажите название заведения."))
+        return name
+
+
 class TelegramSettingsForm(StyledModelForm):
     """Токен вводится один раз и дальше не показывается. Пустое поле оставляет прежний токен."""
 

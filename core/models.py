@@ -26,6 +26,8 @@ class AuditLog(models.Model):
         STOCK_COUNT = "stock_count", _("Инвентаризация")
         PRICE_CHANGE = "price_change", _("Изменение цены")
         LOGIN_FAILED = "login_failed", _("Неудачный вход")
+        BACKUP = "backup", _("Резервная копия")
+        MENU_IMPORT = "menu_import", _("Импорт меню")
 
     created_at = models.DateTimeField(_("Время"), auto_now_add=True, db_index=True)
     user = models.ForeignKey(
@@ -98,6 +100,7 @@ class CafeSettings(models.Model):
     tg_notify_cancel = models.BooleanField(_("Отмена заказов"), default=True)
     tg_notify_discount = models.BooleanField(_("Крупные скидки"), default=True)
     tg_notify_stock = models.BooleanField(_("Заканчиваются продукты"), default=True)
+    setup_done = models.BooleanField(_("Быстрая настройка завершена"), default=False)
     tg_notify_review = models.BooleanField(_("Плохие отзывы гостей"), default=True)
     loyalty_percent = models.PositiveSmallIntegerField(
         _("Баллы гостям, % от суммы"), default=0,
