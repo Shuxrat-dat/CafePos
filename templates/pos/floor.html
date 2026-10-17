@@ -2,9 +2,14 @@
 {% load i18n ui %}
 {% block title %}{% translate 'Заказы' %}{% endblock %}
 
+{% block header_search %}
+  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">{% icon "search" 18 %}</span>
+  <input id="global-pos-search" type="search" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}" class="w-full bg-white border border-line rounded-xl pl-10 pr-4 py-2 text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand shadow-sm">
+{% endblock %}
+
 {% block content %}
 <div class="flex flex-col xl:flex-row gap-5 max-w-[1750px] mx-auto">
-  
+
   {# ЛЕВАЯ И ЦЕНТРАЛЬНАЯ ЧАСТЬ (Категории, Текущие заказы, Быстрые позиции) #}
   <div class="flex-1 flex flex-col min-w-0">
     
@@ -34,7 +39,7 @@
           <span>{{ cat.name }}</span>
         </button>
       {% endfor %}
-      <button type="button" class="w-8 h-8 rounded-xl bg-white border border-line flex items-center justify-center text-stone-500 hover:text-ink shadow-sm shrink-0">
+      <button type="button" id="cat-scroll-next" aria-label="{% translate 'Далее' %}" class="w-8 h-8 rounded-xl bg-white border border-line flex items-center justify-center text-stone-500 hover:text-ink shadow-sm shrink-0">
         {% icon "chevron-right" 16 %}
       </button>
     </div>
@@ -47,17 +52,18 @@
           <span class="px-2 py-0.5 rounded-full bg-[#FDF4EB] text-brand font-bold text-xs">{{ current_orders|length }}</span>
         </div>
         <div class="flex items-center bg-[#F5F2ED] p-1 rounded-xl gap-1 text-xs font-semibold">
-          <button type="button" class="px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
-          <button type="button" class="px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
-          <button type="button" class="px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
+          <button type="button" data-sort="time" class="sort-btn px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
+          <button type="button" data-sort="table" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
+          <button type="button" data-sort="stage" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
         </div>
       </div>
 
       {# Сетка заказов #}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {% for o in current_orders %}
-          <div class="card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
-               onclick="window.location.href='?order_id={{ o.id }}'">
+          <div class="order-card card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
+               data-id="{{ o.id }}" data-age="{{ o.age_seconds }}" data-stage="{{ o.stage_rank }}" data-place="{{ o.place_label }}"
+               onclick="if (!event.target.closest('button, a, form')) window.location.href='?order_id={{ o.id }}'">
             <div>
               {# Шапка карточки: #ID, таймер, стол, гости #}
               <div class="flex items-center justify-between mb-2">
@@ -116,9 +122,15 @@
 
               {# Кнопки действия #}
               <div class="flex items-center gap-2">
-                <button type="button" class="w-10 h-9 rounded-xl bg-[#FAF8F5] border border-line flex items-center justify-center text-stone-600 hover:bg-[#F5F2ED] transition shrink-0" title="Отметить">
-                  {% icon "check" 16 %}
-                </button>
+                <a href="{% url 'order_detail' order_id=o.id %}" class="w-10 h-9 rounded-xl bg-[#FAF8F5] border border-line flex items-center justify-center text-stone-600 hover:bg-[#F5F2ED] transition shrink-0" title="{% translate 'Открыть заказ' %}">
+                  {% icon "pencil" 16 %}
+                </a>
+                {% if o.ready_to_pay %}
+                <a href="{% url 'pay' order_id=o.id %}" class="flex-1 h-9 rounded-xl bg-brand hover:bg-brand-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                  {% icon "credit-card" 16 %}
+                  <span>{{ o.action_label }}</span>
+                </a>
+                {% else %}
                 <form method="post" action="{% url 'toggle_order_stage' order_id=o.id %}" class="flex-1 m-0">
                   {% csrf_token %}
                   {% if o.status_color == 'orange' %}
@@ -138,6 +150,7 @@
                     </button>
                   {% endif %}
                 </form>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -205,44 +218,51 @@
 
       {# Вкладки статусов столов #}
       <div class="flex items-center gap-1 p-1 bg-[#F5F2ED] rounded-xl text-xs font-semibold mb-3">
-        <button type="button" class="flex-1 py-1 rounded-lg bg-white text-ink shadow-sm text-center">Ожидают (3)</button>
-        <button type="button" class="flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">Готовятся (2)</button>
-        <button type="button" class="flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">Готовы (1)</button>
+        <button type="button" data-queue-tab="pending" class="queue-tab flex-1 py-1 rounded-lg bg-white text-ink shadow-sm text-center">{% translate 'Заявки' %} ({{ queue_counts.pending }})</button>
+        <button type="button" data-queue-tab="free" class="queue-tab flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">{% translate 'Свободные' %} ({{ queue_counts.free }})</button>
+        <button type="button" data-queue-tab="busy" class="queue-tab flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">{% translate 'Занятые' %} ({{ queue_counts.busy }})</button>
       </div>
 
       {# Список столов #}
-      <div class="space-y-2">
+      <div class="space-y-2 max-h-72 overflow-y-auto no-scrollbar">
+        <div id="queue-empty" class="hidden text-center text-xs text-stone-400 py-4">{% translate 'Нет столов в этой категории' %}</div>
         {% for item in table_queue %}
-          <div class="flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF8F5] transition border border-line/60">
+          <div data-queue-kind="{{ item.kind }}" class="queue-row flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF8F5] transition border border-line/60">
             <div class="flex items-center gap-2.5">
               <span class="w-8 h-8 rounded-lg bg-[#FDF4EB] text-brand grid place-items-center">
                 {% icon "table" 16 %}
               </span>
               <div>
                 <div class="text-[13px] font-bold text-ink leading-tight">{% translate 'Номер стола' %}: {{ item.number }}</div>
-                {% if item.guest_pending %}
+                {% if item.kind == 'pending' %}
                   <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">{% translate 'Заявка гостя' %}</span>
                 {% else %}
-                  <div class="text-[11px] text-stone-400 font-medium">{{ item.seats }} гостя</div>
+                  <div class="text-[11px] text-stone-400 font-medium">{{ item.seats }} {% translate 'мест' %}</div>
                 {% endif %}
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <span class="text-xs text-stone-500 font-medium flex items-center gap-1">
-                {% icon "clock" 13 %}
-                <span>{{ item.wait }}</span>
-              </span>
-              {% if item.table_id %}
+              {% if item.wait is not None %}
+                <span class="text-xs text-stone-500 font-medium flex items-center gap-1">
+                  {% icon "clock" 13 %}
+                  <span>{{ item.wait }} {% translate 'мин' %}</span>
+                </span>
+              {% endif %}
+              {% if item.kind == 'busy' %}
+                {% if item.locked %}
+                  <span class="text-[11px] font-semibold text-stone-400">{% translate 'Чужой стол' %}</span>
+                {% else %}
+                  <a href="{% url 'order_detail' order_id=item.order_id %}" class="bg-white border border-line hover:bg-stone-50 text-stone-700 text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
+                    {% translate 'Открыть' %}
+                  </a>
+                {% endif %}
+              {% else %}
                 <form method="post" action="{% url 'open_table' table_id=item.table_id %}" class="m-0">
                   {% csrf_token %}
                   <button class="bg-[#9C5323] hover:bg-[#85431A] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
                     {% translate 'Принять' %}
                   </button>
                 </form>
-              {% else %}
-                <button class="bg-[#9C5323] hover:bg-[#85431A] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
-                  {% translate 'Принять' %}
-                </button>
               {% endif %}
             </div>
           </div>
@@ -340,28 +360,77 @@
         this.classList.add('active', 'bg-brand', 'text-white');
         this.classList.remove('bg-white', 'text-stone-700', 'border', 'border-line');
 
-        const cat = this.dataset.catFilter;
-        items.forEach(item => {
-          if (cat === 'all' || item.dataset.category === cat) {
-            item.style.display = 'flex';
-          } else {
-            item.style.display = 'none';
-          }
-        });
+        cat = this.dataset.catFilter;
+        applyFilters();
       });
     });
 
-    // Живой поиск в шапке
+    // Категория и поиск работают вместе: блюдо видно, если подходит под оба условия
+    let cat = 'all';
     const searchInput = document.getElementById('global-pos-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', function (e) {
-        const q = e.target.value.toLowerCase().trim();
-        items.forEach(item => {
-          const text = item.innerText.toLowerCase();
-          item.style.display = (q === '' || text.includes(q)) ? 'flex' : 'none';
-        });
+    const cards = document.querySelectorAll('.order-card');
+    function applyFilters() {
+      const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      items.forEach(item => {
+        const okCat = cat === 'all' || item.dataset.category === cat;
+        const okText = q === '' || item.innerText.toLowerCase().includes(q);
+        item.style.display = (okCat && okText) ? 'flex' : 'none';
+      });
+      cards.forEach(card => {
+        card.style.display = (q === '' || card.innerText.toLowerCase().includes(q)) ? '' : 'none';
       });
     }
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+    // Прокрутка ленты категорий кнопкой «вправо»
+    const next = document.getElementById('cat-scroll-next');
+    if (next) next.addEventListener('click', function () {
+      next.parentElement.scrollBy({ left: 240, behavior: 'smooth' });
+    });
+
+    // Сортировка текущих заказов
+    const grid = document.getElementById('orders-grid');
+    const sorters = {
+      time: (a, b) => b.dataset.age - a.dataset.age,
+      table: (a, b) => a.dataset.place.localeCompare(b.dataset.place, undefined, { numeric: true }),
+      stage: (a, b) => a.dataset.stage - b.dataset.stage || b.dataset.age - a.dataset.age,
+    };
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.sort-btn').forEach(b => {
+          b.classList.remove('bg-white', 'text-ink', 'shadow-sm');
+          b.classList.add('text-stone-600');
+        });
+        this.classList.add('bg-white', 'text-ink', 'shadow-sm');
+        this.classList.remove('text-stone-600');
+        if (grid) [...grid.children].sort(sorters[this.dataset.sort]).forEach(c => grid.appendChild(c));
+      });
+    });
+
+    // Вкладки очереди столов
+    const tabs = document.querySelectorAll('.queue-tab');
+    const rows = document.querySelectorAll('.queue-row');
+    const emptyNote = document.getElementById('queue-empty');
+    function showQueue(kind) {
+      let shown = 0;
+      rows.forEach(r => {
+        const on = r.dataset.queueKind === kind;
+        r.style.display = on ? '' : 'none';
+        if (on) shown++;
+      });
+      if (emptyNote) emptyNote.classList.toggle('hidden', shown > 0);
+      tabs.forEach(t => {
+        const active = t.dataset.queueTab === kind;
+        t.classList.toggle('bg-white', active);
+        t.classList.toggle('text-ink', active);
+        t.classList.toggle('shadow-sm', active);
+        t.classList.toggle('text-stone-600', !active);
+      });
+    }
+    tabs.forEach(t => t.addEventListener('click', () => showQueue(t.dataset.queueTab)));
+    // Открываем первую вкладку, где есть столы
+    const first = [...tabs].find(t => document.querySelector('.queue-row[data-queue-kind="' + t.dataset.queueTab + '"]'));
+    showQueue(first ? first.dataset.queueTab : 'pending');
   })();
 </script>
 {% endblock %}

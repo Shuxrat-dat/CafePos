@@ -189,46 +189,38 @@ def _floor_context(request):
         .prefetch_related("items__dish", "items__modifiers")
         .order_by("id")
     )
+    # Пустые черновики и чужие заказы (для ролей без полного доступа) в списке не показываем
+    current_orders = [
+        o for o in current_orders
+        if o.items.all() and (user.sees_all_orders or o.waiter_id == user.id)
+    ]
+    now = timezone.now()
     for o in current_orders:
-        if o.id == 214:
-            o.timer_display = "01:12"
-            o.status_color = "orange"
-            o.action_label = _("Готовить")
-            o.action_icon = "chef-hat"
-        elif o.id == 215:
-            o.timer_display = "02:40"
-            o.status_color = "blue"
-            o.action_label = _("Готовится")
-            o.action_icon = "clock"
-        elif o.id == 216:
-            o.timer_display = "00:24"
-            o.status_color = "green"
-            o.action_label = _("Готово")
-            o.action_icon = "check"
+        seconds = int((now - o.created_at).total_seconds())
+        o.timer_display = f"{seconds // 60:02d}:{seconds % 60:02d}"
+        o.age_seconds = seconds
+        statuses = {i.status for i in o.items.all()}
+        if OrderItem.Status.COOKING in statuses:
+            o.status_color, o.stage_rank = "blue", 1
+            o.action_label, o.action_icon = _("Готовится"), "clock"
+        elif OrderItem.Status.READY in statuses:
+            o.status_color, o.stage_rank = "green", 2
+            o.action_label, o.action_icon = _("Готово"), "check"
+        elif statuses & {OrderItem.Status.NEW, OrderItem.Status.QUEUED}:
+            o.status_color, o.stage_rank = "orange", 0
+            o.action_label, o.action_icon = _("Готовить"), "chef-hat"
         else:
-            mins = int((timezone.now() - o.created_at).total_seconds() // 60)
-            secs = int((timezone.now() - o.created_at).total_seconds() % 60)
-            o.timer_display = f"{mins:02d}:{secs:02d}"
-            statuses = {i.status for i in o.items.all()}
-            if OrderItem.Status.COOKING in statuses:
-                o.status_color = "blue"
-                o.action_label = _("Готовится")
-                o.action_icon = "clock"
-            elif OrderItem.Status.READY in statuses:
-                o.status_color = "green"
-                o.action_label = _("Готово")
-                o.action_icon = "check"
-            else:
-                o.status_color = "orange"
-                o.action_label = _("Готовить")
-                o.action_icon = "chef-hat"
+            # Всё выдано гостю: остаётся принять оплату
+            o.status_color, o.stage_rank = "green", 3
+            o.action_label, o.action_icon = _("К оплате"), "credit-card"
+            o.ready_to_pay = True
 
     order_id = request.GET.get("order_id")
     selected_order = None
     if order_id:
         selected_order = next((o for o in current_orders if str(o.id) == str(order_id)), None)
-    if not selected_order:
-        selected_order = next((o for o in current_orders if o.id == 215), (current_orders[0] if current_orders else None))
+    if not selected_order and current_orders:
+        selected_order = current_orders[0]
 
     if selected_order:
         items_list = list(selected_order.items.select_related("dish").prefetch_related("modifiers"))
@@ -246,26 +238,39 @@ def _floor_context(request):
             "total": totals["total"],
         }
 
-    real_tables = [t for h in halls for t in h.tables.all()]
-    if real_tables:
-        table_queue = [
-            {
+    pending_since = {}
+    for table_id, created_at in GuestOrder.objects.filter(status=GuestOrder.Status.PENDING).values_list(
+        "table_id", "created_at"
+    ):
+        pending_since[table_id] = min(created_at, pending_since.get(table_id, created_at))
+
+    def _minutes(since):
+        return max(0, int((now - since).total_seconds() // 60))
+
+    table_queue = []
+    for hall in halls:
+        for t in hall.tables.all():
+            if t.guest_pending:
+                kind, wait = "pending", _minutes(pending_since[t.id]) if t.id in pending_since else 0
+            elif t.open_order:
+                kind, wait = "busy", _minutes(t.open_order.created_at)
+            else:
+                kind, wait = "free", None
+            table_queue.append({
                 "number": t.number,
                 "seats": t.seats,
-                "wait": f"{t.seats * 2} мин",
+                "wait": wait,
                 "table_id": t.id,
-                "guest_pending": getattr(t, "guest_pending", False),
-            }
-            for t in real_tables
-        ]
-    else:
-        table_queue = [
-            {"number": "2", "seats": 2, "wait": "5 мин", "table_id": None, "guest_pending": False},
-            {"number": "4", "seats": 4, "wait": "8 мин", "table_id": None, "guest_pending": False},
-            {"number": "6", "seats": 2, "wait": "12 мин", "table_id": None, "guest_pending": False},
-        ]
+                "kind": kind,
+                "locked": t.locked,
+                "order_id": t.open_order.id if t.open_order else None,
+            })
+    order_kind = {"pending": 0, "free": 1, "busy": 2}
+    table_queue.sort(key=lambda row: (order_kind[row["kind"]], -(row["wait"] or 0)))
+    queue_counts = {k: sum(1 for row in table_queue if row["kind"] == k) for k in order_kind}
 
     return {
+        "queue_counts": queue_counts,
         "halls": halls,
         "counts": counts,
         "counter_orders": counter_orders,
@@ -298,16 +303,18 @@ def toggle_order_stage(request, order_id):
 @require_POST
 def quick_add(request, dish_id):
     order_id = request.POST.get("order_id") or request.GET.get("order_id")
-    order = None
-    if order_id:
-        order = Order.objects.filter(id=order_id, status=Order.Status.OPEN).first()
-    if not order:
-        order = Order.objects.filter(id=215, status=Order.Status.OPEN).first()
-    if not order:
-        order = Order.objects.filter(status=Order.Status.OPEN).first()
-    if not order:
-        order = services.create_order(request.user, Order.OrderType.TAKEAWAY)
-    dish = get_object_or_404(Dish, id=dish_id)
+    if order_id and str(order_id).isdigit():
+        order = _get_order(request, order_id)
+    else:
+        # Заказ не выбран: берём свой пустой черновик навынос или заводим новый
+        order = (
+            Order.objects.filter(status=Order.Status.OPEN, waiter=request.user, table=None,
+                                 order_type=Order.OrderType.TAKEAWAY)
+            .annotate(n_items=Count("items"))
+            .filter(n_items=0)
+            .first()
+        ) or services.create_order(request.user, Order.OrderType.TAKEAWAY)
+    dish = get_object_or_404(Dish, id=dish_id, is_available=True)
     item = order.items.filter(dish=dish, status=OrderItem.Status.NEW).first()
     if item:
         item.quantity += 1

@@ -165,20 +165,13 @@
   {% if user.is_authenticated %}
     <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF8F5]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
       <div class="flex-1 max-w-xl relative">
-        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400">
-          {% icon "search" 18 %}
-        </span>
-        <input id="global-pos-search" type="search" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}" class="w-full bg-white border border-line rounded-xl pl-10 pr-4 py-2 text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand shadow-sm">
+        {% block header_search %}{% endblock %}
       </div>
       <div class="flex items-center gap-3 shrink-0">
         <div class="text-right text-xs leading-tight pr-1">
           <div id="live-date" class="text-stone-500 font-medium">--</div>
           <div id="live-time" class="text-ink font-bold text-[13px]">--:--</div>
         </div>
-        <button class="relative icon-btn w-10 h-10 border border-line bg-white rounded-xl text-stone-600 hover:text-ink shadow-sm" title="{% translate 'Уведомления' %}">
-          {% icon "bell" 18 %}
-          <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500"></span>
-        </button>
         <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shadow-sm">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>{% translate 'Онлайн' %}</span>
@@ -186,7 +179,6 @@
         <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-sm">
           {% icon "coffee" 16 %}
           <span>{{ cafe.name }}</span>
-          {% icon "chevron-down" 14 %}
         </div>
       </div>
     </header>
