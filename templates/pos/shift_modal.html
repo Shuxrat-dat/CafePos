@@ -3,7 +3,7 @@
   <div class="card w-full max-w-lg p-6 bg-white shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto no-scrollbar relative animate-in fade-in zoom-in duration-200">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-line">
       <div class="flex items-center gap-2">
-        <span class="grid place-items-center w-8 h-8 rounded-lg bg-[#FDF4EB] text-brand">
+        <span class="grid place-items-center w-8 h-8 rounded-lg bg-[#F8ECDA] text-brand">
           {% icon "wallet" 18 %}
         </span>
         <h2 class="text-base font-bold text-ink">
@@ -21,7 +21,7 @@
 
     {% if shift %}
       {# Информация об открытой смене (X-отчёт) #}
-      <div class="bg-[#FAF8F5] border border-line rounded-xl p-3.5 mb-4 text-xs space-y-2">
+      <div class="bg-[#FAF6EF] border border-line rounded-xl p-3.5 mb-4 text-xs space-y-2">
         <div class="flex justify-between text-stone-500">
           <span>{% translate 'Кассир:' %}</span>
           <span class="font-bold text-ink">{{ shift.cashier.get_full_name|default:shift.cashier.username }}</span>

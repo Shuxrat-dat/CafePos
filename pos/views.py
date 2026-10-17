@@ -197,7 +197,12 @@ def _floor_context(request):
     now = timezone.now()
     for o in current_orders:
         seconds = int((now - o.created_at).total_seconds())
-        o.timer_display = f"{seconds // 60:02d}:{seconds % 60:02d}"
+        if seconds >= 86400:
+            o.timer_display = f"{seconds // 86400} {_('д')} {seconds % 86400 // 3600} {_('ч')}"
+        elif seconds >= 3600:
+            o.timer_display = f"{seconds // 3600} {_('ч')} {seconds % 3600 // 60} {_('мин')}"
+        else:
+            o.timer_display = f"{seconds // 60:02d}:{seconds % 60:02d}"
         o.age_seconds = seconds
         statuses = {i.status for i in o.items.all()}
         if OrderItem.Status.COOKING in statuses:

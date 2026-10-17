@@ -49,9 +49,9 @@
       <div class="flex items-center justify-between gap-3 mb-3">
         <div class="flex items-center gap-2.5">
           <h2 class="text-[17px] font-bold text-ink tracking-tight">{% translate 'Текущие заказы' %}</h2>
-          <span class="px-2 py-0.5 rounded-full bg-[#FDF4EB] text-brand font-bold text-xs">{{ current_orders|length }}</span>
+          <span class="px-2 py-0.5 rounded-full bg-[#F8ECDA] text-brand font-bold text-xs">{{ current_orders|length }}</span>
         </div>
-        <div class="flex items-center bg-[#F5F2ED] p-1 rounded-xl gap-1 text-xs font-semibold">
+        <div class="flex items-center bg-[#EFE8DC] p-1 rounded-xl gap-1 text-xs font-semibold">
           <button type="button" data-sort="time" class="sort-btn px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
           <button type="button" data-sort="table" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
           <button type="button" data-sort="stage" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
@@ -69,11 +69,11 @@
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xl font-black text-ink tracking-tight">#{{ o.id }}</span>
                 {% if o.status_color == 'orange' %}
-                  <span class="px-2.5 py-1 rounded-full bg-[#FFF3ED] text-[#EA580C] text-xs font-bold">{{ o.timer_display }}</span>
+                  <span class="px-2.5 py-1 rounded-full bg-[#F8EBD7] text-[#9E5F22] text-xs font-bold">{{ o.timer_display }}</span>
                 {% elif o.status_color == 'blue' %}
-                  <span class="px-2.5 py-1 rounded-full bg-[#EFF6FF] text-[#2563EB] text-xs font-bold">{{ o.timer_display }}</span>
+                  <span class="px-2.5 py-1 rounded-full bg-[#E6EEF5] text-[#2F5F8A] text-xs font-bold">{{ o.timer_display }}</span>
                 {% else %}
-                  <span class="px-2.5 py-1 rounded-full bg-[#ECFDF5] text-[#059669] text-xs font-bold">{{ o.timer_display }}</span>
+                  <span class="px-2.5 py-1 rounded-full bg-[#E3EFE6] text-[#3C6A4A] text-xs font-bold">{{ o.timer_display }}</span>
                 {% endif %}
               </div>
               <div class="flex items-center gap-3 text-xs text-stone-500 mb-3 font-medium">
@@ -118,11 +118,11 @@
 
             <div>
               {# Цветная полоса прогресса #}
-              <div class="w-full h-1 rounded-full mb-3 {% if o.status_color == 'orange' %}bg-[#F97316]{% elif o.status_color == 'blue' %}bg-[#3B82F6]{% else %}bg-[#10B981]{% endif %}"></div>
+              <div class="w-full h-1 rounded-full mb-3 {% if o.status_color == 'orange' %}bg-[#C98B45]{% elif o.status_color == 'blue' %}bg-[#5B8DB8]{% else %}bg-[#4E7B5C]{% endif %}"></div>
 
               {# Кнопки действия #}
               <div class="flex items-center gap-2">
-                <a href="{% url 'order_detail' order_id=o.id %}" class="w-10 h-9 rounded-xl bg-[#FAF8F5] border border-line flex items-center justify-center text-stone-600 hover:bg-[#F5F2ED] transition shrink-0" title="{% translate 'Открыть заказ' %}">
+                <a href="{% url 'order_detail' order_id=o.id %}" class="w-10 h-9 rounded-xl bg-[#FAF6EF] border border-line flex items-center justify-center text-stone-600 hover:bg-[#EFE8DC] transition shrink-0" title="{% translate 'Открыть заказ' %}">
                   {% icon "pencil" 16 %}
                 </a>
                 {% if o.ready_to_pay %}
@@ -134,17 +134,17 @@
                 <form method="post" action="{% url 'toggle_order_stage' order_id=o.id %}" class="flex-1 m-0">
                   {% csrf_token %}
                   {% if o.status_color == 'orange' %}
-                    <button class="w-full h-9 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                    <button class="w-full h-9 rounded-xl bg-[#B9722B] hover:bg-[#9E5F22] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
                       {% icon "chef-hat" 16 %}
                       <span>{{ o.action_label }}</span>
                     </button>
                   {% elif o.status_color == 'blue' %}
-                    <button class="w-full h-9 rounded-xl bg-[#E0EDFF] hover:bg-[#CCE2FF] text-[#2563EB] font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <button class="w-full h-9 rounded-xl bg-[#E1EAF3] hover:bg-[#CFDDEB] text-[#2F5F8A] font-bold text-xs flex items-center justify-center gap-1.5 transition">
                       {% icon "clock" 16 %}
                       <span>{{ o.action_label }}</span>
                     </button>
                   {% else %}
-                    <button class="w-full h-9 rounded-xl bg-[#D1FAE5] hover:bg-[#A7F3D0] text-[#059669] font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <button class="w-full h-9 rounded-xl bg-[#DCEBE0] hover:bg-[#C6DFCD] text-[#3C6A4A] font-bold text-xs flex items-center justify-center gap-1.5 transition">
                       {% icon "check" 16 %}
                       <span>{{ o.action_label }}</span>
                     </button>
@@ -173,7 +173,7 @@
         {% for dish in quick_dishes %}
           <div class="card p-3 flex flex-col justify-between hover:shadow-md transition text-left group" data-category="{{ dish.category_id }}">
             <div>
-              <div class="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2.5 bg-[#FAF8F5] flex items-center justify-center">
+              <div class="w-full aspect-[4/3] rounded-xl overflow-hidden mb-2.5 bg-[#FAF6EF] flex items-center justify-center">
                 {% if dish.photo %}
                   <img src="{{ dish.photo.url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                 {% else %}
@@ -187,7 +187,7 @@
               <form method="post" action="{% url 'quick_add' dish_id=dish.id %}" class="m-0">
                 {% csrf_token %}
                 <input type="hidden" name="order_id" value="{{ selected_order.id|default:'' }}">
-                <button type="submit" class="w-7 h-7 rounded-lg bg-[#FDF4EB] hover:bg-brand hover:text-white border border-brand/20 flex items-center justify-center text-brand font-bold text-sm transition shadow-sm" title="Добавить в заказ">
+                <button type="submit" class="w-7 h-7 rounded-lg bg-[#F8ECDA] hover:bg-brand hover:text-white border border-brand/20 flex items-center justify-center text-brand font-bold text-sm transition shadow-sm" title="Добавить в заказ">
                   {% icon "plus" 14 %}
                 </button>
               </form>
@@ -217,7 +217,7 @@
       </div>
 
       {# Вкладки статусов столов #}
-      <div class="flex items-center gap-1 p-1 bg-[#F5F2ED] rounded-xl text-xs font-semibold mb-3">
+      <div class="flex items-center gap-1 p-1 bg-[#EFE8DC] rounded-xl text-xs font-semibold mb-3">
         <button type="button" data-queue-tab="pending" class="queue-tab flex-1 py-1 rounded-lg bg-white text-ink shadow-sm text-center">{% translate 'Заявки' %} ({{ queue_counts.pending }})</button>
         <button type="button" data-queue-tab="free" class="queue-tab flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">{% translate 'Свободные' %} ({{ queue_counts.free }})</button>
         <button type="button" data-queue-tab="busy" class="queue-tab flex-1 py-1 rounded-lg text-stone-600 hover:text-ink text-center">{% translate 'Занятые' %} ({{ queue_counts.busy }})</button>
@@ -227,9 +227,9 @@
       <div class="space-y-2 max-h-72 overflow-y-auto no-scrollbar">
         <div id="queue-empty" class="hidden text-center text-xs text-stone-400 py-4">{% translate 'Нет столов в этой категории' %}</div>
         {% for item in table_queue %}
-          <div data-queue-kind="{{ item.kind }}" class="queue-row flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF8F5] transition border border-line/60">
+          <div data-queue-kind="{{ item.kind }}" class="queue-row flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF6EF] transition border border-line/60">
             <div class="flex items-center gap-2.5">
-              <span class="w-8 h-8 rounded-lg bg-[#FDF4EB] text-brand grid place-items-center">
+              <span class="w-8 h-8 rounded-lg bg-[#F8ECDA] text-brand grid place-items-center">
                 {% icon "table" 16 %}
               </span>
               <div>
@@ -259,7 +259,7 @@
               {% else %}
                 <form method="post" action="{% url 'open_table' table_id=item.table_id %}" class="m-0">
                   {% csrf_token %}
-                  <button class="bg-[#9C5323] hover:bg-[#85431A] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
+                  <button class="bg-[#7A3F1E] hover:bg-[#6A3418] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
                     {% translate 'Принять' %}
                   </button>
                 </form>

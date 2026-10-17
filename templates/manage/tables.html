@@ -49,14 +49,14 @@
           </div>
         </div>
 
-        <div class="rounded-2xl bg-[#FAF8F5] border border-line/70 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6">
+        <div class="rounded-2xl bg-[#FAF6EF] border border-line/70 p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-6">
           {% for t in hall.tables.all %}
             <a href="{% url 'table_edit' t.id %}" class="group flex flex-col items-center gap-1.5 focus:outline-none" title="{% translate 'Изменить стол' %} {{ t.number }}">
               <div class="flex gap-1.5">
                 {% for chair in t.chairs_top %}<span class="w-3.5 h-1.5 rounded-full {% if t.state == 'busy' %}bg-brand/50{% elif t.state == 'reserved' %}bg-blue-300{% else %}bg-emerald-300{% endif %}"></span>{% endfor %}
               </div>
               <div class="w-full max-w-[120px] aspect-[4/3] rounded-2xl border-2 flex flex-col items-center justify-center transition shadow-sm group-hover:shadow-md group-hover:-translate-y-0.5 group-focus-visible:ring-2 group-focus-visible:ring-brand/40
-                {% if t.state == 'busy' %}bg-[#FDF4EB] border-brand/60 text-brand{% elif t.state == 'reserved' %}bg-blue-50 border-blue-300 text-blue-700{% else %}bg-white border-emerald-300 text-ink{% endif %}">
+                {% if t.state == 'busy' %}bg-[#F8ECDA] border-brand/60 text-brand{% elif t.state == 'reserved' %}bg-blue-50 border-blue-300 text-blue-700{% else %}bg-white border-emerald-300 text-ink{% endif %}">
                 <span class="text-xl font-black leading-none">{{ t.number }}</span>
                 <span class="mt-1 text-[11px] font-semibold opacity-70">{{ t.seats }} {% translate 'мест' %}</span>
               </div>

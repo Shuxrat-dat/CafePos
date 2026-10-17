@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#F7F3EC">
   <title>{% block title %}{% endblock %} · {{ cafe.name }}</title>
   <script src="{% static 'js/tailwind.js' %}"></script>
   <script>
@@ -12,49 +12,60 @@
       theme: {
         extend: {
           colors: {
-            brand: { DEFAULT: '#9C5323', 50: '#FDF7F2', 100: '#FBECE2', 200: '#F5D3C0', 600: '#8A451A', 700: '#763814', 800: '#5F2C0E' },
-            ink: '#231F1C', muted: '#78716C', line: '#EBE6DF', canvas: '#FAF8F5', night: '#1C1917',
+            brand: { DEFAULT: '#7A3F1E', 50: '#FBF4EA', 100: '#F6E6D2', 200: '#EBCBA6', 600: '#6A3418', 700: '#572A13', 800: '#43200E' },
+            caramel: { DEFAULT: '#C98B45', 100: '#F8EBD7' },
+            sage: { DEFAULT: '#4E7B5C', 50: '#EEF5F0', 100: '#DCEBE0' },
+            ink: '#1E1915', muted: '#7A6F63', line: '#E8DFD2', canvas: '#F7F3EC', night: '#1C1612',
           },
-          fontFamily: { sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'] },
-          boxShadow: { card: '0 1px 3px rgba(35,31,28,.04)', pop: '0 16px 40px -12px rgba(35,31,28,.18)' },
+          fontFamily: { sans: ['Manrope', 'Segoe UI', 'system-ui', '-apple-system', 'Roboto', 'sans-serif'] },
+          boxShadow: { card: '0 1px 2px rgba(60,36,18,.05), 0 4px 14px -6px rgba(60,36,18,.07)', pop: '0 18px 44px -14px rgba(60,36,18,.28)' },
         },
       },
     };
   </script>
+  <style>
+    @font-face { font-family: 'Manrope'; font-weight: 400; font-style: normal; font-display: swap; src: url('{% static "fonts/Manrope-400.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 500; font-style: normal; font-display: swap; src: url('{% static "fonts/Manrope-500.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 600; font-style: normal; font-display: swap; src: url('{% static "fonts/Manrope-600.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 700; font-style: normal; font-display: swap; src: url('{% static "fonts/Manrope-700.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 800; font-style: normal; font-display: swap; src: url('{% static "fonts/Manrope-800.ttf" %}') format('truetype'); }
+  </style>
   <style type="text/tailwindcss">
     @layer components {
-      .card { @apply bg-white border border-line rounded-2xl shadow-card; }
+      .card { @apply bg-white border border-line/80 rounded-2xl shadow-card; }
       .btn { @apply inline-flex items-center justify-center gap-2 min-h-[42px] px-4 rounded-xl font-semibold text-[14px] transition-colors select-none whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none; }
       .btn-lg { @apply min-h-[50px] px-5 text-base rounded-xl; }
       .btn-sm { @apply min-h-[34px] px-3 text-xs rounded-lg; }
       .btn-primary { @apply bg-brand text-white hover:bg-brand-600 active:bg-brand-700; }
       .btn-dark { @apply bg-ink text-white hover:bg-black; }
-      .btn-secondary { @apply bg-white text-ink border border-line hover:bg-[#FAF8F5] active:bg-[#F5F2ED]; }
+      .btn-secondary { @apply bg-white text-ink border border-line hover:bg-[#FAF6EF] active:bg-[#EFE8DC]; }
       .btn-outline { @apply bg-white text-brand border border-brand/30 hover:bg-brand-50; }
       .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-ink; }
       .btn-danger { @apply bg-white text-red-700 border border-red-200 hover:bg-red-50; }
-      .btn-warn { @apply bg-orange-500 text-white hover:bg-orange-600; }
+      .btn-warn { @apply bg-[#B9722B] text-white hover:bg-[#9E5F22]; }
       .icon-btn { @apply inline-grid place-items-center w-10 h-10 rounded-xl border border-line bg-white text-slate-600 hover:bg-slate-50 hover:text-ink active:bg-slate-100 transition-colors; }
       .input { @apply w-full rounded-xl border border-line bg-white px-3.5 min-h-[42px] text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand; }
       .label { @apply block text-[13px] font-medium text-stone-600 mb-1.5; }
       .badge { @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap; }
       .chip { @apply inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl border border-line bg-white text-sm font-medium text-stone-600 hover:text-ink hover:border-stone-300 whitespace-nowrap transition-colors; }
       .chip-active { @apply bg-brand-50 border-brand/40 text-brand font-semibold hover:text-brand hover:border-brand/40; }
-      .page-title { @apply text-[22px] font-bold tracking-tight text-ink; }
+      .page-title { @apply text-[24px] font-extrabold tracking-[-0.02em] text-ink; }
       .page-sub { @apply text-sm text-muted mt-0.5; }
       .section-title { @apply text-base font-semibold text-ink; }
       .table-head { @apply text-left text-xs font-semibold uppercase tracking-wide text-muted; }
       .alert-error { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium; }
       .alert-warn { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 text-sm; }
       .alert-ok { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium; }
-      .seg { @apply flex p-1 bg-[#F5F2ED] rounded-xl gap-1; }
+      .seg { @apply flex p-1 bg-[#EFE8DC] rounded-xl gap-1; }
       .seg-item { @apply flex-1 inline-flex items-center justify-center gap-1.5 min-h-[36px] px-2 rounded-lg text-sm font-semibold text-stone-600 hover:text-ink; }
       .seg-item-active { @apply bg-white text-ink shadow-card; }
-      .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[54px] rounded-xl text-[12px] font-medium text-stone-600 hover:bg-[#FAF8F5] hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3.5 xl:text-[14px]; }
-      .nav-link-active { @apply bg-[#FDF4EB] text-brand font-bold hover:bg-[#FDF4EB] hover:text-brand border-l-4 border-brand xl:rounded-r-xl xl:rounded-l-none; }
+      .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[54px] rounded-xl text-[12px] font-medium text-stone-600 hover:bg-[#FAF6EF] hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3.5 xl:text-[14px]; }
+      .nav-link-active { @apply bg-brand text-white font-bold shadow-sm hover:bg-brand-600 hover:text-white; }
     }
     html { -webkit-tap-highlight-color: transparent; }
-    body { font-feature-settings: "tnum" 1; }
+    body { font-feature-settings: "tnum" 1, "cv11" 1; }
+    ::selection { background: #EBCBA6; color: #43200E; }
+    :focus-visible { outline: 2px solid #C98B45; outline-offset: 2px; }
     .htmx-request.btn, button.htmx-request { opacity: .6; pointer-events: none; }
     #progress { transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
     .htmx-request #progress, #progress.htmx-request { transform: scaleX(.7); }
@@ -70,12 +81,12 @@
 {% if user.is_authenticated %}
   {# Боковая навигация #}
   <aside class="no-print hidden md:flex fixed inset-y-0 left-0 z-40 w-[84px] xl:w-60 flex-col bg-white border-r border-line">
-    <a href="{% url 'floor' %}" class="flex items-center justify-center xl:justify-start gap-3 h-16 px-3 xl:px-5 border-b border-line shrink-0" title="Yurtora Cafe">
-      <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#FDF4EB] text-brand shrink-0">
+    <a href="{% url 'floor' %}" class="flex items-center justify-center xl:justify-start gap-3 h-16 px-3 xl:px-5 border-b border-line shrink-0" title="{{ cafe.name }}">
+      <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#F8ECDA] text-brand shrink-0">
         {% icon "coffee" 22 %}
       </span>
       <span class="hidden xl:block min-w-0">
-        <span class="block font-bold text-[17px] leading-tight text-ink tracking-tight">Yurtora Cafe</span>
+        <span class="block font-bold text-[17px] leading-tight text-ink tracking-tight truncate max-w-[150px]">{{ cafe.name }}</span>
       </span>
     </a>
     {% if DEMO_MODE %}
@@ -89,7 +100,7 @@
               {% icon item.icon 20 %}
               <span class="leading-none truncate max-w-full">{{ item.label }}</span>
               {% if item.badge %}
-                <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
+                <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full {% if item.active %}bg-white text-brand{% else %}bg-brand text-white{% endif %} text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
               {% endif %}
             </button>
           </form>
@@ -98,7 +109,7 @@
             {% icon item.icon 20 %}
             <span class="leading-none truncate max-w-full">{{ item.label }}</span>
             {% if item.badge %}
-              <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
+              <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full {% if item.active %}bg-white text-brand{% else %}bg-brand text-white{% endif %} text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
             {% elif item.name == 'stock' and low_stock_count %}
               <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-md bg-orange-100 text-orange-700 text-[11px] font-bold items-center justify-center">{{ low_stock_count }}</span>
             {% endif %}
@@ -107,9 +118,9 @@
       {% endfor %}
     </nav>
     <div class="border-t border-line p-3 shrink-0">
-      <div class="bg-[#FAF8F5] border border-line rounded-2xl p-2.5 flex flex-col gap-2">
+      <div class="bg-[#FAF6EF] border border-line rounded-2xl p-2.5 flex flex-col gap-2">
         <div class="flex items-center gap-2.5">
-          <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#FBECE2] text-brand text-sm font-bold uppercase shrink-0">
+          <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#F6E6D2] text-brand text-sm font-bold uppercase shrink-0">
             {{ user.first_name|default:user.username|slice:":1" }}
           </span>
           <div class="hidden xl:block flex-1 min-w-0">
@@ -169,7 +180,7 @@
     </div>
   {% endif %}
   {% if user.is_authenticated %}
-    <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF8F5]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
+    <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
       <div class="flex-1 max-w-xl relative">
         {% block header_search %}{% endblock %}
       </div>
