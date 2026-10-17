@@ -124,7 +124,7 @@
             {{ user.first_name|default:user.username|slice:":1" }}
           </span>
           <div class="hidden xl:block flex-1 min-w-0">
-            <span class="block text-[11px] text-muted leading-tight font-medium">{% if user.is_superuser %}Кассир / Админ{% else %}{{ user.get_role_display|default:'Кассир' }}{% endif %}</span>
+            <span class="block text-[11px] text-muted leading-tight font-medium">{% if user.is_superuser %}{% translate 'Кассир / Админ' %}{% else %}{{ user.get_role_display|default:'Кассир' }}{% endif %}</span>
             <span class="block text-[13px] font-bold text-ink truncate leading-tight">{{ user.first_name|default:user.username }}</span>
           </div>
         </div>
@@ -328,10 +328,18 @@
     // Живые часы в шапке
     function updateClock() {
       var d = new Date();
-      var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-      var days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-      var dayStr = days[d.getDay()];
-      var dateStr = d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear();
+      // Дата и день недели на языке интерфейса, а не вшитые русские сокращения
+      var dayStr, dateStr;
+      if (document.documentElement.lang === 'uz') {
+        // Браузеры отдают для узбекского латиницу в виде «M10» и английские дни, поэтому названия заданы здесь
+        var uzMonths = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+        var uzDays = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+        dayStr = uzDays[d.getDay()];
+        dateStr = d.getDate() + '-' + uzMonths[d.getMonth()] + ', ' + d.getFullYear();
+      } else {
+        dayStr = new Intl.DateTimeFormat('ru', { weekday: 'short' }).format(d);
+        dateStr = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+      }
       var timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
       var dEl = document.getElementById('live-date');
       var tEl = document.getElementById('live-time');

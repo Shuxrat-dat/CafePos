@@ -17,6 +17,17 @@ TEXTAREA = INPUT.replace("min-h-[46px]", "py-2.5")
 CHECK = "w-5 h-5 rounded accent-[#0f766e]"
 
 
+def localized_name(obj, field="name"):
+    """Название из базы на языке интерфейса: для узбекского берём name_uz, если оно заполнено."""
+    from django.utils.translation import get_language
+
+    if get_language() == "uz":
+        value = getattr(obj, f"{field}_uz", "")
+        if value:
+            return value
+    return getattr(obj, field, str(obj))
+
+
 def style_form(form):
     """Единый вид полей ввода во всех формах."""
     for field in form.fields.values():
@@ -115,6 +126,10 @@ class TableForm(StyledModelForm):
         model = Table
         fields = ["hall", "number", "seats"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["hall"].label_from_instance = localized_name
+
     def clean_seats(self):
         seats = self.cleaned_data["seats"]
         if not 1 <= seats <= 30:
@@ -141,7 +156,13 @@ class StaffForm(StyledModelForm):
             "role": _("Роль"),
             "is_active": _("Может входить"),
         }
-        help_texts = {"username": ""}
+        help_texts = {"username": "", "is_active": ""}
+        error_messages = {
+            "username": {
+                "unique": _("Сотрудник с таким логином уже есть."),
+                "invalid": _("Логин может содержать только буквы, цифры и знаки @ . + - _"),
+            },
+        }
 
     def __init__(self, *args, editor=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -157,8 +178,25 @@ class StaffForm(StyledModelForm):
         if not self.instance.pk and not password:
             raise forms.ValidationError(_("Задайте пароль."))
         if password:
-            validate_password(password, self.instance)
+            try:
+                validate_password(password, self.instance)
+            except forms.ValidationError as exc:
+                raise forms.ValidationError([self._password_message(error) for error in exc.error_list])
         return password
+
+    @staticmethod
+    def _password_message(error):
+        """Свои тексты вместо встроенных английских: узбекского перевода у Django для них нет."""
+        code = error.code
+        if code == "password_too_short":
+            return _("Пароль слишком короткий: нужно не меньше %(n)s символов.") % {"n": (error.params or {}).get("min_length", 8)}
+        if code == "password_too_common":
+            return _("Пароль слишком простой. Придумайте другой.")
+        if code == "password_entirely_numeric":
+            return _("Пароль не должен состоять только из цифр.")
+        if code == "password_too_similar":
+            return _("Пароль слишком похож на имя или логин.")
+        return error.message % (error.params or {}) if error.params else error.message
 
     def clean_is_active(self):
         active = self.cleaned_data.get("is_active")

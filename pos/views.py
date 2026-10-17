@@ -949,7 +949,7 @@ def shift_close(request):
     try:
         closed = services.close_shift(shift, actual_cash=actual_cash, comment=comment, user=request.user)
         telegram.notify_shift_closed(closed)
-        diff_str = f" (расхождение: {closed.difference} сум)" if closed.difference else ""
+        diff_str = _(" (расхождение: %(d)s сум)") % {"d": closed.difference} if closed.difference else ""
         messages.success(request, _("Кассовая смена №%(id)s закрыта%(diff)s.") % {"id": closed.id, "diff": diff_str})
         if logout_after:
             auth_logout(request)

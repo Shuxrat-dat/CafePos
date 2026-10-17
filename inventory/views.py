@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy
 
 from accounts.permissions import STOCK_ROLES, role_required
 from core import audit
-from core.forms import StyledModelForm
+from core.forms import StyledModelForm, localized_name
 
 from urllib.parse import quote
 
@@ -110,7 +110,7 @@ def shopping(request):
     """Что докупить: срочные продукты с подсказкой количества и готовым текстом для поставщика."""
     rows = shopping_list()
     total = sum((r["cost"] for r in rows), Decimal(0))
-    lines = [f"• {r['product'].name} — {r['suggest']} {r['product'].get_unit_display()}" for r in rows]
+    lines = [f"• {localized_name(r['product'])} — {r['suggest']} {r['product'].get_unit_display()}" for r in rows]
     share_text = _("Закупка на %(date)s:") % {"date": timezone.localdate().strftime("%d.%m")}
     share_text = "\n".join([share_text, *lines]) if lines else ""
     blocked = (
@@ -234,7 +234,7 @@ def stock_count(request):
                         product=product,
                         kind=StockMovement.Kind.ADJUST,
                         quantity=diff,
-                        comment=f"Инвентаризация: было {product.stock:f}, стало {fact:f}"[:200],
+                        comment=(_("Инвентаризация: было %(a)s, стало %(b)s") % {"a": f"{product.stock:f}", "b": f"{fact:f}"})[:200],
                         created_by=request.user,
                     )
             if changes:

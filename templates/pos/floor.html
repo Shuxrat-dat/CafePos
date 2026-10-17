@@ -31,7 +31,7 @@
           {% else %}
             {% icon "dish-plate" 16 %}
           {% endif %}
-          <span>{{ cat.name }}</span>
+          <span>{{ cat|tr }}</span>
         </button>
       {% endfor %}
       <button type="button" id="cat-scroll-next" aria-label="{% translate 'Далее' %}" class="w-8 h-8 rounded-xl bg-white border border-line flex items-center justify-center text-stone-500 hover:text-ink shadow-sm shrink-0">
@@ -78,7 +78,7 @@
                 </span>
                 <span class="flex items-center gap-1">
                   {% icon "user" 14 %}
-                  <span>{{ o.customer_name|default:'Гости' }}</span>
+                  <span>{% translate 'Гости' as guests_label %}{{ o.customer_name|default:guests_label }}</span>
                 </span>
               </div>
 
@@ -95,11 +95,11 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-baseline justify-between gap-1">
-                        <span class="text-[13px] font-bold text-ink truncate">{{ item.dish.name }}</span>
-                        <span class="text-xs text-stone-500 font-semibold shrink-0">{{ item.quantity }} шт</span>
+                        <span class="text-[13px] font-bold text-ink truncate">{{ item.dish|tr }}</span>
+                        <span class="text-xs text-stone-500 font-semibold shrink-0">{{ item.quantity }} {% translate 'шт' %}</span>
                       </div>
                       {% for m in item.modifiers.all %}
-                        <div class="text-[11px] text-stone-400 truncate">• {{ m.name }}</div>
+                        <div class="text-[11px] text-stone-400 truncate">• {{ m|tr }}</div>
                       {% empty %}
                         {% if item.comment %}
                           <div class="text-[11px] text-stone-400 truncate">• {{ item.comment }}</div>
@@ -175,14 +175,14 @@
                   <div class="w-full h-full grid place-items-center text-stone-300">{% icon "utensils" 24 %}</div>
                 {% endif %}
               </div>
-              <h3 class="text-[13px] font-bold text-ink leading-tight truncate">{{ dish.name }}</h3>
+              <h3 class="text-[13px] font-bold text-ink leading-tight truncate">{{ dish|tr }}</h3>
             </div>
             <div class="flex items-center justify-between mt-2 pt-1 border-t border-line/60">
-              <span class="text-[13px] font-black text-ink">{{ dish.price|num }} <span class="text-[11px] font-medium text-stone-400">сум</span></span>
+              <span class="text-[13px] font-black text-ink">{{ dish.price|num }} <span class="text-[11px] font-medium text-stone-400">{% translate 'сум' %}</span></span>
               <form method="post" action="{% url 'quick_add' dish_id=dish.id %}" class="m-0">
                 {% csrf_token %}
                 <input type="hidden" name="order_id" value="{{ selected_order.id|default:'' }}">
-                <button type="submit" class="w-7 h-7 rounded-lg bg-[#F8ECDA] hover:bg-brand hover:text-white border border-brand/20 flex items-center justify-center text-brand font-bold text-sm transition shadow-sm" title="Добавить в заказ">
+                <button type="submit" class="w-7 h-7 rounded-lg bg-[#F8ECDA] hover:bg-brand hover:text-white border border-brand/20 flex items-center justify-center text-brand font-bold text-sm transition shadow-sm" title="{% translate 'Добавить в заказ' %}">
                   {% icon "plus" 14 %}
                 </button>
               </form>
@@ -274,9 +274,9 @@
             <a href="{% url 'order_detail' order_id=selected_order.id %}" class="text-blue-600 hover:text-blue-700 text-xs font-bold">
               {% translate 'Редактировать' %}
             </a>
-            <form method="post" action="{% url 'cancel_order' order_id=selected_order.id %}" onsubmit="return confirm('Отменить этот заказ?');" class="m-0">
+            <form method="post" action="{% url 'cancel_order' order_id=selected_order.id %}" onsubmit="return confirm('{% translate "Отменить этот заказ?" as t %}{{ t|escapejs }}');" class="m-0">
               {% csrf_token %}
-              <button class="text-red-500 hover:text-red-700 p-1" title="Отменить заказ">
+              <button class="text-red-500 hover:text-red-700 p-1" title="{% translate 'Отменить заказ' %}">
                 {% icon "trash" 16 %}
               </button>
             </form>
@@ -287,7 +287,7 @@
         <div class="space-y-2.5 mb-5 max-h-52 overflow-y-auto pr-1 no-scrollbar">
           {% for item in selected_order.items.all %}
             <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-ink flex-1 truncate pr-2">{{ item.dish.name }}</span>
+              <span class="font-bold text-ink flex-1 truncate pr-2">{{ item.dish|tr }}</span>
               <span class="font-semibold text-stone-500 w-8 text-center">{{ item.quantity }}</span>
               <span class="font-black text-ink w-20 text-right">{{ item.line_total|num }}</span>
             </div>
@@ -298,18 +298,18 @@
         <div class="space-y-1.5 py-3 border-t border-line text-xs font-medium text-stone-500">
           <div class="flex justify-between">
             <span>{% translate 'Подытог' %}</span>
-            <span class="font-bold text-ink">{{ selected_order.custom_totals.subtotal|num }} сум</span>
+            <span class="font-bold text-ink">{{ selected_order.custom_totals.subtotal|num }} {% translate 'сум' %}</span>
           </div>
           {% if selected_order.custom_totals.service %}
             <div class="flex justify-between">
               <span>{% translate 'Обслуживание' %}{% if selected_order.service_percent %} ({{ selected_order.service_percent|num }}%){% endif %}</span>
-              <span class="font-bold text-ink">{{ selected_order.custom_totals.service|num }} сум</span>
+              <span class="font-bold text-ink">{{ selected_order.custom_totals.service|num }} {% translate 'сум' %}</span>
             </div>
           {% endif %}
           {% if selected_order.custom_totals.tax %}
             <div class="flex justify-between">
               <span>{% translate 'НДС' %}{% if cafe.vat_percent %} ({{ cafe.vat_percent|num }}%){% endif %}</span>
-              <span class="font-bold text-ink">{{ selected_order.custom_totals.tax|num }} сум</span>
+              <span class="font-bold text-ink">{{ selected_order.custom_totals.tax|num }} {% translate 'сум' %}</span>
             </div>
           {% endif %}
         </div>
@@ -317,7 +317,7 @@
         {# Итого #}
         <div class="flex items-baseline justify-between pt-3 pb-5 border-t border-line">
           <span class="text-base font-bold text-ink">{% translate 'Итого:' %}</span>
-          <span class="text-2xl font-black text-ink tracking-tight">{{ selected_order.custom_totals.total|num }} <span class="text-sm font-bold text-stone-500">сум</span></span>
+          <span class="text-2xl font-black text-ink tracking-tight">{{ selected_order.custom_totals.total|num }} <span class="text-sm font-bold text-stone-500">{% translate 'сум' %}</span></span>
         </div>
 
         {# Кнопки: Печать чека / Оплата #}

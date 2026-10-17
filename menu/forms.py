@@ -1,13 +1,19 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import StyledModelForm, style_form
+from core.forms import StyledModelForm, localized_name, style_form
 from inventory.models import RecipeItem
 
 from .models import ALLERGEN_CHOICES, Category, Dish, Modifier
 
 MAX_PHOTO_BYTES = 3 * 1024 * 1024
+
+
+def _modifier_label(modifier):
+    name = localized_name(modifier)
+    return f"{gettext(modifier.group)}: {name}" if modifier.group else name
 
 
 class DishForm(StyledModelForm):
@@ -33,6 +39,8 @@ class DishForm(StyledModelForm):
         super().__init__(*args, **kwargs)
         self.fields["prep_minutes"].required = False
         self.fields["category"].empty_label = _("Выберите категорию")
+        self.fields["category"].label_from_instance = localized_name
+        self.fields["modifiers"].label_from_instance = _modifier_label
         if self.instance and self.instance.pk:
             self.initial["allergens"] = self.instance.allergen_codes
 
@@ -77,6 +85,7 @@ class RecipeItemForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         style_form(self)
         self.fields["product"].empty_label = _("Выберите продукт")
+        self.fields["product"].label_from_instance = lambda product: f"{localized_name(product)} ({product.get_unit_display()})"
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get("quantity")

@@ -12,19 +12,19 @@ class Product(models.Model):
         ML = "ml", _("мл")
         PIECE = "pcs", _("шт")
 
-    name = models.CharField("Название", max_length=150, unique=True)
-    name_uz = models.CharField("Название (узб.)", max_length=150, blank=True)
-    unit = models.CharField("Единица", max_length=5, choices=Unit.choices, default=Unit.GRAM)
-    stock = models.DecimalField("Остаток", max_digits=14, decimal_places=3, default=0, editable=False)
-    min_stock = models.DecimalField("Минимальный остаток", max_digits=14, decimal_places=3, default=0)
+    name = models.CharField(_("Название"), max_length=150, unique=True)
+    name_uz = models.CharField(_("Название (узб.)"), max_length=150, blank=True)
+    unit = models.CharField(_("Единица"), max_length=5, choices=Unit.choices, default=Unit.GRAM)
+    stock = models.DecimalField(_("Остаток"), max_digits=14, decimal_places=3, default=0, editable=False)
+    min_stock = models.DecimalField(_("Минимальный остаток"), max_digits=14, decimal_places=3, default=0)
     cost_per_unit = models.DecimalField(
-        "Цена за 1 единицу (сум)", max_digits=12, decimal_places=2, default=0,
-        help_text="Например, говядина 80 000 сум за кг это 80 сум за 1 г",
+        _("Цена за 1 единицу (сум)"), max_digits=12, decimal_places=2, default=0,
+        help_text=_("Например, говядина 80 000 сум за кг это 80 сум за 1 г"),
     )
 
     class Meta:
-        verbose_name = "Продукт"
-        verbose_name_plural = "Продукты"
+        verbose_name = _("Продукт")
+        verbose_name_plural = _("Продукты")
         ordering = ["name"]
 
     def __str__(self):
@@ -36,13 +36,13 @@ class Product(models.Model):
 
 
 class RecipeItem(models.Model):
-    dish = models.ForeignKey(Dish, verbose_name="Блюдо", on_delete=models.CASCADE, related_name="recipe")
-    product = models.ForeignKey(Product, verbose_name="Продукт", on_delete=models.PROTECT)
-    quantity = models.DecimalField("Расход на порцию", max_digits=12, decimal_places=3)
+    dish = models.ForeignKey(Dish, verbose_name=_("Блюдо"), on_delete=models.CASCADE, related_name="recipe")
+    product = models.ForeignKey(Product, verbose_name=_("Продукт"), on_delete=models.PROTECT)
+    quantity = models.DecimalField(_("Расход на порцию"), max_digits=12, decimal_places=3)
 
     class Meta:
-        verbose_name = "Ингредиент"
-        verbose_name_plural = "Техкарта"
+        verbose_name = _("Ингредиент")
+        verbose_name_plural = _("Техкарта")
         unique_together = ("dish", "product")
 
     def __str__(self):
@@ -56,26 +56,26 @@ class StockMovement(models.Model):
         SALE = "sale", _("Продажа")
         ADJUST = "adjust", _("Корректировка (инвентаризация)")
 
-    product = models.ForeignKey(Product, verbose_name="Продукт", on_delete=models.PROTECT, related_name="movements")
-    kind = models.CharField("Тип", max_length=10, choices=Kind.choices)
+    product = models.ForeignKey(Product, verbose_name=_("Продукт"), on_delete=models.PROTECT, related_name="movements")
+    kind = models.CharField(_("Тип"), max_length=10, choices=Kind.choices)
     quantity = models.DecimalField(
-        "Количество", max_digits=14, decimal_places=3,
-        help_text="Для прихода и списания вводите положительное число. Для корректировки: плюс добавляет, минус убавляет",
+        _("Количество"), max_digits=14, decimal_places=3,
+        help_text=_("Для прихода и списания вводите положительное число. Для корректировки: плюс добавляет, минус убавляет"),
     )
-    order = models.ForeignKey("pos.Order", verbose_name="Заказ", null=True, blank=True, on_delete=models.SET_NULL)
-    comment = models.CharField("Комментарий", max_length=200, blank=True)
-    created_at = models.DateTimeField("Дата", auto_now_add=True)
+    order = models.ForeignKey("pos.Order", verbose_name=_("Заказ"), null=True, blank=True, on_delete=models.SET_NULL)
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    created_at = models.DateTimeField(_("Дата"), auto_now_add=True)
     unit_cost = models.DecimalField(
-        "Цена за единицу на момент движения", max_digits=12, decimal_places=2,
+        _("Цена за единицу на момент движения"), max_digits=12, decimal_places=2,
         null=True, blank=True, editable=False,
     )
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, verbose_name="Кто", null=True, blank=True, on_delete=models.SET_NULL
+        settings.AUTH_USER_MODEL, verbose_name=_("Кто"), null=True, blank=True, on_delete=models.SET_NULL
     )
 
     class Meta:
-        verbose_name = "Движение склада"
-        verbose_name_plural = "Движения склада"
+        verbose_name = _("Движение склада")
+        verbose_name_plural = _("Движения склада")
         ordering = ["-created_at"]
 
     def __str__(self):

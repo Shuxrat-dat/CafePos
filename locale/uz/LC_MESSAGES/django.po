@@ -133,7 +133,6 @@ msgstr "Buyurtma"
 msgid "Движений не найдено"
 msgstr "Harakatlar topilmadi"
 
-#, python-format
 msgid "Страница %(p)s из %(n)s"
 msgstr "%(n)s dan %(p)s-sahifa"
 
@@ -146,7 +145,6 @@ msgstr "Orqaga"
 msgid "Сохранить"
 msgstr "Saqlash"
 
-#, python-format
 msgid "Текущий остаток: %(s)s %(u)s. Остаток меняется только приходом, списанием или инвентаризацией."
 msgstr "Joriy qoldiq: %(s)s %(u)s. Qoldiq faqat kirim, hisobdan chiqarish yoki inventarizatsiya orqali oʻzgaradi."
 
@@ -207,11 +205,9 @@ msgstr "Barchasi"
 msgid "Движений пока нет"
 msgstr "Hozircha harakatlar yoʻq"
 
-#, python-format
 msgid "Продукты на складе на сумму %(s)s по закупочным ценам"
 msgstr "Omborda xarid narxida %(s)s lik mahsulot bor"
 
-#, python-format
 msgid "Заканчивается продуктов: %(n)s"
 msgstr "Tugayotgan mahsulotlar: %(n)s"
 
@@ -236,7 +232,6 @@ msgstr "Hozircha mahsulotlar yoʻq."
 msgid "Применить пересчёт"
 msgstr "Qayta sanashni qoʻllash"
 
-#, python-format
 msgid "Исправлено позиций: %(n)s."
 msgstr "Tuzatilgan pozitsiyalar: %(n)s."
 
@@ -291,7 +286,6 @@ msgstr "Tayyor buyurtmalar yoʻq"
 msgid "Кухня"
 msgstr "Oshxona"
 
-#, python-format
 msgid "Обновляется автоматически. Заказ подсвечивается, если ждёт дольше %(m)s мин."
 msgstr "Avtomatik yangilanadi. Buyurtma %(m)s daqiqadan koʻp kutsa, ajratib koʻrsatiladi."
 
@@ -313,7 +307,6 @@ msgstr "Yashirilgan — koʻrsatish"
 msgid "Показывается — скрыть"
 msgstr "Koʻrsatilmoqda — yashirish"
 
-#, python-format
 msgid "вариантов: %(n)s"
 msgstr "variantlar: %(n)s"
 
@@ -443,7 +436,6 @@ msgstr "Taomlar topilmadi"
 msgid "Измените фильтр или добавьте новое блюдо."
 msgstr "Filtrni oʻzgartiring yoki yangi taom qoʻshing."
 
-#, python-format
 msgid "Блюд: %(n)s · в стоп-листе: %(s)s · скрыто: %(h)s"
 msgstr "Taomlar: %(n)s · stop-listda: %(s)s · yashirilgan: %(h)s"
 
@@ -567,7 +559,6 @@ msgstr "Stol oʻchirilsinmi?"
 msgid "Удалить стол"
 msgstr "Stolni oʻchirish"
 
-#, python-format
 msgid "Стол %(n)s"
 msgstr "%(n)s-stol"
 
@@ -640,7 +631,6 @@ msgstr "Jami"
 msgid "Отправить официанту"
 msgstr "Ofitsiantga yuborish"
 
-#, python-format
 msgid "стол %(n)s"
 msgstr "%(n)s-stol"
 
@@ -677,7 +667,6 @@ msgstr "Bekor qilmaslik"
 msgid "Отменить заказ"
 msgstr "Buyurtmani bekor qilish"
 
-#, python-format
 msgid "Отменить заказ №%(n)s?"
 msgstr "№%(n)s buyurtma bekor qilinsinmi?"
 
@@ -723,7 +712,6 @@ msgstr "Chegirmani olib tashlash"
 msgid "Применить"
 msgstr "Qoʻllash"
 
-#, python-format
 msgid "Сумма позиций: %(s)s"
 msgstr "Pozitsiyalar summasi: %(s)s"
 
@@ -766,7 +754,6 @@ msgstr "Filtr yoki stol raqamini oʻzgartiring."
 msgid "Навынос и доставка"
 msgstr "Olib ketish va yetkazib berish"
 
-#, python-format
 msgid "Открыть стол %(n)s"
 msgstr "%(n)s-stolni ochish"
 
@@ -803,7 +790,6 @@ msgstr "bron"
 msgid "Свободных столов нет"
 msgstr "Boʻsh stollar yoʻq"
 
-#, python-format
 msgid "Сейчас: стол %(n)s. Выберите свободный стол."
 msgstr "Hozir: %(n)s-stol. Boʻsh stolni tanlang."
 
@@ -915,11 +901,9 @@ msgstr "Toʻlovsiz oshxonaga"
 msgid "Всё готовое подано"
 msgstr "Barcha tayyorlari berildi"
 
-#, python-format
 msgid "Заказ №%(n)s"
 msgstr "Buyurtma №%(n)s"
 
-#, python-format
 msgid "Обслуживание %(p)s%%"
 msgstr "Xizmat haqi %(p)s%%"
 
@@ -947,7 +931,6 @@ msgstr "Buyurtmalar topilmadi"
 msgid "Измените даты или условия поиска."
 msgstr "Sanalar yoki qidiruv shartlarini oʻzgartiring."
 
-#, python-format
 msgid "Найдено заказов: %(n)s на сумму %(s)s"
 msgstr "Topilgan buyurtmalar: %(n)s, jami %(s)s"
 
@@ -1140,11 +1123,9 @@ msgstr "Karta summasini kiriting."
 msgid "Выберите хотя бы одну позицию."
 msgstr "Kamida bitta pozitsiyani tanlang."
 
-#, python-format
 msgid "заказ №%(n)s"
 msgstr "buyurtma №%(n)s"
 
-#, python-format
 msgid "из %(q)s"
 msgstr "%(q)s tadan"
 
@@ -1175,15 +1156,12 @@ msgstr "Oldindan hisobni chop etish"
 msgid "Печать чека"
 msgstr "Chekni chop etish"
 
-#, python-format
 msgid "в т.ч. НДС %(p)s%%"
 msgstr "shu jumladan QQS %(p)s%%"
 
-#, python-format
 msgid "Заказ №%(n)s оплачен"
 msgstr "Buyurtma №%(n)s toʻlandi"
 
-#, python-format
 msgid "Оплатить остаток (%(s)s)"
 msgstr "Qoldiqni toʻlash (%(s)s)"
 
@@ -1289,19 +1267,15 @@ msgstr "Soʻnggi toʻlovlar"
 msgid "Всё в норме"
 msgstr "Hammasi joyida"
 
-#, python-format
 msgid "%(n)s дн."
 msgstr "%(n)s kun"
 
-#, python-format
 msgid "%(p)s%% · себестоимость %(c)s"
 msgstr "%(p)s%% · tannarx %(c)s"
 
-#, python-format
 msgid "Сравнение с предыдущим периодом такой же длины: %(a)s — %(b)s."
 msgstr "Shunday uzunlikdagi oldingi davr bilan solishtirish: %(a)s — %(b)s."
 
-#, python-format
 msgid "Суммы по позициям до скидок. Скидки за период: %(d)s, обслуживание: %(s)s."
 msgstr "Pozitsiyalar summasi chegirmalarsiz. Davrdagi chegirmalar: %(d)s, xizmat haqi: %(s)s."
 
@@ -1365,11 +1339,9 @@ msgstr "Aralash toʻlov"
 msgid "Предупреждать кухню через, мин"
 msgstr "Oshxonani ogohlantirish, daqiqa"
 
-#, python-format
 msgid "%(m)s мин"
 msgstr "%(m)s daq"
 
-#, python-format
 msgid "%(h)s ч %(m)02d мин"
 msgstr "%(h)s soat %(m)02d daq"
 
@@ -1400,7 +1372,6 @@ msgstr "Avval bu zaldagi stollarni oʻchiring yoki koʻchiring."
 msgid "Зал удалён."
 msgstr "Zal oʻchirildi."
 
-#, python-format
 msgid "Сотрудник «%(name)s» сохранён."
 msgstr "«%(name)s» xodimi saqlandi."
 
@@ -1452,7 +1423,6 @@ msgstr "Noldan kichik boʻlishi mumkin emas."
 msgid "Продукт сохранён."
 msgstr "Mahsulot saqlandi."
 
-#, python-format
 msgid "%(name)s: введите число не меньше нуля."
 msgstr "%(name)s: noldan kichik boʻlmagan son kiriting."
 
@@ -1468,11 +1438,9 @@ msgstr "Fayl 3 MB dan katta. Rasmni kichraytiring."
 msgid "Расход должен быть больше нуля."
 msgstr "Sarf noldan katta boʻlishi kerak."
 
-#, python-format
 msgid "Блюдо «%(name)s» сохранено."
 msgstr "«%(name)s» taomi saqlandi."
 
-#, python-format
 msgid "«%(name)s» уже есть в заказах, поэтому блюдо скрыто, а не удалено."
 msgstr "«%(name)s» buyurtmalarda bor, shuning uchun taom oʻchirilmadi, balki yashirildi."
 
@@ -1650,15 +1618,12 @@ msgstr "Yaratilgan"
 msgid "Заявка"
 msgstr "Soʻrov"
 
-#, python-format
 msgid "Заказ №%(n)s отправлен на кухню."
 msgstr "Buyurtma №%(n)s oshxonaga yuborildi."
 
-#, python-format
 msgid "Статус заказа №%(n)s обновлён."
 msgstr "Buyurtma №%(n)s holati yangilandi."
 
-#, python-format
 msgid "Заказ №%(n)s выдан."
 msgstr "Buyurtma №%(n)s berildi."
 
@@ -1707,7 +1672,6 @@ msgstr "Bron kimning nomiga ekanini kiriting."
 msgid "Стол забронирован."
 msgstr "Stol bron qilindi."
 
-#, python-format
 msgid "«%(name)s» сейчас нет в продаже."
 msgstr "«%(name)s» hozir sotuvda yoʻq."
 
@@ -1726,7 +1690,6 @@ msgstr "Buyurtma oshxonaga yuborildi."
 msgid "Готовые блюда отмечены поданными."
 msgstr "Tayyor taomlar berilgan deb belgilandi."
 
-#, python-format
 msgid "Тип заказа: %(t)s."
 msgstr "Buyurtma turi: %(t)s."
 
@@ -1745,19 +1708,15 @@ msgstr "Chegirma qoʻllandi."
 msgid "Заказ уже на кухне. Отменить его может администратор."
 msgstr "Buyurtma allaqachon oshxonada. Uni faqat administrator bekor qila oladi."
 
-#, python-format
 msgid "Заказ №%(n)s отменён."
 msgstr "Buyurtma №%(n)s bekor qilindi."
 
-#, python-format
 msgid "Стол %(n)s уже занят."
 msgstr "%(n)s-stol band."
 
-#, python-format
 msgid "Заказ перенесён на стол %(n)s."
 msgstr "Buyurtma %(n)s-stolga koʻchirildi."
 
-#, python-format
 msgid "Заказ теперь в зале, стол %(n)s."
 msgstr "Buyurtma endi zalda, %(n)s-stol."
 
@@ -1784,3 +1743,1335 @@ msgstr "Taʼm"
 
 msgid "Порция"
 msgstr "Porsiya"
+
+msgid "%(label)s: %(sign)s%(p)s%%."
+msgstr "%(label)s: %(sign)s%(p)s%%."
+
+msgid "%(n)s блюд"
+msgstr "%(n)s ta taom"
+
+msgid "%(src)s: +%(c)s, обновлено %(u)s"
+msgstr "%(src)s: +%(c)s, yangilandi: %(u)s"
+
+msgid "%(what)s: %(when)s, выручка %(sum)s."
+msgstr "%(what)s: %(when)s, tushum %(sum)s."
+
+msgid "90 дней"
+msgstr "90 kun"
+
+msgid "Telegram"
+msgstr "Telegram"
+
+msgid "Telegram вернул ошибку %(code)s."
+msgstr "Telegram %(code)s xatosini qaytardi."
+
+msgid "Telegram отключён."
+msgstr "Telegram ulanishi oʻchirildi."
+
+msgid "«%(name)s»: цена не число или не больше нуля"
+msgstr "«%(name)s»: narx raqam emas yoki noldan katta emas"
+
+msgid "Аллергены и пометки"
+msgstr "Allergenlar va belgilar"
+
+msgid "Баллы"
+msgstr "Ballar"
+
+msgid "Баллы гостям, % от суммы"
+msgstr "Mehmonlarga ballar, summadan %"
+
+msgid "Баллы: %(p)s · визитов: %(v)s"
+msgstr "Ballar: %(p)s · tashriflar: %(v)s"
+
+msgid "Бот не может писать в этот чат. Напишите ему /start."
+msgstr "Bot bu chatga yoza olmaydi. Unga /start deb yozing."
+
+msgid "Бургеры, хот-доги, картофель и напитки."
+msgstr "Burgerlar, xot-doglar, kartoshka va ichimliklar."
+
+msgid "Быстрая настройка"
+msgstr "Tezkor sozlash"
+
+msgid "Быстрая настройка завершена"
+msgstr "Tezkor sozlash yakunlandi"
+
+msgid "Быстрые позиции"
+msgstr "Tezkor taomlar"
+
+msgid "В Telegram откройте @BotFather и создайте бота командой /newbot."
+msgstr "Telegramda @BotFather ni oching va /newbot buyrugʻi bilan bot yarating."
+
+msgid "В кассе должно быть: %(sum)s"
+msgstr "Kassada boʻlishi kerak: %(sum)s"
+
+msgid "В файле больше %(n)s строк. Разделите меню на части."
+msgstr "Faylda %(n)s tadan ortiq satr bor. Menyuni qismlarga boʻling."
+
+msgid "В файле нет строк."
+msgstr "Faylda satrlar yoʻq."
+
+msgid "Валовая прибыль %(m)s, это %(p)s%% выручки."
+msgstr "Yalpi foyda %(m)s, bu tushumning %(p)s%%."
+
+msgid "Ваш баланс: %(t)s"
+msgstr "Balansingiz: %(t)s"
+
+msgid "Ваша оценка"
+msgstr "Sizning bahoyingiz"
+
+msgid "Ваше заведение"
+msgstr "Sizning muassasangiz"
+
+msgid "Введите номер заказа, стола или имя гостя. Поиск работает на любом экране."
+msgstr "Buyurtma, stol raqamini yoki mehmon ismini kiriting. Qidiruv har qanday ekranda ishlaydi."
+
+msgid "Введите сумму операции больше нуля."
+msgstr "Operatsiya summasini noldan katta kiriting."
+
+msgid "Введите фактическую сумму наличных числом."
+msgstr "Naqd pulning haqiqiy summasini raqam bilan kiriting."
+
+msgid "Веган"
+msgstr "Vegan"
+
+msgid "Вернуть списанные ингредиенты на склад"
+msgstr "Hisobdan chiqarilgan mahsulotlarni omborga qaytarish"
+
+msgid "Визиты"
+msgstr "Tashriflar"
+
+msgid "Включить звук"
+msgstr "Ovozni yoqish"
+
+msgid "Внесение"
+msgstr "Kirim qilish"
+
+msgid "Внесение или изъятие наличных"
+msgstr "Naqd pulni kiritish yoki olish"
+
+msgid "Внесение наличных в кассу"
+msgstr "Kassaga naqd pul kiritish"
+
+msgid "Внесения наличных:"
+msgstr "Naqd pul kiritishlar:"
+
+msgid "Внести"
+msgstr "Kiritish"
+
+msgid "Возврат"
+msgstr "Qaytarish"
+
+msgid "Возврат возможен только для оплаченных заказов."
+msgstr "Qaytarish faqat toʻlangan buyurtmalar uchun mumkin."
+
+msgid "Возврат по заказу №%(id)s"
+msgstr "№%(id)s buyurtma boʻyicha qaytarish"
+
+msgid "Возвраты (наличные):"
+msgstr "Qaytarishlar (naqd):"
+
+msgid "Возможно, она устарела. Оценить визит можно в течение двух недель после оплаты."
+msgstr "Ehtimol, u eskirgan. Tashrifni toʻlovdan keyin ikki hafta ichida baholash mumkin."
+
+msgid "Время закрытия"
+msgstr "Yopilish vaqti"
+
+msgid "Время открытия"
+msgstr "Ochilish vaqti"
+
+msgid "Время открытия:"
+msgstr "Ochilish vaqti:"
+
+msgid "Время платежа"
+msgstr "Toʻlov vaqti"
+
+msgid "Время приготовления, мин"
+msgstr "Tayyorlash vaqti, daqiqa"
+
+msgid "Все позиции"
+msgstr "Barcha taomlar"
+
+msgid "Все проданные блюда с нормальной наценкой."
+msgstr "Sotilgan barcha taomlarda ustama normal."
+
+msgid "Все продукты в запасе выше минимума, ближайшие дни хватает."
+msgstr "Barcha mahsulotlar minimumdan yuqori, yaqin kunlarga yetadi."
+
+msgid "Всего мест"
+msgstr "Jami oʻrinlar"
+
+msgid "Всего примерно"
+msgstr "Jami taxminan"
+
+msgid "Всё время"
+msgstr "Butun davr"
+
+msgid "Всё готово?"
+msgstr "Hammasi tayyormi?"
+
+msgid "Выберите категорию"
+msgstr "Kategoriyani tanlang"
+
+msgid "Выберите один из готовых вариантов меню."
+msgstr "Tayyor menyu variantlaridan birini tanlang."
+
+msgid "Выберите оценку от 1 до 5."
+msgstr "1 dan 5 gacha baho tanlang."
+
+msgid "Выберите продукт"
+msgstr "Mahsulotni tanlang"
+
+msgid "Выберите файл с меню."
+msgstr "Menyu faylini tanlang."
+
+msgid "Выйти из системы после закрытия смены"
+msgstr "Smenani yopgach tizimdan chiqish"
+
+msgid "Выполнить возврат"
+msgstr "Qaytarishni bajarish"
+
+msgid "Выручка (карты):"
+msgstr "Tushum (karta):"
+
+msgid "Выручка (наличные):"
+msgstr "Tushum (naqd):"
+
+msgid "Выручка минус себестоимость по техкарте за выбранный период."
+msgstr "Tanlangan davr uchun tushum minus texnologik karta boʻyicha tannarx."
+
+msgid "Выручка: %(sum)s"
+msgstr "Tushum: %(sum)s"
+
+msgid "Глютен"
+msgstr "Glyuten"
+
+msgid "Гости увидят эти пометки в меню и смогут выбрать блюдо осознанно."
+msgstr "Mehmonlar bu belgilarni menyuda koʻrib, taomni ongli tanlay oladi."
+
+msgid "Гость с номером телефона в заказе копит баллы. 1 балл = 1 сум. 0 — не начислять."
+msgstr "Buyurtmada telefon raqami boʻlgan mehmon ball yigʻadi. 1 ball = 1 soʻm. 0 — hisoblanmaydi."
+
+msgid "Готовить"
+msgstr "Tayyorlash"
+
+msgid "Готово %(done)s из %(total)s. Отдаём всё вместе."
+msgstr "Tayyor: %(done)s / %(total)s. Hammasini birga beramiz."
+
+msgid "Далее"
+msgstr "Keyingisi"
+
+msgid "Дальше"
+msgstr "Keyingi"
+
+msgid "Данные заведения сохранены."
+msgstr "Muassasa maʼlumotlari saqlandi."
+
+msgid "Действие"
+msgstr "Harakat"
+
+msgid "Для PostgreSQL используйте команду backup_db на сервере."
+msgstr "PostgreSQL uchun serverda backup_db buyrugʻidan foydalaning."
+
+msgid "Для гостей и кухни"
+msgstr "Mehmonlar va oshxona uchun"
+
+msgid "Для группы или канала добавьте бота участником и укажите номер группы (он начинается с минуса) или @имя канала."
+msgstr "Guruh yoki kanal uchun botni aʼzo sifatida qoʻshing va guruh raqamini (minus bilan boshlanadi) yoki @kanal nomini kiriting."
+
+msgid "Добавить продукт"
+msgstr "Mahsulot qoʻshish"
+
+msgid "Добавить сотрудника"
+msgstr "Xodim qoʻshish"
+
+msgid "Добавить это меню"
+msgstr "Bu menyuni qoʻshish"
+
+msgid "Добавьте официантов, кассира и повара: у каждого свой вход и свои права."
+msgstr "Ofitsiantlar, kassir va oshpazni qoʻshing: har birining oʻz kirishi va huquqlari bor."
+
+msgid "Ждёт выдачи %(m)s. Блюда остывают."
+msgstr "Berilishini %(m)s kutmoqda. Taomlar sovib qolmoqda."
+
+msgid "Журнал"
+msgstr "Jurnal"
+
+msgid "Журнал действий"
+msgstr "Harakatlar jurnali"
+
+msgid "За %(d)s дней заказали %(n)s раз, прибыль небольшая."
+msgstr "%(d)s kunda %(n)s marta buyurtma qilingan, foyda kam."
+
+msgid "За выбранный период кассовых смен не найдено"
+msgstr "Tanlangan davrda kassa smenalari topilmadi"
+
+msgid "За последние 30 дней у этих сотрудников заметно больше событий, чем у остальных. Это повод поговорить, а не обвинение."
+msgstr "Oxirgi 30 kunda bu xodimlarda boshqalarga qaraganda hodisalar sezilarli koʻp. Bu ayblov emas, suhbatlashish uchun sabab."
+
+msgid "За это время блюдо должно быть готово. 0 — использовать общий порог из настроек."
+msgstr "Taom shu vaqt ichida tayyor boʻlishi kerak. 0 — sozlamalardagi umumiy chegara ishlatiladi."
+
+msgid "За этот период оплаченных заказов нет."
+msgstr "Bu davrda toʻlangan buyurtmalar yoʻq."
+
+msgid "Заведение настроено. Можно принимать заказы."
+msgstr "Muassasa sozlandi. Buyurtmalarni qabul qilish mumkin."
+
+msgid "Загрузить"
+msgstr "Yuklash"
+
+msgid "Заказ №%(id)s успешно возвращён."
+msgstr "№%(id)s buyurtma muvaffaqiyatli qaytarildi."
+
+msgid "Заказ №%(id)s, %(place)s"
+msgstr "№%(id)s buyurtma, %(place)s"
+
+msgid "Заказов: %(n)s"
+msgstr "Buyurtmalar: %(n)s"
+
+msgid "Заказы, меню, столы, касса, склад и отчёты. Показаны только те, что доступны вашей роли."
+msgstr "Buyurtmalar, menyu, stollar, kassa, ombor va hisobotlar. Faqat rolingizga ruxsat etilganlari koʻrsatiladi."
+
+msgid "Заканчиваются продукты"
+msgstr "Mahsulotlar tugamoqda"
+
+msgid "Заканчиваются продукты · %(cafe)s"
+msgstr "Mahsulotlar tugamoqda · %(cafe)s"
+
+msgid "Заканчиваются продукты: %(n)s. Откройте «Склад → Закупка»."
+msgstr "Tugayotgan mahsulotlar: %(n)s. «Ombor → Xarid» boʻlimini oching."
+
+msgid "Закройте программу кассы."
+msgstr "Kassa dasturini yoping."
+
+msgid "Закрыта"
+msgstr "Yopilgan"
+
+msgid "Закрытие смены"
+msgstr "Smenani yopish"
+
+msgid "Закрыть смену (Z-отчёт)"
+msgstr "Smenani yopish (Z-hisobot)"
+
+msgid "Закупать пока нечего"
+msgstr "Hozircha xarid qilish shart emas"
+
+msgid "Закупить"
+msgstr "Xarid qilish"
+
+msgid "Закупка"
+msgstr "Xarid"
+
+msgid "Закупка на %(date)s:"
+msgstr "%(date)s uchun xarid:"
+
+msgid "Зал «%(h)s»: добавлено столов — %(n)s."
+msgstr "«%(h)s» zali: qoʻshilgan stollar — %(n)s."
+
+msgid "Зал и столы"
+msgstr "Zal va stollar"
+
+msgid "Занятые"
+msgstr "Bandlar"
+
+msgid "Записей нет"
+msgstr "Yozuvlar yoʻq"
+
+msgid "Запустите программу снова."
+msgstr "Dasturni qayta ishga tushiring."
+
+msgid "Заявки"
+msgstr "Arizalar"
+
+msgid "Звук включён"
+msgstr "Ovoz yoqilgan"
+
+msgid "Здесь открывают и закрывают смену, а кнопка «Выйти» ниже завершает вашу сессию."
+msgstr "Bu yerda smena ochiladi va yopiladi, pastdagi «Chiqish» tugmasi seansingizni tugatadi."
+
+msgid "Из них картой"
+msgstr "Shundan karta bilan"
+
+msgid "Из них наличными"
+msgstr "Shundan naqd"
+
+msgid "Изменение цены"
+msgstr "Narx oʻzgartirildi"
+
+msgid "Изменить стол"
+msgstr "Stolni oʻzgartirish"
+
+msgid "Изъятие / Инкассация"
+msgstr "Olish / Inkassatsiya"
+
+msgid "Изъять"
+msgstr "Olish"
+
+msgid "Или загрузите своё меню"
+msgstr "Yoki oʻz menyuingizni yuklang"
+
+msgid "Импорт меню"
+msgstr "Menyuni import qilish"
+
+msgid "Имя сотрудника"
+msgstr "Xodim ismi"
+
+msgid "Инкассация"
+msgstr "Inkassatsiya"
+
+msgid "Инкассация / Изъятие наличных"
+msgstr "Inkassatsiya / Naqd pulni olish"
+
+msgid "Инкассация / изъятия:"
+msgstr "Inkassatsiya / olishlar:"
+
+msgid "Используется PostgreSQL: скачивание из браузера недоступно, копию делает команда backup_db на сервере."
+msgstr "PostgreSQL ishlatilmoqda: brauzerdan yuklab olish mumkin emas, nusxani serverdagi backup_db buyrugʻi yaratadi."
+
+msgid "Исправить цену"
+msgstr "Narxni tuzatish"
+
+msgid "Исправлено позиций: %(n)s, недостача на %(sum)s сум"
+msgstr "Tuzatilgan pozitsiyalar: %(n)s, kamomad %(sum)s soʻm"
+
+msgid "Итого:"
+msgstr "Jami:"
+
+msgid "К предыдущим %(n)s дням"
+msgstr "Oldingi %(n)s kunga nisbatan"
+
+msgid "К тому же дню прошлой недели (%(wd)s)"
+msgstr "Oʻtgan haftaning shu kuniga (%(wd)s) nisbatan"
+
+msgid "Как вам у нас?"
+msgstr "Bizda sizga qanday?"
+
+msgid "Как восстановить"
+msgstr "Qanday tiklash"
+
+msgid "Как подключить"
+msgstr "Qanday ulash"
+
+msgid "Касса на связи"
+msgstr "Kassa aloqada"
+
+msgid "Касса не сходится при закрытии смены"
+msgstr "Smena yopilganda kassa mos kelmaydi"
+
+msgid "Касса работает по локальной сети, интернет ей не нужен. Здесь видно только связь вашего устройства с кассой."
+msgstr "Kassa mahalliy tarmoqda ishlaydi, internet kerak emas. Bu yerda faqat qurilmangizning kassa bilan aloqasi koʻrinadi."
+
+msgid "Касса сошлась"
+msgstr "Kassa mos keldi"
+
+msgid "Кассир:"
+msgstr "Kassir:"
+
+msgid "Кассир: %(name)s"
+msgstr "Kassir: %(name)s"
+
+msgid "Кассовая смена"
+msgstr "Kassa smenasi"
+
+msgid "Кассовая смена и выход"
+msgstr "Kassa smenasi va chiqish"
+
+msgid "Кассовая смена уже открыта (№%(id)s)."
+msgstr "Kassa smenasi allaqachon ochilgan (№%(id)s)."
+
+msgid "Кассовая смена №%(id)s закрыта%(diff)s."
+msgstr "№%(id)s kassa smenasi yopildi%(diff)s."
+
+msgid "Кассовая смена №%(id)s открыта."
+msgstr "№%(id)s kassa smenasi ochildi."
+
+msgid "Кассовые смены (Z-отчёты)"
+msgstr "Kassa smenalari (Z-hisobotlar)"
+
+msgid "Ключ идемпотентности"
+msgstr "Takrorlanmaslik kaliti"
+
+msgid "Кнопка на карточке двигает заказ по этапам: приготовить, выдать, оплатить. Нажмите на саму карточку, чтобы увидеть детали справа."
+msgstr "Kartochkadagi tugma buyurtmani bosqichma-bosqich olib boradi: tayyorlash, berish, toʻlash. Tafsilotlarni oʻngda koʻrish uchun kartochkaning oʻzini bosing."
+
+msgid "Когда"
+msgstr "Qachon"
+
+msgid "Комментариев пока нет."
+msgstr "Hozircha izohlar yoʻq."
+
+msgid "Комментарий (причины расхождения, если есть):"
+msgstr "Izoh (farq sabablari, agar boʻlsa):"
+
+msgid "Комментарий к закрытию"
+msgstr "Yopilish haqida izoh"
+
+msgid "Комментарий: %(text)s"
+msgstr "Izoh: %(text)s"
+
+msgid "Копий пока нет."
+msgstr "Hozircha nusxalar yoʻq."
+
+msgid "Копировать"
+msgstr "Nusxalash"
+
+msgid "Копия"
+msgstr "Nusxa"
+
+msgid "Копия всех заказов, меню, склада и сотрудников одним файлом."
+msgstr "Barcha buyurtmalar, menyu, ombor va xodimlarning bitta fayldagi nusxasi."
+
+msgid "Копия сохранена в папке backups."
+msgstr "Nusxa backups papkasida saqlandi."
+
+msgid "Копия сохранена на сервере"
+msgstr "Nusxa serverda saqlandi"
+
+msgid "Коротко"
+msgstr "Qisqacha"
+
+msgid "Кофе, чай, десерты и лёгкие завтраки."
+msgstr "Kofe, choy, shirinliklar va yengil nonushtalar."
+
+msgid "Кофейня"
+msgstr "Qahvaxona"
+
+msgid "Крупная скидка %(p)s%% · %(cafe)s"
+msgstr "Katta chegirma %(p)s%% · %(cafe)s"
+
+msgid "Крупные скидки"
+msgstr "Katta chegirmalar"
+
+msgid "Кто дал: %(name)s"
+msgstr "Kim bergan: %(name)s"
+
+msgid "Кто и что делал в кассе: отмены, скидки, возвраты, смены, склад и цены."
+msgstr "Kassada kim nima qilgan: bekor qilishlar, chegirmalar, qaytarishlar, smenalar, ombor va narxlar."
+
+msgid "Кто отменил: %(name)s"
+msgstr "Kim bekor qilgan: %(name)s"
+
+msgid "Лучший день"
+msgstr "Eng yaxshi kun"
+
+msgid "МБ"
+msgstr "MB"
+
+msgid "Меню (%(src)s): добавлено %(c)s, обновлено %(u)s, пропущено %(s)s."
+msgstr "Menyu (%(src)s): qoʻshildi %(c)s, yangilandi %(u)s, oʻtkazib yuborildi %(s)s."
+
+msgid "Меню сбалансировано: явных проблем не видно."
+msgstr "Menyu muvozanatli: aniq muammolar koʻrinmayapti."
+
+msgid "Мест за столом"
+msgstr "Stoldagi oʻrinlar"
+
+msgid "Много возвратов"
+msgstr "Qaytarishlar koʻp"
+
+msgid "Много отмен заказов"
+msgstr "Buyurtma bekor qilishlar koʻp"
+
+msgid "Много скидок"
+msgstr "Chegirmalar koʻp"
+
+msgid "Молоко"
+msgstr "Sut"
+
+msgid "Морепродукты"
+msgstr "Dengiz mahsulotlari"
+
+msgid "Мы прочитаем ваш отзыв и постараемся стать лучше."
+msgstr "Fikringizni oʻqiymiz va yaxshiroq boʻlishga harakat qilamiz."
+
+msgid "НДС"
+msgstr "QQS"
+
+msgid "На данный момент кассовая смена не открыта. Укажите начальную сумму разменного фонда для открытия."
+msgstr "Hozir kassa smenasi ochilmagan. Ochish uchun maydalash fondining boshlangʻich summasini kiriting."
+
+msgid "На складе пока нет продуктов."
+msgstr "Omborda hozircha mahsulotlar yoʻq."
+
+msgid "Нажмите Ctrl+C"
+msgstr "Ctrl+C ni bosing"
+
+msgid "Нажмите «Сохранить и отправить тест»."
+msgstr "«Saqlash va sinov yuborish» tugmasini bosing."
+
+msgid "Нажмите, когда закончите. Подсказка о настройке исчезнет, к мастеру можно вернуться из настроек."
+msgstr "Tugatgach bosing. Sozlash haqidagi eslatma yoʻqoladi, ustaga sozlamalardan qaytish mumkin."
+
+msgid "Название зала"
+msgstr "Zal nomi"
+
+msgid "Напишите своему боту /start. Без этого он не сможет вам писать."
+msgstr "Botingizga /start deb yozing. Busiz u sizga yoza olmaydi."
+
+msgid "Настройки Telegram сохранены."
+msgstr "Telegram sozlamalari saqlandi."
+
+msgid "Настройте заведение за пять минут"
+msgstr "Muassasani besh daqiqada sozlang"
+
+msgid "Наценка %(p)s%%, но заказывают редко. Поставьте в начало меню."
+msgstr "Ustama %(p)s%%, lekin kam buyurtma qilinadi. Menyu boshiga qoʻying."
+
+msgid "Наценка всего %(p)s%%. Поднимите цену или пересмотрите рецепт."
+msgstr "Ustama atigi %(p)s%%. Narxni oshiring yoki retseptni qayta koʻrib chiqing."
+
+msgid "Наценка ниже 30%. Красным отмечены блюда, которые приносят убыток."
+msgstr "Ustama 30% dan past. Qizil rangda zarar keltiruvchi taomlar belgilangan."
+
+msgid "Начальный остаток"
+msgstr "Boshlangʻich qoldiq"
+
+msgid "Начальный остаток (размен)"
+msgstr "Boshlangʻich qoldiq (maydalash)"
+
+msgid "Начальный остаток не может быть отрицательным."
+msgstr "Boshlangʻich qoldiq manfiy boʻlishi mumkin emas."
+
+msgid "Начальный размен:"
+msgstr "Boshlangʻich maydalash:"
+
+msgid "Начальный разменный фонд (сум):"
+msgstr "Boshlangʻich maydalash fondi (soʻm):"
+
+msgid "Начать работу"
+msgstr "Ishni boshlash"
+
+msgid "Начислено баллов: +%(p)s"
+msgstr "Hisoblangan ballar: +%(p)s"
+
+msgid "Начислено за заказ №%(id)s"
+msgstr "№%(id)s buyurtma uchun hisoblandi"
+
+msgid "Начните с готового меню и поправьте цены, или загрузите своё из Excel."
+msgstr "Tayyor menyudan boshlang va narxlarni tuzating yoki oʻzingiznikini Excel dan yuklang."
+
+msgid "Не подключено"
+msgstr "Ulanmagan"
+
+msgid "Не удалось прочитать Excel-файл. Сохраните таблицу как .xlsx или CSV."
+msgstr "Excel faylini oʻqib boʻlmadi. Jadvalni .xlsx yoki CSV sifatida saqlang."
+
+msgid "Не удалось прочитать файл. Сохраните его как CSV в кодировке UTF-8."
+msgstr "Faylni oʻqib boʻlmadi. Uni UTF-8 kodlashdagi CSV sifatida saqlang."
+
+msgid "Не удалось сделать копию: %(e)s"
+msgstr "Nusxa yaratib boʻlmadi: %(e)s"
+
+msgid "Не хватает продукта на одну порцию. Уберите блюдо из продажи или пополните склад."
+msgstr "Bir porsiya uchun mahsulot yetmaydi. Taomni sotuvdan olib tashlang yoki omborni toʻldiring."
+
+msgid "Неверный токен бота."
+msgstr "Bot tokeni notoʻgʻri."
+
+msgid "Некоторые строки пропущены:"
+msgstr "Ayrim satrlar oʻtkazib yuborildi:"
+
+msgid "Нельзя вносить или изымать средства в закрытой смене."
+msgstr "Yopilgan smenada pul kiritish yoki olish mumkin emas."
+
+msgid "Нет открытой кассовой смены."
+msgstr "Ochiq kassa smenasi yoʻq."
+
+msgid "Нет связи с Telegram. Проверьте интернет."
+msgstr "Telegram bilan aloqa yoʻq. Internetni tekshiring."
+
+msgid "Нет связи с кассой"
+msgstr "Kassa bilan aloqa yoʻq"
+
+msgid "Нет связи с кассой. Заказы и оплаты сейчас не сохраняются. Проверьте Wi-Fi: когда связь вернётся, это сообщение исчезнет само."
+msgstr "Kassa bilan aloqa yoʻq. Buyurtmalar va toʻlovlar hozir saqlanmayapti. Wi-Fi ni tekshiring: aloqa qaytgach, bu xabar oʻzi yoʻqoladi."
+
+msgid "Нет столов в этой категории"
+msgstr "Bu toifada stollar yoʻq"
+
+msgid "Неудачный вход"
+msgstr "Muvaffaqiyatsiz kirish"
+
+msgid "Ничего не найдено. Попробуйте номер заказа, стола или имя гостя."
+msgstr "Hech narsa topilmadi. Buyurtma, stol raqami yoki mehmon ismini sinab koʻring."
+
+msgid "Номер чата или @имя канала. Напишите боту /start, затем узнайте номер у @userinfobot."
+msgstr "Chat raqami yoki @kanal nomi. Botga /start deb yozing, keyin raqamni @userinfobot dan bilib oling."
+
+msgid "Обзор"
+msgstr "Umumiy koʻrinish"
+
+msgid "Ожидаемый остаток в кассе:"
+msgstr "Kassadagi kutilgan qoldiq:"
+
+msgid "Ожидалось"
+msgstr "Kutilgan"
+
+msgid "Операция «%(kind)s» на сумму %(amount)s сум выполнена."
+msgstr "«%(kind)s» operatsiyasi %(amount)s soʻm miqdorda bajarildi."
+
+msgid "Оплачено заказов: %(n)s на %(sum)s. Средний чек %(avg)s."
+msgstr "Toʻlangan buyurtmalar: %(n)s ta, %(sum)s. Oʻrtacha chek %(avg)s."
+
+msgid "Орехи"
+msgstr "Yongʻoq"
+
+msgid "Основание / Примечание:"
+msgstr "Asos / Izoh:"
+
+msgid "Основной зал"
+msgstr "Asosiy zal"
+
+msgid "Острое"
+msgstr "Achchiq"
+
+msgid "Отзывы гостей"
+msgstr "Mehmonlar fikrlari"
+
+msgid "Отключить Telegram"
+msgstr "Telegramni oʻchirish"
+
+msgid "Отключить Telegram? Токен и номер чата будут удалены."
+msgstr "Telegramni oʻchirasizmi? Token va chat raqami oʻchiriladi."
+
+msgid "Открыта"
+msgstr "Ochiq"
+
+msgid "Открытие смены"
+msgstr "Smenani ochish"
+
+msgid "Открыть"
+msgstr "Ochish"
+
+msgid "Открыть заказ"
+msgstr "Buyurtmani ochish"
+
+msgid "Открыть мастер"
+msgstr "Ustani ochish"
+
+msgid "Открыть смену"
+msgstr "Smenani ochish"
+
+msgid "Открыть стол"
+msgstr "Stolni ochish"
+
+msgid "Отмена заказа"
+msgstr "Buyurtmani bekor qilish"
+
+msgid "Отмена заказов"
+msgstr "Buyurtmalarni bekor qilish"
+
+msgid "Отменено заказов: %(n)s на %(sum)s."
+msgstr "Bekor qilingan buyurtmalar: %(n)s ta, %(sum)s."
+
+msgid "Отменён заказ №%(id)s · %(cafe)s"
+msgstr "№%(id)s buyurtma bekor qilindi · %(cafe)s"
+
+msgid "Отправить"
+msgstr "Yuborish"
+
+msgid "Отправить поставщику"
+msgstr "Yetkazib beruvchiga yuborish"
+
+msgid "Официант: %(name)s"
+msgstr "Ofitsiant: %(name)s"
+
+msgid "Оформление возврата чека"
+msgstr "Chek qaytarishni rasmiylashtirish"
+
+msgid "Оцените визит: наведите камеру на код"
+msgstr "Tashrifni baholang: kamerani kodga qarating"
+
+msgid "Оценка"
+msgstr "Baho"
+
+msgid "Оценка %(r)s из 5 · %(cafe)s"
+msgstr "Baho %(r)s / 5 · %(cafe)s"
+
+msgid "Оценок за период нет. Гости оценивают визит по QR-коду на чеке."
+msgstr "Davr uchun baholar yoʻq. Mehmonlar tashrifni chekdagi QR-kod orqali baholaydi."
+
+msgid "Очередь на столы"
+msgstr "Stollar navbati"
+
+msgid "Первый визит"
+msgstr "Birinchi tashrif"
+
+msgid "Переименуйте текущий db.sqlite3 в db-old.sqlite3, а копию назовите db.sqlite3."
+msgstr "Joriy db.sqlite3 ni db-old.sqlite3 deb qayta nomlang, nusxani esa db.sqlite3 deb nomlang."
+
+msgid "Пересчитайте купюры в денежном ящике перед закрытием."
+msgstr "Yopishdan oldin pul qutisidagi pullarni qayta sanang."
+
+msgid "Период"
+msgstr "Davr"
+
+msgid "Плов, лагман, шашлык, самса и салаты."
+msgstr "Palov, lagʻmon, kabob, somsa va salatlar."
+
+msgid "Плохие отзывы гостей"
+msgstr "Mehmonlarning yomon fikrlari"
+
+msgid "По времени"
+msgstr "Vaqt boʻyicha"
+
+msgid "По продажам за последние %(d)s дней. Решение остаётся за вами."
+msgstr "Oxirgi %(d)s kunlik sotuvlar boʻyicha. Qaror sizda."
+
+msgid "По статусу"
+msgstr "Holat boʻyicha"
+
+msgid "По столам"
+msgstr "Stollar boʻyicha"
+
+msgid "По факту: %(sum)s"
+msgstr "Haqiqatda: %(sum)s"
+
+msgid "Подключение"
+msgstr "Ulanish"
+
+msgid "Подключено"
+msgstr "Ulangan"
+
+msgid "Подробности"
+msgstr "Tafsilotlar"
+
+msgid "Подтверждаете возврат заказа?"
+msgstr "Buyurtmani qaytarishni tasdiqlaysizmi?"
+
+msgid "Подумать об уборке из меню"
+msgstr "Menyudan olib tashlashni oʻylab koʻring"
+
+msgid "Поиск по заказу, столику или напитку..."
+msgstr "Buyurtma, stol yoki ichimlik boʻyicha qidirish..."
+
+msgid "Показать подсказки"
+msgstr "Maslahatlarni koʻrsatish"
+
+msgid "Положите файл копии в папку программы рядом с manage.py."
+msgstr "Nusxa faylini dastur papkasiga, manage.py yoniga qoʻying."
+
+msgid "Получено наличных"
+msgstr "Olingan naqd pul"
+
+msgid "Пометки видны гостям в QR-меню. Время приготовления подсвечивает на кухне блюда, которые готовятся слишком долго."
+msgstr "Belgilar mehmonlarga QR-menyuda koʻrinadi. Tayyorlash vaqti oshxonada juda uzoq tayyorlanayotgan taomlarni ajratib koʻrsatadi."
+
+msgid "Попробуйте другой период или сбросьте фильтры."
+msgstr "Boshqa davrni sinab koʻring yoki filtrlarni tozalang."
+
+msgid "Последние копии на этом компьютере"
+msgstr "Bu kompyuterdagi oxirgi nusxalar"
+
+msgid "Потрачено всего"
+msgstr "Jami sarflangan"
+
+msgid "Примерно"
+msgstr "Taxminan"
+
+msgid "Причина / Инкассатор:"
+msgstr "Sabab / Inkassator:"
+
+msgid "Причина / Назначение"
+msgstr "Sabab / Maqsad"
+
+msgid "Причина возврата"
+msgstr "Qaytarish sababi"
+
+msgid "Причина возврата:"
+msgstr "Qaytarish sababi:"
+
+msgid "Причина: %(text)s"
+msgstr "Sabab: %(text)s"
+
+msgid "Проверьте название заведения."
+msgstr "Muassasa nomini tekshiring."
+
+msgid "Проверьте основания в журнале кассы."
+msgstr "Kassa jurnalidagi asoslarni tekshiring."
+
+msgid "Проверьте, не отменяют ли заказы после оплаты наличными."
+msgstr "Naqd toʻlovdan keyin buyurtmalar bekor qilinmayaptimi, tekshiring."
+
+msgid "Продаётся почти без прибыли"
+msgstr "Deyarli foydasiz sotilmoqda"
+
+msgid "Продвигать"
+msgstr "Targʻib qilish"
+
+msgid "Продукты, которые скоро закончатся, и сколько стоит их докупить на неделю."
+msgstr "Tez orada tugaydigan mahsulotlar va ularni bir haftaga xarid qilish narxi."
+
+msgid "Пропустить"
+msgstr "Oʻtkazib yuborish"
+
+msgid "Просто выйти (без закрытия смены)"
+msgstr "Shunchaki chiqish (smenani yopmasdan)"
+
+msgid "Рады, что вам понравилось. Ждём вас снова."
+msgstr "Yoqqanidan xursandmiz. Sizni yana kutamiz."
+
+msgid "Разница"
+msgstr "Farq"
+
+msgid "Расход по пятницам–воскресеньям выше обычного"
+msgstr "Juma–yakshanba kunlari sarf odatdagidan yuqori"
+
+msgid "Расхождение: %(sign)s%(sum)s"
+msgstr "Farq: %(sign)s%(sum)s"
+
+msgid "Расхождения повторяются: проверьте пересчёт наличных."
+msgstr "Farqlar takrorlanmoqda: naqd pulni sanashni tekshiring."
+
+msgid "Редактировать"
+msgstr "Tahrirlash"
+
+msgid "Резервная копия"
+msgstr "Zaxira nusxa"
+
+msgid "Ресторан узбекской кухни"
+msgstr "Oʻzbek oshxonasi restorani"
+
+msgid "Рыба"
+msgstr "Baliq"
+
+msgid "Самый загруженный час"
+msgstr "Eng gavjum soat"
+
+msgid "Сбросить"
+msgstr "Tozalash"
+
+msgid "Сверьте возвраты с чеками и причиной."
+msgstr "Qaytarishlarni cheklar va sabab bilan solishtiring."
+
+msgid "Сверьте с кухней: блюдо могли приготовить и выдать."
+msgstr "Oshxona bilan solishtiring: taom tayyorlanib, berilgan boʻlishi mumkin."
+
+msgid "Свободные"
+msgstr "Boʻshlar"
+
+msgid "Сделать копию"
+msgstr "Nusxa yaratish"
+
+msgid "Сейчас: блюд %(d)s в %(c)s категориях. Можно добавить ещё из шаблона или файла."
+msgstr "Hozir: %(d)s ta taom, %(c)s ta kategoriyada. Shablon yoki fayldan yana qoʻshish mumkin."
+
+msgid "Сейчас: залов %(h)s, столов %(t)s. Можно добавить ещё зал."
+msgstr "Hozir: zallar %(h)s, stollar %(t)s. Yana zal qoʻshish mumkin."
+
+msgid "Скачана копия базы"
+msgstr "Baza nusxasi yuklab olindi"
+
+msgid "Скачать копию"
+msgstr "Nusxani yuklab olish"
+
+msgid "Скачать образец"
+msgstr "Namunani yuklab olish"
+
+msgid "Скидка %(d)s из %(s)s"
+msgstr "Chegirma %(d)s, jami %(s)s dan"
+
+msgid "Скидка снята"
+msgstr "Chegirma olib tashlandi"
+
+msgid "Скидка считается крупной от, %"
+msgstr "Chegirma katta hisoblanadi, % dan"
+
+msgid "Скопировано"
+msgstr "Nusxalandi"
+
+msgid "Скопируйте выданный токен и вставьте в поле слева."
+msgstr "Berilgan tokenni nusxalab, chapdagi maydonga qoʻying."
+
+msgid "Смена"
+msgstr "Smena"
+
+msgid "Смена №%(id)s закрыта · %(cafe)s"
+msgstr "№%(id)s smena yopildi · %(cafe)s"
+
+msgid "Смена №%(id)s, по факту %(fact)s, расхождение %(diff)s"
+msgstr "№%(id)s smena, haqiqatda %(fact)s, farq %(diff)s"
+
+msgid "Смотреть журнал"
+msgstr "Jurnalni koʻrish"
+
+msgid "Сначала откройте кассовую смену."
+msgstr "Avval kassa smenasini oching."
+
+msgid "Советы появятся, когда накопится хотя бы неделя продаж."
+msgstr "Maslahatlar kamida bir haftalik sotuv toʻplangach paydo boʻladi."
+
+msgid "Создайте бота у @BotFather и вставьте выданный токен."
+msgstr "@BotFather orqali bot yarating va berilgan tokenni qoʻying."
+
+msgid "Создайте первый зал: столы нумеруются сами."
+msgstr "Birinchi zalni yarating: stollar oʻzi raqamlanadi."
+
+msgid "Создать столы"
+msgstr "Stollarni yaratish"
+
+msgid "Сообщения о смене, отменах, скидках и складе приходят вам в Telegram."
+msgstr "Smena, bekor qilishlar, chegirmalar va ombor haqidagi xabarlar sizga Telegramda keladi."
+
+msgid "Сотрудников в системе: %(n)s."
+msgstr "Tizimdagi xodimlar: %(n)s."
+
+msgid "Сохранить и отправить тест"
+msgstr "Saqlash va sinov yuborish"
+
+msgid "Сохранить на этом компьютере"
+msgstr "Shu kompyuterda saqlash"
+
+msgid "Соя"
+msgstr "Soya"
+
+msgid "Спасибо за оценку!"
+msgstr "Bahoingiz uchun rahmat!"
+
+msgid "Списание продуктов"
+msgstr "Mahsulotlarni hisobdan chiqarish"
+
+msgid "Список готов к отправке: скопируйте текст или откройте его в Telegram."
+msgstr "Roʻyxat yuborishga tayyor: matnni nusxalang yoki Telegramda oching."
+
+msgid "Список сотрудников"
+msgstr "Xodimlar roʻyxati"
+
+msgid "Спросите, на каком основании даются скидки."
+msgstr "Chegirmalar qanday asosda berilayotganini soʻrang."
+
+msgid "Ссылка не работает"
+msgstr "Havola ishlamayapti"
+
+msgid "Стоит проверить"
+msgstr "Tekshirib koʻrish kerak"
+
+msgid "Столов"
+msgstr "Stollar"
+
+msgid "Столы"
+msgstr "Stollar"
+
+msgid "Страница %(n)s из %(total)s"
+msgstr "%(n)s-sahifa, jami %(total)s"
+
+msgid "Сумма (сум):"
+msgstr "Summa (soʻm):"
+
+msgid "Сумма изъятия (%(amount)s сум) превышает ожидаемый остаток в кассе (%(expected)s сум)."
+msgstr "Olish summasi (%(amount)s soʻm) kassadagi kutilgan qoldiqdan (%(expected)s soʻm) oshib ketdi."
+
+msgid "Сумма платежа"
+msgstr "Toʻlov summasi"
+
+msgid "Сумма: %(sum)s, %(place)s"
+msgstr "Summa: %(sum)s, %(place)s"
+
+msgid "Таких блюд нет"
+msgstr "Bunday taomlar yoʻq"
+
+msgid "Текущие заказы"
+msgstr "Joriy buyurtmalar"
+
+msgid "Тест из %(cafe)s: уведомления подключены."
+msgstr "%(cafe)s dan sinov: bildirishnomalar ulandi."
+
+msgid "Тестовое сообщение отправлено."
+msgstr "Sinov xabari yuborildi."
+
+msgid "Токен Telegram-бота"
+msgstr "Telegram bot tokeni"
+
+msgid "Токен выглядит неверно. Он состоит из цифр, двоеточия и букв."
+msgstr "Token notoʻgʻri koʻrinadi. U raqamlar, ikki nuqta va harflardan iborat."
+
+msgid "Токен сохранён и не показывается. Оставьте поле пустым, чтобы не менять его."
+msgstr "Token saqlangan va koʻrsatilmaydi. Oʻzgartirmaslik uchun maydonni boʻsh qoldiring."
+
+msgid "Удалено блюдо с кухни"
+msgstr "Oshxonadagi taom oʻchirildi"
+
+msgid "Узнайте номер чата у @userinfobot и вставьте его."
+msgstr "Chat raqamini @userinfobot dan bilib, uni qoʻying."
+
+msgid "Укажите название заведения."
+msgstr "Muassasa nomini kiriting."
+
+msgid "Укажите номер чата (например, 123456789) или @имя канала."
+msgstr "Chat raqamini (masalan, 123456789) yoki @kanal nomini kiriting."
+
+msgid "Укажите причину возврата."
+msgstr "Qaytarish sababini kiriting."
+
+msgid "Укажите токен бота и номер чата."
+msgstr "Bot tokeni va chat raqamini kiriting."
+
+msgid "Укажите число столов от 1 до %(n)s и мест от 1 до 30."
+msgstr "Stollar sonini 1 dan %(n)s gacha, oʻrinlarni 1 dan 30 gacha kiriting."
+
+msgid "Файл Excel (.xlsx) или CSV. Колонки: категория, название, цена; необязательно: название по-узбекски, минуты, описание."
+msgstr "Excel (.xlsx) yoki CSV fayl. Ustunlar: kategoriya, nomi, narx; ixtiyoriy: oʻzbekcha nomi, daqiqalar, tavsif."
+
+msgid "Файл больше 1 МБ. Разделите меню на несколько файлов."
+msgstr "Fayl 1 MB dan katta. Menyuni bir necha faylga boʻling."
+
+msgid "Файл копии содержит данные сотрудников и заказов. Не отправляйте его посторонним."
+msgstr "Nusxa faylida xodimlar va buyurtmalar maʼlumotlari bor. Uni begonalarga yubormang."
+
+msgid "Факт кассы"
+msgstr "Kassaning haqiqiy qoldigʻi"
+
+msgid "Фактическая сумма наличных в ящике кассы (сум):"
+msgstr "Kassa qutisidagi naqd pulning haqiqiy summasi (soʻm):"
+
+msgid "Фактическая сумма не может быть отрицательной."
+msgstr "Haqiqiy summa manfiy boʻlishi mumkin emas."
+
+msgid "Фактический остаток"
+msgstr "Haqiqiy qoldiq"
+
+msgid "Хватит на"
+msgstr "Yetadi"
+
+msgid "Храните файл не на этом компьютере: на флешке или в облаке. Тогда данные не пропадут при поломке."
+msgstr "Faylni bu kompyuterda emas, flesh-xotira yoki bulutda saqlang. Shunda buzilganda maʼlumotlar yoʻqolmaydi."
+
+msgid "Часто убирает блюда, уже отправленные на кухню"
+msgstr "Oshxonaga yuborilgan taomlarni tez-tez olib tashlaydi"
+
+msgid "Частые изъятия или внесения наличных"
+msgstr "Naqd pulni tez-tez olish yoki kiritish"
+
+msgid "Чат для уведомлений"
+msgstr "Bildirishnomalar uchun chat"
+
+msgid "Чат не найден. Проверьте номер чата и напишите боту /start."
+msgstr "Chat topilmadi. Chat raqamini tekshiring va botga /start deb yozing."
+
+msgid "Чаще всего заказывали: %(name)s (%(n)s шт)."
+msgstr "Eng koʻp buyurtma qilingan: %(name)s (%(n)s ta)."
+
+msgid "Четыре шага, и можно принимать первые заказы. Каждый шаг сохраняется сразу, к ним можно вернуться позже."
+msgstr "Toʻrt qadam — va birinchi buyurtmalarni qabul qilish mumkin. Har bir qadam darhol saqlanadi, ularga keyinroq qaytish mumkin."
+
+msgid "Что закупить"
+msgstr "Nimani xarid qilish kerak"
+
+msgid "Что понравилось или что исправить? (необязательно)"
+msgstr "Nima yoqdi yoki nimani tuzatish kerak? (ixtiyoriy)"
+
+msgid "Что приносит больше всего прибыли"
+msgstr "Eng koʻp foyda keltiradigan taomlar"
+
+msgid "Что присылать"
+msgstr "Nimalarni yuborish"
+
+msgid "Что сделать с меню"
+msgstr "Menyu bilan nima qilish kerak"
+
+msgid "Чтобы блюдо списывало продукты, сначала добавьте их на складе, потом вернитесь сюда и укажите расход. Без техкарты блюдо продаётся как обычно, но склад и прибыль по нему не считаются."
+msgstr "Taom mahsulotlarni hisobdan chiqarishi uchun avval ularni omborga qoʻshing, keyin bu yerga qaytib sarfni kiriting. Texnologik kartasiz taom odatdagidek sotiladi, lekin u boʻyicha ombor va foyda hisoblanmaydi."
+
+msgid "Чужой стол"
+msgstr "Boshqa xodimning stoli"
+
+msgid "Эти блюда сейчас приготовить не из чего"
+msgstr "Bu taomlarni hozir tayyorlash uchun mahsulot yoʻq"
+
+msgid "Это займёт десять секунд."
+msgstr "Bu oʻn soniya oladi."
+
+msgid "Яйца"
+msgstr "Tuxum"
+
+msgid "выходные +%(b)s%%"
+msgstr "dam olish kunlari +%(b)s%%"
+
+msgid "д"
+msgstr "k"
+
+msgid "дн."
+msgstr "kun"
+
+msgid "залы, меню и сотрудники"
+msgstr "zallar, menyu va xodimlar"
+
+msgid "из"
+msgstr "/"
+
+msgid "меньше дня"
+msgstr "bir kundan kam"
+
+msgid "мин"
+msgstr "daq"
+
+msgid "наличные %(cash)s, карта %(card)s"
+msgstr "naqd %(cash)s, karta %(card)s"
+
+msgid "не указана"
+msgstr "koʻrsatilmagan"
+
+msgid "не хватает"
+msgstr "yetishmaydi"
+
+msgid "нет"
+msgstr "yoʻq"
+
+msgid "нет названия блюда"
+msgstr "taom nomi yoʻq"
+
+msgid "оценок: %(n)s"
+msgstr "baholar: %(n)s"
+
+msgid "по плану %(m)s мин"
+msgstr "reja boʻyicha %(m)s daq"
+
+msgid "причина не указана"
+msgstr "sabab koʻrsatilmagan"
+
+msgid "скоро"
+msgstr "tez orada"
+
+msgid "срочно"
+msgstr "shoshilinch"
+
+msgid "столов"
+msgstr "stol"
+
+msgid "строка %(line)s: %(reason)s"
+msgstr "%(line)s-satr: %(reason)s"
+
+msgid "у остальных в среднем %(a)s"
+msgstr "boshqalarda oʻrtacha %(a)s"
+
+msgid "ч"
+msgstr "s"
+
+msgid "…и ещё %(n)s"
+msgstr "…va yana %(n)s"
+
+msgid " (расхождение: %(d)s сум)"
+msgstr " (farq: %(d)s soʻm)"
+
+msgid ", расход ×%(f)s"
+msgstr ", sarf ×%(f)s"
+
+msgid "Возврат по чеку №%(id)s: %(r)s"
+msgstr "№%(id)s chek boʻyicha qaytarish: %(r)s"
+
+msgid "Возврат: %(r)s"
+msgstr "Qaytarish: %(r)s"
+
+msgid "Гости"
+msgstr "Mehmonlar"
+
+msgid "Движения склада"
+msgstr "Ombor harakatlari"
+
+msgid "Для прихода и списания вводите положительное число. Для корректировки: плюс добавляет, минус убавляет"
+msgstr "Kirim va hisobdan chiqarish uchun musbat son kiriting. Tuzatish uchun: plyus qoʻshadi, minus kamaytiradi"
+
+msgid "Добавить в заказ"
+msgstr "Buyurtmaga qoʻshish"
+
+msgid "Дополнительный разменный фонд"
+msgstr "Qoʻshimcha maydalash fondi"
+
+msgid "Единица"
+msgstr "Birlik"
+
+msgid "Инвентаризация: было %(a)s, стало %(b)s"
+msgstr "Inventarizatsiya: edi %(a)s, boʻldi %(b)s"
+
+msgid "Ингредиент"
+msgstr "Ingredient"
+
+msgid "Инкассация в банк"
+msgstr "Bankka inkassatsiya"
+
+msgid "Кассир / Админ"
+msgstr "Kassir / Admin"
+
+msgid "Минимальный остаток"
+msgstr "Minimal qoldiq"
+
+msgid "Например, говядина 80 000 сум за кг это 80 сум за 1 г"
+msgstr "Masalan, mol goʻshti kilosi 80 000 soʻm boʻlsa, bu 1 g uchun 80 soʻm"
+
+msgid "Отказ гостя / ошибка пробития"
+msgstr "Mehmonning rad etishi / chek urishdagi xato"
+
+msgid "Отменить этот заказ?"
+msgstr "Bu buyurtmani bekor qilasizmi?"
+
+msgid "Продукты"
+msgstr "Mahsulotlar"
+
+msgid "Расход на порцию"
+msgstr "Bir porsiyaga sarf"
+
+msgid "Смена сдана без замечаний"
+msgstr "Smena eʼtirozsiz topshirildi"
+
+msgid "Техкарта"
+msgstr "Texnologik karta"
+
+msgid "Цена за единицу на момент движения"
+msgstr "Harakat paytidagi birlik narxi"
+
+msgid "Логин может содержать только буквы, цифры и знаки @ . + - _"
+msgstr "Login faqat harflar, raqamlar va @ . + - _ belgilaridan iborat boʻlishi mumkin."
+
+msgid "Пароль не должен состоять только из цифр."
+msgstr "Parol faqat raqamlardan iborat boʻlmasligi kerak."
+
+msgid "Пароль слишком короткий: нужно не меньше %(n)s символов."
+msgstr "Parol juda qisqa: kamida %(n)s ta belgi kerak."
+
+msgid "Пароль слишком похож на имя или логин."
+msgstr "Parol ism yoki loginga juda oʻxshash."
+
+msgid "Пароль слишком простой. Придумайте другой."
+msgstr "Parol juda oddiy. Boshqasini oʻylab toping."
+
+msgid "Сотрудник с таким логином уже есть."
+msgstr "Bunday login bilan xodim allaqachon mavjud."
+
+msgid "Наценка ниже 30%%. Красным отмечены блюда, которые приносят убыток."
+msgstr "Ustama 30%% dan past. Qizil rangda zarar keltiruvchi taomlar belgilangan."
+
+msgid "Блюдо с кухни убрано"
+msgstr "Taom oshxonadan olib tashlandi"
+
+msgid "Говядина: 600 г. Испортилась при хранении"
+msgstr "Mol goʻshti: 600 g. Saqlashda buzilgan"
+
+msgid "Гость передумал"
+msgstr "Mehmon fikrini oʻzgartirdi"
+
+msgid "Гость ушёл"
+msgstr "Mehmon ketib qoldi"
+
+msgid "Гостю принесли не то блюдо"
+msgstr "Mehmonga boshqa taom keltirilgan"
+
+msgid "Долго ждал"
+msgstr "Uzoq kutdi"
+
+msgid "Изъятие / Инкассация: сдача выручки"
+msgstr "Olish / Inkassatsiya: tushumni topshirish"
+
+msgid "Исправлено позиций: 4, недостача на 42000 сум"
+msgstr "Tuzatilgan pozitsiyalar: 4, kamomad 42000 soʻm"
+
+msgid "Не та позиция"
+msgstr "Notoʻgʻri taom"
+
+msgid "Ошибка в заказе"
+msgstr "Buyurtmada xato"
+
+msgid "Плов по-ташкентски: 42000 → 45000"
+msgstr "Toshkent oshi: 42000 → 45000"
+
+msgid "Процент 10: постоянный гость"
+msgstr "Foiz 10: doimiy mehmon"

@@ -13,6 +13,8 @@ from accounts.permissions import REPORT_ROLES, role_required
 from inventory.models import Product, StockMovement
 from pos.models import CashShift, Order, Review
 
+from core.forms import localized_name
+
 from . import insights
 
 reports_only = role_required(REPORT_ROLES)
@@ -171,7 +173,7 @@ def dashboard(request):
     summary = insights.headline(
         revenue=revenue, orders_count=orders_count, avg_check=avg_check, single_day=single_day,
         compare_label=compare_label, compare_change=compare_change, best_label=best_label, best_sum=best_sum,
-        top_dish={"name": best_dish[0].name, "n": best_dish[1]["qty"]} if best_dish else None,
+        top_dish={"name": localized_name(best_dish[0]), "n": best_dish[1]["qty"]} if best_dish else None,
         margin=margin, margin_pct_value=round(margin / revenue * 100) if revenue else 0, has_cost=cost > 0,
         cancelled_count=len(cancelled), cancelled_sum=sum((o.subtotal for o in cancelled), Decimal(0)),
         low_stock_count=low_stock_count,

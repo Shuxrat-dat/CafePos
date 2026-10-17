@@ -14,10 +14,24 @@
 <body>
   {# Без шаблонных тегов: страница должна открыться, даже если сломалась база #}
   <div class="box">
-    <h1>Serverda xatolik</h1>
-    <p>Sahifani qayta yuklang. Muammo takrorlansa, administratorga xabar bering.</p>
-    <p>Ошибка сервера. Обновите страницу или сообщите администратору.</p>
-    <a href="/">Bosh sahifa · На главную</a>
+    <div data-lang="uz">
+      <h1>Serverda xatolik</h1>
+      <p>Sahifani qayta yuklang. Muammo takrorlansa, administratorga xabar bering.</p>
+      <a href="/">Bosh sahifa</a>
+    </div>
+    <div data-lang="ru" hidden>
+      <h1>Ошибка сервера</h1>
+      <p>Обновите страницу. Если ошибка повторяется, сообщите администратору.</p>
+      <a href="/">На главную</a>
+    </div>
   </div>
+  <script>
+    // Показываем язык, выбранный на этом устройстве (по умолчанию узбекский), без обращения к базе
+    (function () {
+      var m = document.cookie.match(/(?:^|; )cafepos_language=(uz|ru)/), lang = m ? m[1] : 'uz';
+      document.documentElement.lang = lang;
+      document.querySelectorAll('[data-lang]').forEach(function (el) { el.hidden = el.dataset.lang !== lang; });
+    })();
+  </script>
 </body>
 </html>

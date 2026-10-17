@@ -19,7 +19,7 @@
     <div class="px-4 pt-3 pb-1 text-xs font-bold text-muted {% if orders %}border-t border-line mt-1{% endif %}">{% translate 'Столы' %}</div>
     {% for t in tables %}
       <div class="flex items-center justify-between gap-3 px-4 py-2.5">
-        <span class="text-sm text-ink"><b>{{ t.number }}</b> <span class="text-muted">· {{ t.hall.name }}, {{ t.seats }} {% translate 'мест' %}</span></span>
+        <span class="text-sm text-ink"><b>{{ t.number }}</b> <span class="text-muted">· {{ t.hall|tr }}, {{ t.seats }} {% translate 'мест' %}</span></span>
         {% if t.open_order %}
           {% if t.locked %}
             <span class="text-xs font-semibold text-stone-400">{% translate 'Чужой стол' %}</span>

@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import F
+from django.utils.translation import gettext as _
 
 from .models import Product, RecipeItem, StockMovement
 
@@ -28,7 +29,7 @@ def write_off_order(order):
                 factor *= modifier.consumption_multiplier
             comment = f"{item.dish.name} × {item.quantity}"
             if factor != 1:
-                comment += f", расход ×{factor:.2f}"
+                comment += _(", расход ×%(f)s") % {"f": f"{factor:.2f}"}
             for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
                 StockMovement.objects.create(
                     product=recipe.product,

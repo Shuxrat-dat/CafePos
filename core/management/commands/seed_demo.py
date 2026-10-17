@@ -11,6 +11,7 @@ from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 
 from django.conf import settings
+from django.utils.translation import gettext_noop as N_
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -327,24 +328,24 @@ class Command(BaseCommand):
             )
             AuditLog.objects.filter(pk=entry.pk).update(created_at=self.now - timedelta(hours=ago_hours))
 
-        reasons = ["Гость передумал", "Долго ждал", "Ошибка в заказе", "Гость ушёл", "Не та позиция"]
+        reasons = [N_("Гость передумал"), N_("Долго ждал"), N_("Ошибка в заказе"), N_("Гость ушёл"), N_("Не та позиция")]
         for day in range(days):
             base = day * 24
-            add("kassir", A.SHIFT_OPEN, base + 12, 200000, "Начальный остаток", order=False)
-            add("kassir", A.SHIFT_CLOSE, base + 2, 0, "Касса сошлась", order=False)
+            add("kassir", A.SHIFT_OPEN, base + 12, 200000, N_("Начальный остаток"), order=False)
+            add("kassir", A.SHIFT_CLOSE, base + 2, 0, N_("Касса сошлась"), order=False)
             if rng.random() < 0.6:
                 add("ofitsiant", A.ORDER_CANCEL, base + rng.randint(3, 10), rng.randint(2, 8) * 10000, rng.choice(reasons))
             for _i in range(rng.choice([0, 1, 2, 2, 3])):
                 add("ofitsiant2", A.ORDER_CANCEL, base + rng.randint(3, 10), rng.randint(3, 12) * 10000, rng.choice(reasons))
             if rng.random() < 0.5:
-                add("ofitsiant2", A.ITEM_REMOVE, base + rng.randint(3, 10), rng.randint(1, 4) * 15000, "Блюдо с кухни убрано")
+                add("ofitsiant2", A.ITEM_REMOVE, base + rng.randint(3, 10), rng.randint(1, 4) * 15000, N_("Блюдо с кухни убрано"))
             if rng.random() < 0.4:
-                add("kassir", A.DISCOUNT, base + rng.randint(3, 10), rng.randint(1, 4) * 5000, "Процент 10: постоянный гость")
-        add("admin", A.STOCK_WRITEOFF, 30, 18000, "Говядина: 600 г. Испортилась при хранении", order=False)
-        add("admin", A.STOCK_COUNT, 50, 42000, "Исправлено позиций: 4, недостача на 42000 сум", order=False)
-        add("owner", A.PRICE_CHANGE, 70, 45000, "Плов по-ташкентски: 42000 → 45000", order=False)
-        add("kassir", A.REFUND, 20, 85000, "Гостю принесли не то блюдо")
-        add("kassir", A.CASH_MOVE, 26, 500000, "Изъятие / Инкассация: сдача выручки", order=False)
+                add("kassir", A.DISCOUNT, base + rng.randint(3, 10), rng.randint(1, 4) * 5000, N_("Процент 10: постоянный гость"))
+        add("admin", A.STOCK_WRITEOFF, 30, 18000, N_("Говядина: 600 г. Испортилась при хранении"), order=False)
+        add("admin", A.STOCK_COUNT, 50, 42000, N_("Исправлено позиций: 4, недостача на 42000 сум"), order=False)
+        add("owner", A.PRICE_CHANGE, 70, 45000, N_("Плов по-ташкентски: 42000 → 45000"), order=False)
+        add("kassir", A.REFUND, 20, 85000, N_("Гостю принесли не то блюдо"))
+        add("kassir", A.CASH_MOVE, 26, 500000, N_("Изъятие / Инкассация: сдача выручки"), order=False)
 
     def _guest_data(self):
         """Оценки гостей и баллы за повторные визиты: блок «Отзывы» и карточка гостя на демо не пустые."""

@@ -357,7 +357,7 @@ def refund_order(order, user, reason, return_to_stock=True):
 
         locked.status = Order.Status.CANCELLED
         locked.cancelled_by = user
-        locked.cancel_reason = f"Возврат: {refund_reason}"
+        locked.cancel_reason = _("Возврат: %(r)s") % {"r": refund_reason}
         locked.save(update_fields=["status", "cancelled_by", "cancel_reason"])
 
         if return_to_stock:
@@ -372,7 +372,7 @@ def refund_order(order, user, reason, return_to_stock=True):
                         kind=StockMovement.Kind.INCOME,
                         quantity=recipe.quantity * item.quantity * factor,
                         order=locked,
-                        comment=f"Возврат по чеку #{locked.id}: {refund_reason}",
+                        comment=_("Возврат по чеку №%(id)s: %(r)s") % {"id": locked.id, "r": refund_reason},
                         created_by=user,
                     )
 
