@@ -21,6 +21,8 @@ def style_form(form):
     """Единый вид полей ввода во всех формах."""
     for field in form.fields.values():
         widget = field.widget
+        if isinstance(field, forms.ModelChoiceField) and field.empty_label is not None:
+            field.empty_label = _("Выберите…")  # иначе в списке остаётся английское «Select an option»
         if isinstance(widget, (forms.CheckboxInput, forms.CheckboxSelectMultiple, forms.RadioSelect)):
             widget.attrs.setdefault("class", CHECK)
         elif isinstance(widget, forms.ClearableFileInput):

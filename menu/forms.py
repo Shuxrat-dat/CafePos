@@ -32,6 +32,7 @@ class DishForm(StyledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["prep_minutes"].required = False
+        self.fields["category"].empty_label = _("Выберите категорию")
         if self.instance and self.instance.pk:
             self.initial["allergens"] = self.instance.allergen_codes
 
@@ -75,6 +76,7 @@ class RecipeItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         style_form(self)
+        self.fields["product"].empty_label = _("Выберите продукт")
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get("quantity")

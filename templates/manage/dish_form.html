@@ -36,11 +36,32 @@
     </section>
 
     <section class="card p-5">
+      <h2 class="section-title mb-1">{% translate 'Для гостей и кухни' %}</h2>
+      <p class="text-sm text-muted mb-3">{% translate 'Пометки видны гостям в QR-меню. Время приготовления подсвечивает на кухне блюда, которые готовятся слишком долго.' %}</p>
+      <div class="grid sm:grid-cols-3 gap-x-4 gap-y-1">
+        {% for choice in form.allergens %}
+          <label class="flex items-center gap-3 py-1.5 cursor-pointer">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+        {% endfor %}
+      </div>
+      <div class="mt-3 max-w-xs">{% include "components/field.html" with field=form.prep_minutes %}</div>
+    </section>
+
+    <section class="card p-5">
       <h2 class="section-title mb-1">{% translate 'Техкарта (списание со склада)' %}</h2>
       <p class="text-sm text-muted mb-3">{% translate 'Расход продуктов на одну порцию. При оплате заказа продукты списываются со склада автоматически.' %}</p>
       {{ recipe.management_form }}
       {% if recipe.non_form_errors %}<div class="alert-error mb-3">{{ recipe.non_form_errors }}</div>{% endif %}
-      <div class="space-y-2">
+      {% if not products_exist %}
+        <div class="alert-warn">
+          {% icon "alert" 18 %}
+          <div>
+            <b>{% translate 'На складе пока нет продуктов.' %}</b>
+            <span class="block mt-0.5">{% translate 'Чтобы блюдо списывало продукты, сначала добавьте их на складе, потом вернитесь сюда и укажите расход. Без техкарты блюдо продаётся как обычно, но склад и прибыль по нему не считаются.' %}</span>
+            <a href="{% url 'product_create' %}" class="btn btn-secondary btn-sm mt-2">{% icon "plus" 16 %}{% translate 'Добавить продукт' %}</a>
+          </div>
+        </div>
+      {% endif %}
+      <div class="space-y-2 {% if not products_exist %}hidden{% endif %}">
         {% for f in recipe %}
           <div class="grid grid-cols-[1fr_140px_auto] gap-2 items-start">
             {{ f.id }}
@@ -64,8 +85,6 @@
       <h2 class="section-title mb-1">{% translate 'Продажа' %}</h2>
       {% include "components/field.html" with field=form.is_available %}
       {% include "components/field.html" with field=form.is_hidden %}
-      {% include "components/field.html" with field=form.allergens %}
-      {% include "components/field.html" with field=form.prep_minutes %}
       {% include "components/field.html" with field=form.sort_order %}
     </section>
     <button class="btn btn-primary btn-lg w-full">{% icon "check" 18 %}{% translate 'Сохранить' %}</button>

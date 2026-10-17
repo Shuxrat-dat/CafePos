@@ -63,7 +63,11 @@ def _dish_form(request, dish=None):
             messages.success(request, _("Блюдо «%(name)s» сохранено.") % {"name": saved.name})
             return redirect("manage_menu")
         messages.error(request, _("Проверьте поля формы."))
-    return render(request, "manage/dish_form.html", {"form": form, "recipe": recipe, "dish": dish})
+    from inventory.models import Product
+
+    return render(request, "manage/dish_form.html", {
+        "form": form, "recipe": recipe, "dish": dish, "products_exist": Product.objects.exists(),
+    })
 
 
 @manager_only
