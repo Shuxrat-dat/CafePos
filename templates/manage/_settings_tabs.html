@@ -3,6 +3,7 @@
 <div class="flex gap-1 border-b border-line mb-5 overflow-x-auto no-scrollbar">
   <a href="{% url 'manage_settings' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'manage_settings' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Заведение' %}</a>
   <a href="{% url 'manage_tables' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'manage_tables' or page == 'table_edit' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Залы и столы' %}</a>
+  <a href="{% url 'manage_telegram' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'manage_telegram' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">Telegram</a>
   <a href="{% url 'menu_qr' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'menu_qr' or page == 'tables_qr' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'QR-меню' %}</a>
 </div>
 {% endwith %}

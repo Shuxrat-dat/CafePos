@@ -17,6 +17,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import DISCOUNT_ROLES, has_role
+from core import telegram
 from core.models import CafeSettings
 from inventory.services import find_shortages
 from menu.models import Category, Dish
@@ -635,6 +636,8 @@ def discount_form(request, order_id):
             order, request.POST.get("kind", ""), request.POST.get("value", ""), request.POST.get("reason", "")
         )
         if not error:
+            if order.discount_kind:
+                telegram.notify_discount(order, request.user)
             message = _("Скидка снята.") if not order.discount_kind else _("Скидка применена.")
             return _panel(request, order, message)
         response = render(request, "pos/_discount_form.html", {"order": order, "error": error, "form": request.POST})
@@ -679,6 +682,7 @@ def cancel_order(request, order_id):
         messages.error(request, _("Заказ уже на кухне. Отменить его может администратор."))
         return redirect("order_detail", order_id=order.id)
     services.cancel_order(order, request.user, request.POST.get("reason", ""))
+    telegram.notify_order_cancelled(order, request.user)
     messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.id})
     return redirect("floor")
 
@@ -928,6 +932,7 @@ def shift_close(request):
     logout_after = request.POST.get("logout_after") == "1"
     try:
         closed = services.close_shift(shift, actual_cash=actual_cash, comment=comment, user=request.user)
+        telegram.notify_shift_closed(closed)
         diff_str = f" (расхождение: {closed.difference} сум)" if closed.difference else ""
         messages.success(request, _("Кассовая смена №%(id)s закрыта%(diff)s.") % {"id": closed.id, "diff": diff_str})
         if logout_after:

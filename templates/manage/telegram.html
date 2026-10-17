@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}Telegram{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Сообщения о смене, отменах, скидках и складе приходят вам в Telegram.' %}</p>
+</div>
+{% include "manage/_settings_tabs.html" %}
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start max-w-5xl">
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert-error">{% icon "alert" 18 %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+    <section class="card p-5 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="section-title">{% translate 'Подключение' %}</h2>
+        {% if connected %}
+          <span class="badge bg-sage-100 text-sage">{% icon "check-circle" 14 %}{% translate 'Подключено' %}</span>
+        {% else %}
+          <span class="badge bg-stone-100 text-stone-600">{% translate 'Не подключено' %}</span>
+        {% endif %}
+      </div>
+      {% include "components/field.html" with field=form.telegram_bot_token %}
+      {% if connected %}<p class="text-xs text-muted -mt-2">{% translate 'Токен сохранён и не показывается. Оставьте поле пустым, чтобы не менять его.' %}</p>{% endif %}
+      {% include "components/field.html" with field=form.telegram_chat_id %}
+    </section>
+
+    <section class="card p-5 space-y-3">
+      <h2 class="section-title">{% translate 'Что присылать' %}</h2>
+      {% include "components/field.html" with field=form.tg_notify_shift %}
+      {% include "components/field.html" with field=form.tg_notify_cancel %}
+      {% include "components/field.html" with field=form.tg_notify_discount %}
+      {% include "components/field.html" with field=form.tg_discount_percent %}
+      {% include "components/field.html" with field=form.tg_notify_stock %}
+    </section>
+
+    <div class="flex flex-wrap gap-2">
+      <button name="action" value="save" class="btn btn-primary">{% icon "check" 18 %}{% translate 'Сохранить' %}</button>
+      <button name="action" value="test" class="btn btn-secondary">{% icon "send" 18 %}{% translate 'Сохранить и отправить тест' %}</button>
+    </div>
+  </form>
+
+  <aside class="space-y-4">
+    <section class="card p-5 space-y-3 text-sm">
+      <h2 class="section-title">{% translate 'Как подключить' %}</h2>
+      <ol class="list-decimal pl-5 space-y-1.5 text-stone-700">
+        <li>{% translate 'В Telegram откройте @BotFather и создайте бота командой /newbot.' %}</li>
+        <li>{% translate 'Скопируйте выданный токен и вставьте в поле слева.' %}</li>
+        <li>{% translate 'Напишите своему боту /start. Без этого он не сможет вам писать.' %}</li>
+        <li>{% translate 'Узнайте номер чата у @userinfobot и вставьте его.' %}</li>
+        <li>{% translate 'Нажмите «Сохранить и отправить тест».' %}</li>
+      </ol>
+      <p class="text-xs text-muted">{% translate 'Для группы или канала добавьте бота участником и укажите номер группы (он начинается с минуса) или @имя канала.' %}</p>
+    </section>
+    {% if connected %}
+      <form method="post" class="card p-5" onsubmit="return confirm('{% translate 'Отключить Telegram? Токен и номер чата будут удалены.' %}');">
+        {% csrf_token %}
+        <button name="action" value="disconnect" class="btn btn-danger w-full">{% translate 'Отключить Telegram' %}</button>
+      </form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

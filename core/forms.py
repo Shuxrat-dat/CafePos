@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -49,6 +51,40 @@ class CafeSettingsForm(StyledModelForm):
         if not (data.get("accept_cash") or data.get("accept_card") or data.get("accept_mixed")):
             raise forms.ValidationError(_("Оставьте хотя бы один способ оплаты."))
         return data
+
+
+class TelegramSettingsForm(StyledModelForm):
+    """Токен вводится один раз и дальше не показывается. Пустое поле оставляет прежний токен."""
+
+    telegram_bot_token = forms.CharField(
+        label=_("Токен Telegram-бота"), required=False,
+        widget=forms.PasswordInput(render_value=False, attrs={"autocomplete": "off", "placeholder": "123456:ABC-..."}),
+        help_text=_("Создайте бота у @BotFather и вставьте выданный токен."),
+    )
+
+    class Meta:
+        model = CafeSettings
+        fields = [
+            "telegram_bot_token", "telegram_chat_id", "tg_notify_shift", "tg_notify_cancel",
+            "tg_notify_discount", "tg_notify_stock", "tg_discount_percent",
+        ]
+        help_texts = {
+            "telegram_chat_id": _("Номер чата или @имя канала. Напишите боту /start, затем узнайте номер у @userinfobot."),
+        }
+
+    def clean_telegram_bot_token(self):
+        token = self.cleaned_data.get("telegram_bot_token", "").strip()
+        if not token:
+            return self.instance.telegram_bot_token  # оставляем сохранённый
+        if not re.fullmatch(r"\d{6,12}:[A-Za-z0-9_-]{30,60}", token):
+            raise forms.ValidationError(_("Токен выглядит неверно. Он состоит из цифр, двоеточия и букв."))
+        return token
+
+    def clean_telegram_chat_id(self):
+        chat = self.cleaned_data.get("telegram_chat_id", "").strip()
+        if chat and not re.fullmatch(r"-?\d{3,20}|@[A-Za-z][A-Za-z0-9_]{3,31}", chat):
+            raise forms.ValidationError(_("Укажите номер чата (например, 123456789) или @имя канала."))
+        return chat
 
 
 class HallForm(StyledModelForm):

@@ -48,6 +48,17 @@ class CafeSettings(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(180)],
     )
 
+    telegram_bot_token = models.CharField(_("Токен Telegram-бота"), max_length=100, blank=True)
+    telegram_chat_id = models.CharField(_("Чат для уведомлений"), max_length=40, blank=True)
+    tg_notify_shift = models.BooleanField(_("Закрытие смены"), default=True)
+    tg_notify_cancel = models.BooleanField(_("Отмена заказов"), default=True)
+    tg_notify_discount = models.BooleanField(_("Крупные скидки"), default=True)
+    tg_notify_stock = models.BooleanField(_("Заканчиваются продукты"), default=True)
+    tg_discount_percent = models.PositiveSmallIntegerField(
+        _("Скидка считается крупной от, %"), default=20,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+    )
+
     class Meta:
         verbose_name = "Настройки заведения"
         verbose_name_plural = "Настройки заведения"

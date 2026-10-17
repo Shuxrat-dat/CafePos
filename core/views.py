@@ -13,7 +13,8 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import MANAGE_ROLES, role_required
 from pos.models import Hall, Table
 
-from .forms import CafeSettingsForm, HallForm, StaffForm, TableForm
+from . import telegram
+from .forms import CafeSettingsForm, HallForm, StaffForm, TableForm, TelegramSettingsForm
 from .models import CafeSettings
 
 manager_only = role_required(MANAGE_ROLES)
@@ -54,6 +55,33 @@ def manage_settings(request):
             return redirect("manage_settings")
         messages.error(request, _("Проверьте поля формы."))
     return render(request, "manage/settings.html", {"form": form})
+
+
+@manager_only
+def manage_telegram(request):
+    """Подключение Telegram-бота: токен, чат, какие события присылать, тестовое сообщение."""
+    cafe = CafeSettings.get()
+    form = TelegramSettingsForm(request.POST or None, instance=cafe)
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        if action == "disconnect":
+            cafe.telegram_bot_token = ""
+            cafe.telegram_chat_id = ""
+            cafe.save(update_fields=["telegram_bot_token", "telegram_chat_id"])
+            messages.success(request, _("Telegram отключён."))
+            return redirect("manage_telegram")
+        if form.is_valid():
+            cafe = form.save()
+            if action == "test":
+                ok, reason = telegram.send_now("✅ " + _("Тест из %(cafe)s: уведомления подключены.") % {"cafe": cafe.name}, cafe)
+                (messages.success if ok else messages.error)(
+                    request, _("Тестовое сообщение отправлено.") if ok else reason
+                )
+            else:
+                messages.success(request, _("Настройки Telegram сохранены."))
+            return redirect("manage_telegram")
+        messages.error(request, _("Проверьте поля формы."))
+    return render(request, "manage/telegram.html", {"form": form, "connected": telegram.is_configured(cafe)})
 
 
 @manager_only

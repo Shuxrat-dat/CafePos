@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
 
 from .models import Product, RecipeItem, StockMovement
 
@@ -16,6 +17,10 @@ def write_off_order(order):
         ))
         if product_ids:
             list(Product.objects.filter(id__in=product_ids).select_for_update())
+        # Запоминаем, кто был выше минимума: после продажи сообщим только о тех, кто опустился до него
+        was_ok = set(
+            Product.objects.filter(id__in=product_ids, stock__gt=F("min_stock")).values_list("id", flat=True)
+        )
 
         for item in order.items.select_related("dish").prefetch_related("modifiers"):
             factor = Decimal(1)
@@ -32,6 +37,16 @@ def write_off_order(order):
                     order=order,
                     comment=comment,
                 )
+        if was_ok:
+            transaction.on_commit(lambda: _warn_low_stock(was_ok))
+
+
+def _warn_low_stock(was_ok_ids):
+    """После оплаты: продукты, которые только что опустились до минимума, уходят в Telegram."""
+    from core import telegram
+
+    crossed = list(Product.objects.filter(id__in=was_ok_ids, stock__lte=F("min_stock")).order_by("name"))
+    telegram.notify_low_stock(crossed)
 
 
 def find_shortages(lines):
