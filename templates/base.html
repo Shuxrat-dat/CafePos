@@ -198,9 +198,11 @@
           <div id="live-date" class="text-stone-500 font-medium">--</div>
           <div id="live-time" class="text-ink font-bold text-[13px]">--:--</div>
         </div>
-        <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>{% translate 'Онлайн' %}</span>
+        <div id="conn-pill" data-state="online" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shadow-sm"
+             title="{% translate 'Касса работает по локальной сети, интернет ей не нужен. Здесь видно только связь вашего устройства с кассой.' %}"
+             data-online="{% translate 'Касса на связи' %}" data-offline="{% translate 'Нет связи с кассой' %}">
+          <span id="conn-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="conn-label">{% translate 'Касса на связи' %}</span>
         </div>
         <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-sm">
           {% icon "coffee" 16 %}
@@ -209,6 +211,9 @@
       </div>
     </header>
   {% endif %}
+  <div id="conn-banner" role="alert" class="hidden no-print sticky top-0 z-[60] bg-red-600 text-white px-4 py-2.5 text-sm font-semibold text-center">
+    {% translate 'Нет связи с кассой. Заказы и оплаты сейчас не сохраняются. Проверьте Wi-Fi: когда связь вернётся, это сообщение исчезнет само.' %}
+  </div>
   {% if setup_needed and request.resolver_match.url_name != 'setup_wizard' %}
     <div class="no-print bg-brand-50 border-b border-brand-200 px-4 lg:px-6 py-2.5 text-sm flex flex-wrap items-center justify-between gap-2">
       <span><b>{% translate 'Настройте заведение за пять минут' %}</b> · {% translate 'залы, меню и сотрудники' %}</span>
@@ -286,6 +291,40 @@
       if (form.hasAttribute('hx-post') || form.hasAttribute('hx-get') || form.method.toLowerCase() === 'get') return;
       setTimeout(function () { form.querySelectorAll('button').forEach(function (b) { b.disabled = true; }); }, 0);
     });
+    // Связь с кассой: система работает по локальной сети, поэтому проверяем сервер, а не интернет
+    (function () {
+      var pill = document.getElementById('conn-pill'), banner = document.getElementById('conn-banner');
+      if (!pill) return;
+      var dot = document.getElementById('conn-dot'), label = document.getElementById('conn-label');
+      var fails = 0, offline = false;
+      var OK = ['bg-emerald-50', 'border-emerald-200', 'text-emerald-700'], BAD = ['bg-red-50', 'border-red-300', 'text-red-700'];
+      function paint(isOffline) {
+        OK.forEach(function (c) { pill.classList.toggle(c, !isOffline); });
+        BAD.forEach(function (c) { pill.classList.toggle(c, isOffline); });
+        dot.classList.toggle('bg-emerald-500', !isOffline);
+        dot.classList.toggle('bg-red-500', isOffline);
+        label.textContent = isOffline ? pill.dataset.offline : pill.dataset.online;
+        if (banner) banner.classList.toggle('hidden', !isOffline);
+      }
+      function check() {
+        if (document.visibilityState === 'hidden') return;
+        var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 4000);
+        fetch('{% url "ping" %}', { cache: 'no-store', signal: ctl.signal })
+          .then(function () {
+            fails = 0;
+            if (offline) { offline = false; paint(false); showToast(pill.dataset.online, 'success'); }
+          })
+          .catch(function () {
+            fails++;
+            if (fails >= 2 && !offline) { offline = true; paint(true); }
+          })
+          .finally(function () { clearTimeout(timer); });
+      }
+      setInterval(check, 8000);
+      document.addEventListener('visibilitychange', check);
+      window.addEventListener('online', check);
+      window.addEventListener('offline', function () { fails = 1; check(); });
+    })();
     // Живые часы в шапке
     function updateClock() {
       var d = new Date();

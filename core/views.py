@@ -7,7 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.core.paginator import Paginator
 from django.db.models import Count, ProtectedError
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -33,6 +33,13 @@ def _safe_next(request, fallback="/"):
     if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
         return target
     return fallback
+
+
+def ping(request):
+    """Проверка связи с кассой для индикатора в шапке. Ничего не читает из базы и не требует входа."""
+    response = JsonResponse({"ok": True})
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @require_POST
