@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Закупка' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Склад' %}</h1>
+    <p class="page-sub">{% translate 'Продукты, которые скоро закончатся, и сколько стоит их докупить на неделю.' %}</p>
+  </div>
+</div>
+{% include "inventory/_tabs.html" %}
+
+{% if rows %}
+  <div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+    <section class="card overflow-hidden" id="shopping-print">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-b border-line">
+            <tr>
+              <th class="table-head px-4 py-3">{% translate 'Продукт' %}</th>
+              <th class="table-head px-4 py-3 text-right">{% translate 'Остаток' %}</th>
+              <th class="table-head px-4 py-3 text-right">{% translate 'Хватит на' %}</th>
+              <th class="table-head px-4 py-3 text-right">{% translate 'Закупить' %}</th>
+              <th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Примерно' %}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            {% for r in rows %}
+              <tr>
+                <td class="px-4 py-2.5">
+                  <span class="font-medium">{{ r.product|tr }}</span>
+                  {% if r.level == 'out' %}<span class="ml-1 badge bg-red-100 text-red-700">{% translate 'нет' %}</span>
+                  {% elif r.level == 'critical' %}<span class="ml-1 badge bg-orange-100 text-orange-800">{% translate 'срочно' %}</span>
+                  {% else %}<span class="ml-1 badge bg-caramel-100 text-brand">{% translate 'скоро' %}</span>{% endif %}
+                </td>
+                <td class="px-4 py-2.5 text-right tabular-nums whitespace-nowrap">{{ r.product.stock|qty }} {{ r.product.get_unit_display }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums whitespace-nowrap {% if r.level == 'out' or r.level == 'critical' %}text-red-600 font-semibold{% endif %}">
+                  {% if r.days_left is None %}—{% elif r.days_left < 1 %}{% translate 'меньше дня' %}{% else %}{{ r.days_left|floatformat:0 }} {% translate 'дн.' %}{% endif %}
+                </td>
+                <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap">{{ r.suggest|qty }} {{ r.product.get_unit_display }}</td>
+                <td class="px-4 py-2.5 text-right tabular-nums text-muted hidden sm:table-cell whitespace-nowrap">{{ r.cost|money }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="border-t-2 border-line bg-canvas">
+            <tr><td colspan="4" class="px-4 py-3 font-bold text-right">{% translate 'Всего примерно' %}</td><td class="px-4 py-3 text-right font-black tabular-nums whitespace-nowrap">{{ total|money }}</td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <aside class="card p-5 space-y-3 lg:sticky lg:top-4 no-print">
+      <h2 class="section-title">{% translate 'Отправить поставщику' %}</h2>
+      <p class="text-sm text-muted">{% translate 'Список готов к отправке: скопируйте текст или откройте его в Telegram.' %}</p>
+      <textarea id="share-text" readonly rows="8" class="input font-mono text-[13px] leading-snug">{{ share_text }}</textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="copy-list" class="btn btn-secondary" data-done="{% translate 'Скопировано' %}" data-manual="{% translate 'Нажмите Ctrl+C' %}">{% icon "copy" 16 %}<span>{% translate 'Копировать' %}</span></button>
+        <a href="{{ telegram_url }}" target="_blank" rel="noopener" class="btn btn-primary">{% icon "send" 16 %}{% translate 'Telegram' %}</a>
+      </div>
+      <button type="button" onclick="window.print()" class="btn btn-ghost w-full">{% icon "printer" 16 %}{% translate 'Печать' %}</button>
+    </aside>
+  </div>
+{% else %}
+  <div class="card">
+    {% translate 'Закупать пока нечего' as t1 %}{% translate 'Все продукты в запасе выше минимума, ближайшие дни хватает.' as t2 %}
+    {% include "components/empty.html" with icon="check-circle" title=t1 text=t2 %}
+  </div>
+{% endif %}
+
+{% if blocked_dishes %}
+  <section class="card p-5 mt-4">
+    <h2 class="section-title mb-1">{% translate 'Эти блюда сейчас приготовить не из чего' %}</h2>
+    <p class="text-sm text-muted mb-3">{% translate 'Не хватает продукта на одну порцию. Уберите блюдо из продажи или пополните склад.' %}</p>
+    <ul class="divide-y divide-line text-sm">
+      {% for dish, products in blocked_dishes %}
+        <li class="py-2 flex flex-wrap items-center justify-between gap-2">
+          <span class="font-medium">{{ dish|tr }}</span>
+          <span class="text-muted">{% translate 'не хватает' %}: {% for p in products %}{{ p|tr }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var btn = document.getElementById('copy-list');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var area = document.getElementById('share-text');
+      var done = function () {
+        var s = btn.querySelector('span'), old = s.textContent;
+        s.textContent = btn.dataset.done;
+        setTimeout(function () { s.textContent = old; }, 1800);
+      };
+      var fallback = function () {
+        area.focus();
+        area.select();
+        var copied = false;
+        try { copied = document.execCommand('copy'); } catch (e) {}
+        if (copied) { done(); return; }
+        var s = btn.querySelector('span'), old = s.textContent;
+        s.textContent = btn.dataset.manual;
+        setTimeout(function () { s.textContent = old; }, 3000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(area.value).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+  })();
+</script>
+{% endblock %}

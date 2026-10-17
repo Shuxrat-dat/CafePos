@@ -13,7 +13,12 @@ from django.utils.translation import gettext_lazy
 from accounts.permissions import STOCK_ROLES, role_required
 from core.forms import StyledModelForm
 
-from .models import Product, StockMovement
+from urllib.parse import quote
+
+from django.utils import timezone
+
+from .forecast import build_forecast, shopping_list
+from .models import Product, RecipeItem, StockMovement
 
 MAX_VALUE = Decimal(10_000_000)
 
@@ -80,6 +85,10 @@ def stock(request):
         products = products.filter(Q(name__icontains=search) | Q(name_uz__icontains=search))
     if only_low:
         products = products.filter(stock__lte=F("min_stock"))
+    forecast = build_forecast()
+    products = list(products)
+    for product in products:
+        product.fc = forecast[product.id]
     context = {
         "products": products,
         "all_products": Product.objects.all(),
@@ -93,6 +102,31 @@ def stock(request):
         "only_low": only_low,
     }
     return render(request, "inventory/stock.html", context)
+
+
+@stock_only
+def shopping(request):
+    """Что докупить: срочные продукты с подсказкой количества и готовым текстом для поставщика."""
+    rows = shopping_list()
+    total = sum((r["cost"] for r in rows), Decimal(0))
+    lines = [f"• {r['product'].name} — {r['suggest']} {r['product'].get_unit_display()}" for r in rows]
+    share_text = _("Закупка на %(date)s:") % {"date": timezone.localdate().strftime("%d.%m")}
+    share_text = "\n".join([share_text, *lines]) if lines else ""
+    blocked = (
+        RecipeItem.objects.filter(product__stock__lt=F("quantity"))
+        .select_related("dish", "product")
+        .order_by("dish__name")
+    )
+    blocked_dishes = {}
+    for recipe in blocked:
+        blocked_dishes.setdefault(recipe.dish, []).append(recipe.product)
+    return render(request, "inventory/shopping.html", {
+        "rows": rows,
+        "total": total,
+        "share_text": share_text,
+        "telegram_url": "https://t.me/share/url?url=%20&text=" + quote(share_text) if share_text else "",
+        "blocked_dishes": blocked_dishes.items(),
+    })
 
 
 @stock_only

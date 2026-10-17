@@ -7,7 +7,10 @@
     <h1 class="page-title">{% translate 'Склад' %}</h1>
     <p class="page-sub">{% blocktranslate trimmed with s=stock_value|money %}Продукты на складе на сумму {{ s }} по закупочным ценам{% endblocktranslate %}</p>
   </div>
-  <a href="{% url 'product_create' %}" class="btn btn-secondary">{% icon "plus" 18 %}{% translate 'Новый продукт' %}</a>
+  <div class="flex gap-2">
+    <a href="{% url 'stock_shopping' %}" class="btn btn-primary">{% icon "package" 18 %}{% translate 'Что закупить' %}</a>
+    <a href="{% url 'product_create' %}" class="btn btn-secondary">{% icon "plus" 18 %}{% translate 'Новый продукт' %}</a>
+  </div>
 </div>
 {% include "inventory/_tabs.html" %}
 
@@ -33,7 +36,7 @@
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 border-b border-line">
-          <tr><th class="table-head px-4 py-3">{% translate 'Продукт' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Остаток' %}</th><th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Минимум' %}</th><th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Цена за ед.' %}</th><th class="px-2 py-3"></th></tr>
+          <tr><th class="table-head px-4 py-3">{% translate 'Продукт' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Остаток' %}</th><th class="table-head px-4 py-3 text-right">{% translate 'Хватит на' %}</th><th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Минимум' %}</th><th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Цена за ед.' %}</th><th class="px-2 py-3"></th></tr>
         </thead>
         <tbody class="divide-y divide-line">
           {% for p in products %}
@@ -44,6 +47,16 @@
                 {% elif p.is_low %}<span class="ml-1 badge bg-orange-100 text-orange-800">{% translate 'мало' %}</span>{% endif %}
               </td>
               <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap {% if p.is_low %}text-red-600{% endif %}">{{ p.stock|qty }} {{ p.get_unit_display }}</td>
+              <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                {% if p.fc.days_left is not None %}
+                  <span class="font-semibold tabular-nums {% if p.fc.level == 'critical' or p.fc.level == 'out' %}text-red-600{% elif p.fc.level == 'soon' %}text-orange-700{% else %}text-ink{% endif %}">
+                    {% if p.fc.days_left < 1 %}{% translate 'меньше дня' %}{% else %}{{ p.fc.days_left|floatformat:0 }} {% translate 'дн.' %}{% endif %}
+                  </span>
+                  {% if p.fc.weekend_boost %}<span class="block text-[11px] text-muted" title="{% translate 'Расход по пятницам–воскресеньям выше обычного' %}">{% blocktranslate with b=p.fc.weekend_boost %}выходные +{{ b }}%{% endblocktranslate %}</span>{% endif %}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
               <td class="px-4 py-2.5 text-right tabular-nums text-muted hidden sm:table-cell whitespace-nowrap">{{ p.min_stock|qty }} {{ p.get_unit_display }}</td>
               <td class="px-4 py-2.5 text-right tabular-nums text-muted hidden md:table-cell whitespace-nowrap">{{ p.cost_per_unit|qty }} {% translate 'сум' %}</td>
               <td class="px-2 py-2.5 text-right"><a href="{% url 'product_edit' p.id %}" class="icon-btn w-9 h-9 border-0" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 16 %}</a></td>
