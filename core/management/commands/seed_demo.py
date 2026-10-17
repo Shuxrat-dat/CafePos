@@ -84,6 +84,9 @@ CATEGORIES = [
     ("drinks", "Напитки", "Ichimliklar", "drink"),
 ]
 
+# Время приготовления по категориям, мин: кухня подсвечивает блюда, которые готовятся дольше
+PREP_MINUTES = {"national": 18, "hot": 15, "fastfood": 8, "pizza": 14, "salads": 5, "desserts": 4, "coffee": 3, "drinks": 2}
+
 # (ключ, название, по-узбекски, группа, доплата, множитель расхода)
 MODIFIERS = [
     ("double", "Двойная порция", "Ikki hissa", "", 35000, 2),
@@ -277,6 +280,7 @@ class Command(BaseCommand):
                 category=self.categories[cat], name=name, name_uz=name_uz, price=price,
                 description=desc, description_uz=desc_uz, sort_order=order,
                 is_available=key not in STOP_LIST, is_hidden=key in HIDDEN,
+                prep_minutes=PREP_MINUTES.get(cat, 0),
             )
             dish.modifiers.set([self.modifiers[m] for m in mods])
             self.dishes[key] = dish

@@ -73,6 +73,10 @@ class Dish(models.Model):
         _("Скрыто"), default=False,
         help_text=_("Скрытое блюдо не показывается ни на кассе, ни в меню для гостей."),
     )
+    prep_minutes = models.PositiveSmallIntegerField(
+        _("Время приготовления, мин"), default=0,
+        help_text=_("За это время блюдо должно быть готово. 0 — использовать общий порог из настроек."),
+    )
     sort_order = models.PositiveIntegerField(_("Порядок"), default=0)
 
     class Meta:

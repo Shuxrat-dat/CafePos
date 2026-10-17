@@ -64,6 +64,7 @@
       <h2 class="section-title mb-1">{% translate 'Продажа' %}</h2>
       {% include "components/field.html" with field=form.is_available %}
       {% include "components/field.html" with field=form.is_hidden %}
+      {% include "components/field.html" with field=form.prep_minutes %}
       {% include "components/field.html" with field=form.sort_order %}
     </section>
     <button class="btn btn-primary btn-lg w-full">{% icon "check" 18 %}{% translate 'Сохранить' %}</button>

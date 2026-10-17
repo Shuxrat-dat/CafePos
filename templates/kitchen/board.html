@@ -2,13 +2,26 @@
 {% load i18n ui %}
 {% block title %}{% translate 'Кухня' %}{% endblock %}
 {% block main_class %}px-3 py-3 lg:px-5 lg:py-4 w-full{% endblock %}
+{% block head %}
+<style>
+  @keyframes kdsflash { 0% { box-shadow: 0 0 0 0 rgba(201,139,69,.9); } 100% { box-shadow: 0 0 0 18px rgba(201,139,69,0); } }
+  .kds-flash { animation: kdsflash 1.2s ease-out 3; }
+  @media (prefers-reduced-motion: reduce) { .kds-flash { animation: none; outline: 3px solid #C98B45; } }
+</style>
+{% endblock %}
 {% block content %}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <div>
     <h1 class="page-title">{% translate 'Кухня' %}</h1>
     <p class="page-sub">{% blocktranslate trimmed with m=warn_minutes %}Обновляется автоматически. Заказ подсвечивается, если ждёт дольше {{ m }} мин.{% endblocktranslate %}</p>
   </div>
-  <div class="text-3xl font-bold tabular-nums text-slate-700" id="kds-clock">{% now "H:i" %}</div>
+  <div class="flex items-center gap-4">
+    <button type="button" id="kds-sound" aria-pressed="false" class="btn btn-secondary btn-sm"
+            data-on="{% translate 'Звук включён' %}" data-off="{% translate 'Включить звук' %}">
+      {% icon "bell" 16 %}<span>{% translate 'Включить звук' %}</span>
+    </button>
+    <div class="text-3xl font-bold tabular-nums text-slate-700" id="kds-clock">{% now "H:i" %}</div>
+  </div>
 </div>
 <div id="tickets" hx-get="{% url 'kitchen_tickets' %}" hx-trigger="every 5s" hx-swap="innerHTML">
   {% include "kitchen/_tickets.html" %}
@@ -23,13 +36,69 @@
       document.querySelectorAll('[data-since]').forEach(function (el) {
         var s = Math.max(0, Math.floor(now / 1000 - parseInt(el.dataset.since, 10)));
         var m = Math.floor(s / 60), r = s % 60;
-        el.textContent = m + ':' + (r < 10 ? '0' : '') + r;
+        if (s >= 86400) {
+          el.textContent = Math.floor(s / 86400) + ' {% translate "д" as t %}{{ t|escapejs }} ' + Math.floor(s % 86400 / 3600) + ' {% translate "ч" as t %}{{ t|escapejs }}';
+        } else if (s >= 3600) {
+          el.textContent = Math.floor(s / 3600) + ' {% translate "ч" as t %}{{ t|escapejs }} ' + Math.floor(s % 3600 / 60) + ' {% translate "мин" as t %}{{ t|escapejs }}';
+        } else {
+          el.textContent = m + ':' + (r < 10 ? '0' : '') + r;
+        }
       });
       var d = new Date();
       document.getElementById('kds-clock').textContent = (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
     }
     setInterval(tick, 1000);
     tick();
+
+    // Новые заказы: мигание карточки и короткий сигнал. Звук включает сам повар: браузер не даёт играть без нажатия.
+    var baseTitle = document.title, known = null, audio = null;
+    var btn = document.getElementById('kds-sound');
+    var soundOn = false;
+    try { soundOn = localStorage.getItem('kds_sound') === '1'; } catch (e) {}
+
+    function paintButton() {
+      btn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+      btn.querySelector('span').textContent = soundOn ? btn.dataset.on : btn.dataset.off;
+      btn.classList.toggle('btn-primary', soundOn);
+      btn.classList.toggle('btn-secondary', !soundOn);
+    }
+    function beep() {
+      if (!audio) return;
+      [[880, 0], [660, 0.18]].forEach(function (n) {
+        var osc = audio.createOscillator(), gain = audio.createGain(), t = audio.currentTime + n[1];
+        osc.frequency.value = n[0]; osc.type = 'sine';
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        osc.connect(gain); gain.connect(audio.destination);
+        osc.start(t); osc.stop(t + 0.18);
+      });
+    }
+    btn.addEventListener('click', function () {
+      soundOn = !soundOn;
+      try { localStorage.setItem('kds_sound', soundOn ? '1' : '0'); } catch (e) {}
+      if (soundOn) {
+        audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === 'suspended') audio.resume();
+        beep();
+      }
+      paintButton();
+    });
+    paintButton();
+
+    function onTickets() {
+      var fresh = Array.prototype.slice.call(document.querySelectorAll('.ticket[data-column="new"]'));
+      var ids = fresh.map(function (a) { return a.dataset.ticket; });
+      if (known !== null) {
+        var added = fresh.filter(function (a) { return known.indexOf(a.dataset.ticket) === -1; });
+        added.forEach(function (a) { a.classList.add('kds-flash'); });
+        if (added.length && soundOn) beep();
+      }
+      known = ids;
+      document.title = ids.length ? '(' + ids.length + ') ' + baseTitle : baseTitle;
+    }
+    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target.id === 'tickets') onTickets(); });
+    onTickets();
   })();
 </script>
 {% endblock %}

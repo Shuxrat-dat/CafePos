@@ -15,13 +15,21 @@ class DishForm(StyledModelForm):
         model = Dish
         fields = [
             "name", "name_uz", "category", "price", "description", "description_uz",
-            "photo", "modifiers", "is_available", "is_hidden", "sort_order",
+            "photo", "modifiers", "is_available", "is_hidden", "prep_minutes", "sort_order",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
             "description_uz": forms.Textarea(attrs={"rows": 3}),
             "modifiers": forms.CheckboxSelectMultiple,
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["prep_minutes"].required = False
+
+    def clean_prep_minutes(self):
+        value = self.cleaned_data.get("prep_minutes")
+        return min(value or 0, 600)
 
     def clean_price(self):
         price = self.cleaned_data["price"]

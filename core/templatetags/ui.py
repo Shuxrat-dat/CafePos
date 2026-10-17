@@ -125,6 +125,20 @@ def _to_int(value):
 
 
 @register.filter
+def duration_min(value):
+    """Минуты в короткий читаемый вид: «12 мин», «2 ч 5 мин», «3 д 4 ч»."""
+    try:
+        minutes = max(0, int(value))
+    except (TypeError, ValueError):
+        return ""
+    if minutes < 60:
+        return f"{minutes} {_('мин')}"
+    if minutes < 24 * 60:
+        return f"{minutes // 60} {_('ч')} {minutes % 60} {_('мин')}"
+    return f"{minutes // 1440} {_('д')} {minutes % 1440 // 60} {_('ч')}"
+
+
+@register.filter
 def num(value):
     """125000 -> «125 000» (неразрывные пробелы между разрядами)."""
     number = _to_int(value)

@@ -11,6 +11,7 @@ from pos.models import Order, OrderItem
 kitchen_only = role_required(KITCHEN_ROLES)
 
 ACTIVE = [OrderItem.Status.QUEUED, OrderItem.Status.COOKING, OrderItem.Status.READY]
+READY_WARN_MINUTES = 3  # готовое блюдо дольше этого ждёт официанта — остывает
 
 
 def _tickets_context():
@@ -38,14 +39,39 @@ def _tickets_context():
             column = "cooking"
         else:
             column = "ready"
-        if column != "ready":
-            order.level = "late" if minutes >= warn * 2 else "warn" if minutes >= warn else "ok"
-        else:
-            order.level = "ok"
+        order.level = _order_level(order, column, now, warn)
+        order.ready_count = sum(1 for i in order.kitchen_items if i.status == OrderItem.Status.READY)
+        order.total_count = len(order.kitchen_items)
+        # Часть позиций готова, часть ещё нет: подсказываем отдать всё вместе
+        order.partly_ready = column != "ready" and order.ready_count > 0
+        if column == "ready":
+            ready_times = [i.ready_at for i in order.kitchen_items if i.ready_at]
+            order.ready_since = max(ready_times) if ready_times else order.since
+            order.ready_wait = max(0, int((now - order.ready_since).total_seconds() // 60))
         columns[column].append(order)
     for column in columns.values():
         column.sort(key=lambda o: o.since)
-    return {"columns": columns, "warn_minutes": warn}
+    return {"columns": columns, "warn_minutes": warn, "ready_warn_minutes": READY_WARN_MINUTES}
+
+
+def _order_level(order, column, now, warn):
+    """Цвет карточки. Готовые блюда остывают, остальные оцениваем по времени приготовления каждого блюда."""
+    if column == "ready":
+        times = [i.ready_at for i in order.kitchen_items if i.ready_at]
+        waited = (now - max(times)).total_seconds() / 60 if times else 0
+        return "late" if waited >= READY_WARN_MINUTES * 2 else "warn" if waited >= READY_WARN_MINUTES else "ok"
+    worst = 0
+    for item in order.kitchen_items:
+        if item.status == OrderItem.Status.READY:
+            item.level = "ok"
+            continue
+        target = item.dish.prep_minutes or warn
+        started = item.sent_at or order.since
+        elapsed = (now - started).total_seconds() / 60
+        item.target_minutes = item.dish.prep_minutes
+        item.level = "late" if elapsed >= target * 2 else "warn" if elapsed >= target else "ok"
+        worst = max(worst, {"ok": 0, "warn": 1, "late": 2}[item.level])
+    return ("ok", "warn", "late")[worst]
 
 
 def _tickets(request):
