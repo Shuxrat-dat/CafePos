@@ -44,6 +44,7 @@ class CafeSettingsForm(StyledModelForm):
         fields = [
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
             "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_mixed", "kitchen_warn_minutes",
+            "loyalty_percent",
         ]
 
     def clean(self):
@@ -66,7 +67,7 @@ class TelegramSettingsForm(StyledModelForm):
         model = CafeSettings
         fields = [
             "telegram_bot_token", "telegram_chat_id", "tg_notify_shift", "tg_notify_cancel",
-            "tg_notify_discount", "tg_notify_stock", "tg_discount_percent",
+            "tg_notify_discount", "tg_notify_stock", "tg_notify_review", "tg_discount_percent",
         ]
         help_texts = {
             "telegram_chat_id": _("Номер чата или @имя канала. Напишите боту /start, затем узнайте номер у @userinfobot."),

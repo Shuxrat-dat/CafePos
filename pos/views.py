@@ -19,10 +19,11 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import DISCOUNT_ROLES, has_role
 from core import audit, telegram
 from core.models import CafeSettings
+from menu.public_views import _qr_svg
 from inventory.services import find_shortages
 from menu.models import Category, Dish
 
-from . import services
+from . import loyalty, reviews, services
 from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table
 
 
@@ -63,6 +64,7 @@ def _panel_context(request, order):
         "totals": order.totals,
         "can_cancel": _can_cancel(request.user, order),
         "can_discount": has_role(request.user, DISCOUNT_ROLES),
+        "loyalty_customer": loyalty.find_customer(order.customer_phone),
     }
 
 
@@ -870,6 +872,8 @@ def receipt(request, order_id):
     order_items = list(_items(order))
     order._prefetched_objects_cache = {"items": order_items}
     remaining = _open_orders().filter(table=order.table).first() if order.table_id else None
+    review_url = request.build_absolute_uri(reverse("order_review", args=[reviews.make_token(order)]))
+    entry = order.loyalty_entries.filter(points__gt=0).select_related("customer").first()
     return render(
         request,
         "pos/receipt.html",
@@ -880,6 +884,8 @@ def receipt(request, order_id):
             "change": order.change,
             "remaining": remaining,
             "is_precheck": False,
+            "review_qr": _qr_svg(review_url),
+            "loyalty_entry": entry,
         },
     )
 

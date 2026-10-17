@@ -84,6 +84,25 @@ CATEGORIES = [
     ("drinks", "Напитки", "Ichimliklar", "drink"),
 ]
 
+# Пометки об аллергенах по ключевым словам в названии блюда (для демо-меню)
+ALLERGEN_KEYWORDS = {
+    "gluten": ["лагман", "манты", "самса", "лепёш", "лепеш", "пицца", "бургер", "сэндвич", "круассан", "чизкейк", "торт", "хот-дог", "паста", "блин"],
+    "milk": ["сыр", "чизкейк", "латте", "капучино", "торт", "мороженое", "пицца", "сливк", "флэт", "какао"],
+    "eggs": ["цезарь", "торт", "чизкейк", "омлет", "блин"],
+    "nuts": ["орех", "медовик", "ореш"],
+    "fish": ["рыб", "лосос", "форел"],
+    "seafood": ["креветк", "мидии"],
+    "soy": ["соев"],
+    "spicy": ["пепперони", "чили", "острый", "острая", "кимчи"],
+    "vegan": ["овощн", "греческий"],
+}
+
+
+def allergens_for(name):
+    low = name.lower()
+    return ",".join(code for code, words in ALLERGEN_KEYWORDS.items() if any(w in low for w in words))
+
+
 # Время приготовления по категориям, мин: кухня подсвечивает блюда, которые готовятся дольше
 PREP_MINUTES = {"national": 18, "hot": 15, "fastfood": 8, "pizza": 14, "salads": 5, "desserts": 4, "coffee": 3, "drinks": 2}
 
@@ -229,6 +248,7 @@ class Command(BaseCommand):
             self._active_orders()
             self._stock_income(options["days"])
             self._audit_log(options["days"])
+            self._guest_data()
         self.stdout.write(self.style.SUCCESS(
             f"Демо-ресторан готов: заказов {Order.objects.count()}, блюд {Dish.objects.count()}, "
             f"продуктов {Product.objects.count()}. Пароль сотрудников: {PASSWORD}"
@@ -281,7 +301,7 @@ class Command(BaseCommand):
                 category=self.categories[cat], name=name, name_uz=name_uz, price=price,
                 description=desc, description_uz=desc_uz, sort_order=order,
                 is_available=key not in STOP_LIST, is_hidden=key in HIDDEN,
-                prep_minutes=PREP_MINUTES.get(cat, 0),
+                prep_minutes=PREP_MINUTES.get(cat, 0), allergens=allergens_for(name),
             )
             dish.modifiers.set([self.modifiers[m] for m in mods])
             self.dishes[key] = dish
@@ -325,6 +345,33 @@ class Command(BaseCommand):
         add("owner", A.PRICE_CHANGE, 70, 45000, "Плов по-ташкентски: 42000 → 45000", order=False)
         add("kassir", A.REFUND, 20, 85000, "Гостю принесли не то блюдо")
         add("kassir", A.CASH_MOVE, 26, 500000, "Изъятие / Инкассация: сдача выручки", order=False)
+
+    def _guest_data(self):
+        """Оценки гостей и баллы за повторные визиты: блок «Отзывы» и карточка гостя на демо не пустые."""
+        from core.models import CafeSettings
+        from pos import loyalty
+        from pos.models import Review
+
+        cafe = CafeSettings.get()
+        cafe.loyalty_percent = 5
+        cafe.save(update_fields=["loyalty_percent"])
+        rng = random.Random(404)
+        comments = {
+            5: ["Очень вкусно, быстро принесли", "Лучший плов в районе", "Уютно, обязательно вернёмся", ""],
+            4: ["Хорошо, но немного шумно", "", "Вкусно, цены чуть выше ожиданий"],
+            3: ["Ждали заказ дольше обычного", "Блюдо было тёплым, не горячим"],
+            2: ["Долго несли счёт", "Официант забыл напиток"],
+            1: ["Суп холодный, пришлось просить подогреть"],
+        }
+        paid = list(Order.objects.filter(status=Order.Status.PAID).order_by("-closed_at")[:160])
+        for order in paid:
+            if rng.random() < 0.3:
+                rating = rng.choices([5, 4, 3, 2, 1], weights=[52, 26, 12, 7, 3])[0]
+                review = Review.objects.create(order=order, rating=rating, comment=rng.choice(comments[rating]))
+                Review.objects.filter(pk=review.pk).update(created_at=order.closed_at)
+        for order in paid:
+            if order.customer_phone:
+                loyalty.earn(order)
 
     def _stock_items(self):
         self.products = {}

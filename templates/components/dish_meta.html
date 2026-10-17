@@ -1,0 +1,11 @@
+{% load i18n %}
+{% if dish.allergen_list or dish.prep_minutes %}
+  <div class="mt-1.5 flex flex-wrap items-center gap-1">
+    {% for code, label in dish.allergen_list %}
+      <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold {% if code == 'spicy' %}bg-red-50 text-red-700{% elif code == 'vegan' %}bg-sage-100 text-sage{% else %}bg-amber-50 text-amber-800{% endif %}">{{ label }}</span>
+    {% endfor %}
+    {% if dish.prep_minutes %}
+      <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold bg-stone-100 text-stone-600">≈ {{ dish.prep_minutes }} {% translate 'мин' %}</span>
+    {% endif %}
+  </div>
+{% endif %}

@@ -33,6 +33,7 @@
       <span class="flex-1 min-w-0">
         {% if order.customer_name or order.customer_phone or order.delivery_address %}
           <span class="block font-medium truncate">{{ order.customer_name|default:"—" }}{% if order.customer_phone %} · {{ order.customer_phone }}{% endif %}</span>
+          {% if loyalty_customer %}<span class="block text-xs font-semibold text-sage">{% blocktranslate trimmed with p=loyalty_customer.points v=loyalty_customer.visits %}Баллы: {{ p }} · визитов: {{ v }}{% endblocktranslate %}</span>{% endif %}
           {% if order.delivery_address %}<span class="block text-muted truncate">{{ order.delivery_address }}</span>{% endif %}
         {% elif order.order_type == 'delivery' %}
           <span class="font-medium text-orange-900">{% translate 'Укажите адрес и телефон для доставки' %}</span>

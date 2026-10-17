@@ -4,6 +4,20 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import IMAGE_EXTENSIONS
 
+# Пометки в меню для гостей: коды хранятся в блюде через запятую
+ALLERGEN_CHOICES = [
+    ("gluten", _("Глютен")),
+    ("milk", _("Молоко")),
+    ("eggs", _("Яйца")),
+    ("nuts", _("Орехи")),
+    ("fish", _("Рыба")),
+    ("seafood", _("Морепродукты")),
+    ("soy", _("Соя")),
+    ("spicy", _("Острое")),
+    ("vegan", _("Веган")),
+]
+ALLERGEN_LABELS = dict(ALLERGEN_CHOICES)
+
 
 class Category(models.Model):
     class Icon(models.TextChoices):
@@ -73,6 +87,7 @@ class Dish(models.Model):
         _("Скрыто"), default=False,
         help_text=_("Скрытое блюдо не показывается ни на кассе, ни в меню для гостей."),
     )
+    allergens = models.CharField(_("Аллергены и пометки"), max_length=100, blank=True)
     prep_minutes = models.PositiveSmallIntegerField(
         _("Время приготовления, мин"), default=0,
         help_text=_("За это время блюдо должно быть готово. 0 — использовать общий порог из настроек."),
@@ -86,6 +101,15 @@ class Dish(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def allergen_codes(self):
+        return [code for code in self.allergens.split(",") if code in ALLERGEN_LABELS]
+
+    @property
+    def allergen_list(self):
+        """Пометки для гостя: [(код, подпись)]."""
+        return [(code, ALLERGEN_LABELS[code]) for code in self.allergen_codes]
 
     @property
     def can_order(self):

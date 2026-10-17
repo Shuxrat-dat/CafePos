@@ -22,6 +22,7 @@
             <div class="min-w-0 flex-1">
               <div class="font-semibold leading-snug">{{ dish|tr }}</div>
               <div class="font-bold text-sm mt-0.5">{{ dish.price|money }}</div>
+              {% include "components/dish_meta.html" %}
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <button type="button" data-delta="-1" class="qty-btn w-10 h-10 rounded-full bg-slate-100 text-xl font-bold" aria-label="{% translate 'Уменьшить' %}">−</button>

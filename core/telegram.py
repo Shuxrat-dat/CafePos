@@ -168,6 +168,27 @@ def notify_discount(order, user):
         return False
 
 
+def notify_review(review):
+    """Низкие оценки (3 и ниже) владелец должен увидеть сразу, пока гость ещё рядом."""
+    if review.rating > 3:
+        return False
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            order = review.order
+            lines = [
+                "⭐ " + _("Оценка %(r)s из 5 · %(cafe)s") % {"r": review.rating, "cafe": cafe.name},
+                _("Заказ №%(id)s, %(place)s") % {"id": order.id, "place": order.place_label},
+                _("Официант: %(name)s") % {"name": _person(order.waiter)},
+            ]
+            if review.comment:
+                lines.append("«" + review.comment + "»")
+        return send("\n".join(lines), "review")
+    except Exception:
+        log.exception("Telegram: сообщение об отзыве не собрано")
+        return False
+
+
 def notify_low_stock(products):
     """products: продукты, которые только что опустились до минимума или ниже."""
     if not products:

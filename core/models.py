@@ -98,6 +98,12 @@ class CafeSettings(models.Model):
     tg_notify_cancel = models.BooleanField(_("Отмена заказов"), default=True)
     tg_notify_discount = models.BooleanField(_("Крупные скидки"), default=True)
     tg_notify_stock = models.BooleanField(_("Заканчиваются продукты"), default=True)
+    tg_notify_review = models.BooleanField(_("Плохие отзывы гостей"), default=True)
+    loyalty_percent = models.PositiveSmallIntegerField(
+        _("Баллы гостям, % от суммы"), default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(30)],
+        help_text=_("Гость с номером телефона в заказе копит баллы. 1 балл = 1 сум. 0 — не начислять."),
+    )
     tg_discount_percent = models.PositiveSmallIntegerField(
         _("Скидка считается крупной от, %"), default=20,
         validators=[MinValueValidator(1), MaxValueValidator(100)],

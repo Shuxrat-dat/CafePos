@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from core.forms import StyledModelForm, style_form
 from inventory.models import RecipeItem
 
-from .models import Category, Dish, Modifier
+from .models import ALLERGEN_CHOICES, Category, Dish, Modifier
 
 MAX_PHOTO_BYTES = 3 * 1024 * 1024
 
@@ -15,7 +15,7 @@ class DishForm(StyledModelForm):
         model = Dish
         fields = [
             "name", "name_uz", "category", "price", "description", "description_uz",
-            "photo", "modifiers", "is_available", "is_hidden", "prep_minutes", "sort_order",
+            "photo", "modifiers", "allergens", "is_available", "is_hidden", "prep_minutes", "sort_order",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
@@ -23,9 +23,20 @@ class DishForm(StyledModelForm):
             "modifiers": forms.CheckboxSelectMultiple,
         }
 
+    allergens = forms.MultipleChoiceField(
+        label=_("Аллергены и пометки"), required=False, choices=ALLERGEN_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        help_text=_("Гости увидят эти пометки в меню и смогут выбрать блюдо осознанно."),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["prep_minutes"].required = False
+        if self.instance and self.instance.pk:
+            self.initial["allergens"] = self.instance.allergen_codes
+
+    def clean_allergens(self):
+        return ",".join(self.cleaned_data.get("allergens") or [])
 
     def clean_prep_minutes(self):
         value = self.cleaned_data.get("prep_minutes")

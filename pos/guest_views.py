@@ -115,3 +115,33 @@ def reject_guest(request, order_id, guest_id):
         status=GuestOrder.Status.REJECTED
     )
     return _panel(request, order)
+
+def review(request, token):
+    """Страница оценки по QR на чеке: без входа, один отзыв на заказ."""
+    from core import telegram
+
+    from . import reviews
+    from .models import Order, Review
+
+    order_id = reviews.read_token(token)
+    order = Order.objects.filter(id=order_id, status=Order.Status.PAID).first() if order_id else None
+    if order is None:
+        return render(request, "menu/review.html", {"state": "invalid"}, status=404)
+    existing = Review.objects.filter(order=order).first()
+    if existing:
+        return render(request, "menu/review.html", {"state": "done", "review": existing})
+
+    error = ""
+    if request.method == "POST":
+        raw = request.POST.get("rating", "")
+        comment = request.POST.get("comment", "").strip()[:500]
+        if not (raw.isascii() and raw.isdigit() and 1 <= int(raw) <= 5):
+            error = _("Выберите оценку от 1 до 5.")
+        else:
+            created, _new = Review.objects.get_or_create(
+                order=order, defaults={"rating": int(raw), "comment": comment}
+            )
+            if _new:
+                telegram.notify_review(created)
+            return redirect(reverse("order_review", args=[token]))
+    return render(request, "menu/review.html", {"state": "form", "error": error, "token": token})

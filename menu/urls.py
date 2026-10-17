@@ -9,4 +9,5 @@ urlpatterns = [
     path("qr/", public_views.menu_qr, name="menu_qr"),
     path("qr/tables/", guest_views.tables_qr, name="tables_qr"),
     path("t/<int:table_id>/", guest_views.table_menu, name="table_menu"),
+    path("review/<str:token>/", guest_views.review, name="order_review"),
 ]

@@ -13,6 +13,7 @@
               <div>
                 <div class="font-semibold leading-snug">{{ dish|tr }}</div>
                 {% with d=dish|tr:"description" %}{% if d %}<div class="text-sm text-muted mt-0.5 line-clamp-2">{{ d }}</div>{% endif %}{% endwith %}
+                {% include "components/dish_meta.html" %}
               </div>
               <div class="font-bold mt-1">{{ dish.price|money }}</div>
             </div>

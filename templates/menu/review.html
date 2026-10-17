@@ -1,0 +1,69 @@
+{% extends "menu/_guest_base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Ваша оценка' %}{% endblock %}
+{% block subtitle %}{% translate 'Ваша оценка' %}{% endblock %}
+{% block content %}
+<main class="max-w-xl mx-auto p-4">
+  {% if state == 'invalid' %}
+    <div class="bg-white rounded-2xl border border-line p-6 text-center">
+      <h1 class="text-lg font-bold mb-1">{% translate 'Ссылка не работает' %}</h1>
+      <p class="text-muted text-sm">{% translate 'Возможно, она устарела. Оценить визит можно в течение двух недель после оплаты.' %}</p>
+    </div>
+  {% elif state == 'done' %}
+    <div class="bg-white rounded-2xl border border-line p-6 text-center">
+      <div class="text-4xl mb-2" aria-hidden="true">{% if review.rating >= 4 %}😊{% elif review.rating == 3 %}🙂{% else %}🙏{% endif %}</div>
+      <h1 class="text-lg font-bold mb-1">{% translate 'Спасибо за оценку!' %}</h1>
+      <p class="text-muted text-sm">
+        {% if review.rating >= 4 %}{% translate 'Рады, что вам понравилось. Ждём вас снова.' %}
+        {% else %}{% translate 'Мы прочитаем ваш отзыв и постараемся стать лучше.' %}{% endif %}
+      </p>
+    </div>
+  {% else %}
+    <form method="post" class="bg-white rounded-2xl border border-line p-5 space-y-4">
+      {% csrf_token %}
+      <div>
+        <h1 class="text-lg font-bold">{% translate 'Как вам у нас?' %}</h1>
+        <p class="text-muted text-sm">{% translate 'Это займёт десять секунд.' %}</p>
+      </div>
+      {% if error %}<div class="rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium px-4 py-3">{{ error }}</div>{% endif %}
+      <fieldset>
+        <legend class="sr-only">{% translate 'Оценка' %}</legend>
+        <div class="flex justify-between gap-2" id="stars">
+          {% for n in "12345" %}
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="rating" value="{{ n }}" class="peer sr-only" required>
+              <span class="grid place-items-center h-14 rounded-xl border border-line text-2xl text-stone-300 peer-checked:border-brand peer-checked:bg-brand/10 peer-checked:text-amber-500 peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40 transition">★</span>
+              <span class="block text-center text-xs text-muted mt-1">{{ n }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div>
+        <label for="comment" class="block text-sm font-medium mb-1.5">{% translate 'Что понравилось или что исправить? (необязательно)' %}</label>
+        <textarea id="comment" name="comment" rows="3" maxlength="500" class="w-full rounded-xl border border-line px-3.5 py-2.5 text-[15px] focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"></textarea>
+      </div>
+      <button class="w-full min-h-[48px] rounded-xl bg-brand hover:bg-brand-600 text-white font-semibold">{% translate 'Отправить' %}</button>
+    </form>
+  {% endif %}
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Закрашиваем все звёзды до выбранной, как привычно в оценках
+  (function () {
+    var stars = document.querySelectorAll('#stars label');
+    if (!stars.length) return;
+    function paint() {
+      var value = 0;
+      stars.forEach(function (l) { if (l.querySelector('input').checked) value = parseInt(l.querySelector('input').value, 10); });
+      stars.forEach(function (l, i) {
+        var box = l.querySelector('span');
+        box.classList.toggle('text-amber-500', i < value);
+        box.classList.toggle('text-stone-300', i >= value);
+      });
+    }
+    stars.forEach(function (l) { l.querySelector('input').addEventListener('change', paint); });
+    paint();
+  })();
+</script>
+{% endblock %}

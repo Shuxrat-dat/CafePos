@@ -11,7 +11,7 @@ from django.utils.translation import gettext as _
 
 from accounts.permissions import REPORT_ROLES, role_required
 from inventory.models import Product, StockMovement
-from pos.models import CashShift, Order
+from pos.models import CashShift, Order, Review
 
 from . import insights
 
@@ -179,7 +179,16 @@ def dashboard(request):
 
     method_labels = dict(Order.PaymentMethod.choices)
     type_labels = dict(Order.OrderType.choices)
+    period_reviews = list(Review.objects.filter(created_at__gte=start, created_at__lt=end).select_related("order"))
+    rating_counts = {n: sum(1 for r in period_reviews if r.rating == n) for n in range(5, 0, -1)}
     context = {
+        "reviews": {
+            "count": len(period_reviews),
+            "avg": round(sum(r.rating for r in period_reviews) / len(period_reviews), 1) if period_reviews else None,
+            "bars": [{"stars": n, "count": c, "pct": round(c / len(period_reviews) * 100) if period_reviews else 0}
+                     for n, c in rating_counts.items()],
+            "recent": [r for r in period_reviews if r.comment or r.rating <= 3][:6],
+        },
         "summary": summary,
         "profit_rows": sorted(margin_rows, key=lambda r: -r["profit"])[:8],
         "poor_rows": sorted((r for r in margin_rows if r["margin"] < 30), key=lambda r: r["margin"])[:6],

@@ -6,7 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{% translate 'Меню' %}{% endblock %} · {{ cafe.name }}</title>
   <script src="{% static 'js/tailwind.js' %}"></script>
-  <script>tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#0f766e', 600: '#0d6961', 50: '#effaf8' }, ink: '#0f172a', muted: '#64748b', line: '#e5e7eb', canvas: '#f4f5f7', night: '#0b1220' } } } };</script>
+  <script>tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#7A3F1E', 600: '#6A3418', 50: '#FBF4EA' }, sage: { DEFAULT: '#4E7B5C', 100: '#DCEBE0' }, ink: '#1E1915', muted: '#7A6F63', line: '#E8DFD2', canvas: '#F7F3EC', night: '#1C1612' }, fontFamily: { sans: ['Manrope', 'Segoe UI', 'system-ui', 'sans-serif'] } } } };</script>
+  <style>
+    @font-face { font-family: 'Manrope'; font-weight: 400; font-display: swap; src: url('{% static "fonts/Manrope-400.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 600; font-display: swap; src: url('{% static "fonts/Manrope-600.ttf" %}') format('truetype'); }
+    @font-face { font-family: 'Manrope'; font-weight: 700; font-display: swap; src: url('{% static "fonts/Manrope-700.ttf" %}') format('truetype'); }
+  </style>
   <style type="text/tailwindcss">
     @layer components {
       .seg { @apply flex p-1 bg-white/10 rounded-xl gap-1; }

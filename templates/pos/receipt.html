@@ -61,6 +61,18 @@
         {% endif %}
       {% endif %}
     </div>
+    {% if loyalty_entry %}
+      <div class="mt-3 pt-3 border-t border-dashed border-slate-400 text-center">
+        <div>{% blocktranslate trimmed with p=loyalty_entry.points %}Начислено баллов: +{{ p }}{% endblocktranslate %}</div>
+        <div class="font-bold">{% blocktranslate trimmed with t=loyalty_entry.customer.points %}Ваш баланс: {{ t }}{% endblocktranslate %}</div>
+      </div>
+    {% endif %}
+    {% if not is_precheck and review_qr %}
+      <div class="mt-3 pt-3 border-t border-dashed border-slate-400 text-center">
+        <div class="mx-auto w-[30mm] h-[30mm] max-w-[120px]">{{ review_qr }}</div>
+        <div class="text-[12px] mt-1">{% translate 'Оцените визит: наведите камеру на код' %}</div>
+      </div>
+    {% endif %}
     <p class="text-center text-slate-500 mt-4">{{ cafe.receipt_footer|default:_("Спасибо за визит!") }}</p>
   </div>
 

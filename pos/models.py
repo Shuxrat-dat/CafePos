@@ -451,3 +451,52 @@ class Payment(models.Model):
         kind = "Возврат" if self.is_refund else "Оплата"
         return f"{kind} #{self.id} по заказу #{self.order_id}: {self.amount} сум ({self.get_payment_method_display()})"
 
+
+
+class Review(models.Model):
+    """Оценка гостя после оплаты. Один отзыв на заказ."""
+
+    order = models.OneToOneField(Order, verbose_name=_("Заказ"), on_delete=models.CASCADE, related_name="review")
+    rating = models.PositiveSmallIntegerField(_("Оценка"))
+    comment = models.CharField(_("Комментарий"), max_length=500, blank=True)
+    created_at = models.DateTimeField(_("Когда"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Отзыв"
+        verbose_name_plural = "Отзывы"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Заказ #{self.order_id}: {self.rating}/5"
+
+
+class Customer(models.Model):
+    """Гость, которого узнаём по номеру телефона. Копит баллы за оплаченные заказы."""
+
+    phone = models.CharField(_("Телефон"), max_length=20, unique=True, help_text="Только последние 9 цифр номера")
+    name = models.CharField(_("Имя"), max_length=100, blank=True)
+    points = models.IntegerField(_("Баллы"), default=0)
+    visits = models.PositiveIntegerField(_("Визиты"), default=0)
+    spent = models.DecimalField(_("Потрачено всего"), max_digits=14, decimal_places=0, default=0)
+    created_at = models.DateTimeField(_("Первый визит"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Гость"
+        verbose_name_plural = "Гости"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name or 'Гость'} {self.phone}"
+
+
+class LoyaltyEntry(models.Model):
+    """Движение баллов. По записям всегда можно проверить, откуда взялся остаток."""
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="entries")
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name="loyalty_entries")
+    points = models.IntegerField(_("Баллы"))
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]

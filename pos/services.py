@@ -9,6 +9,7 @@ from core import audit
 from core.models import CafeSettings
 from inventory.services import write_off_order
 
+from . import loyalty
 from .models import CashMovement, CashShift, Order, OrderItem, Payment
 
 MAX_SUM = Decimal(1_000_000_000)
@@ -308,6 +309,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
         )
 
         write_off_order(target)
+        loyalty.earn(target)
     return target
 
 
@@ -374,5 +376,6 @@ def refund_order(order, user, reason, return_to_stock=True):
                         created_by=user,
                     )
 
+    loyalty.reverse(locked)
     audit.record(user, audit.A.REFUND, order=locked, amount=locked.total, detail=refund_reason)
     return locked
