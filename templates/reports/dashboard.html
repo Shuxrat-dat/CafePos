@@ -66,7 +66,7 @@
       <div class="flex items-end gap-1 h-52 border-b border-line">
         {% for bar in chart %}
           <div class="group relative flex-1 h-full flex items-end min-w-0">
-            <div class="w-full rounded-t-md {% if bar.weekend %}bg-brand/60{% else %}bg-brand{% endif %} group-hover:bg-brand-700 transition-colors" style="height: {{ bar.height }}%; min-height: {% if bar.sum %}2px{% else %}0{% endif %}"></div>
+            <div class="w-full max-w-[56px] mx-auto rounded-t-md {% if bar.weekend %}bg-brand/60{% else %}bg-brand{% endif %} group-hover:bg-brand-700 transition-colors" style="height: {{ bar.height }}%; min-height: {% if bar.sum %}2px{% else %}0{% endif %}"></div>
             <div class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap rounded-md bg-ink text-white text-xs px-2 py-1 z-10 tabular-nums">{{ bar.label }} · {{ bar.sum|money }}</div>
           </div>
         {% endfor %}
