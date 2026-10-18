@@ -34,3 +34,6 @@ media_test/
 
 # local editor/agent config
 .claude/
+
+# server logs
+logs/

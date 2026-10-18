@@ -24,14 +24,18 @@ start_demo.bat
 set CAFEPOS_DEMO=1 && .venv\Scripts\python.exe manage.py seed_demo --reset
 ```
 
-## Рабочий запуск
+## Рабочий запуск на ноутбуке заведения
 
-1. Скопируйте `.env.example` в `.env`, задайте `DJANGO_SECRET_KEY` и `DJANGO_ALLOWED_HOSTS`.
-2. `.venv\Scripts\python.exe manage.py migrate`
-3. `.venv\Scripts\python.exe manage.py createsuperuser` — владелец; сотрудников добавляйте в разделе «Персонал».
-4. `start_server.bat` (collectstatic + waitress на порту 8000).
+1. Установите Python 3.12+ («Install for all users») и Git, затем `git clone https://github.com/Shuxrat-dat/CafePos C:\CafePos`.
+2. Подключите ноутбук к Wi‑Fi кафе и запустите `install.bat` **от имени администратора**.
+   Скрипт ставит пакеты, создаёт `.env` (секретный ключ, IP ноутбука), базу и владельца,
+   открывает порт 8000 для частной сети, отключает сон от сети и при закрытии крышки,
+   регистрирует задачи Планировщика `CafePOS` (сервер при включении, до входа в Windows)
+   и `CafePOS backup` (ежедневно в 23:30, копии в `backups\`). Повторный запуск безопасен.
+3. В роутере закрепите за ноутбуком IP, который показал `install.bat`. Сотрудников добавляйте в разделе «Персонал».
 
-Резервная копия базы: `backup.bat` (команда `backup_db`).
+`start_server.bat` применяет миграции, собирает статику и запускает waitress на порту 8000; вывод пишется в `logs\server.log`.
+Ручная резервная копия: `backup.bat` (команда `backup_db`).
 
 ## Разделы и роли
 
