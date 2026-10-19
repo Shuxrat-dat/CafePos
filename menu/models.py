@@ -78,6 +78,10 @@ class Dish(models.Model):
         validators=[FileExtensionValidator(IMAGE_EXTENSIONS)],
     )
     price = models.DecimalField(_("Цена (сум)"), max_digits=12, decimal_places=0)
+    sold_by_weight = models.BooleanField(
+        _("Продаётся на вес"), default=False,
+        help_text=_("Цена указывается за 1 кг, вес вводится в граммах при заказе. Техкарта — расход на 1 кг."),
+    )
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     is_available = models.BooleanField(
         _("В продаже"), default=True,

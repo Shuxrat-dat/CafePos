@@ -2,7 +2,7 @@ import json
 import uuid
 from collections import OrderedDict
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
@@ -104,6 +104,43 @@ def _clean_qty(request):
     except ValueError:
         qty = 1
     return max(1, min(qty, 50))
+
+
+MAX_WEIGHT_GRAMS = 50000
+
+
+def _clean_weight(request):
+    """Вес блюда на вес в граммах: «1030» — граммы, «1,03» или «1.03» — килограммы.
+    Возвращает (граммы, None) или (None, текст ошибки)."""
+    raw = request.POST.get("weight", "").strip().replace(" ", "").replace(",", ".")
+    try:
+        value = Decimal(raw)
+    except InvalidOperation:
+        return None, _("Укажите вес в граммах, например 450 или 1030.")
+    if not value.is_finite():
+        return None, _("Укажите вес в граммах, например 450 или 1030.")
+    grams = int((value * 1000 if "." in raw else value).to_integral_value())
+    if grams < 10 or grams > MAX_WEIGHT_GRAMS:
+        return None, _("Вес должен быть от 10 г до 50 кг. Например: 450 или 1030.")
+    return grams, None
+
+
+def _weight_form(request, order, dish, item, error):
+    """Форма позиции снова в окне: с ошибкой веса и уже введёнными данными."""
+    groups, extras = _modifier_groups(dish)
+    response = render(
+        request,
+        "pos/_item_form.html",
+        {
+            "order": order, "dish": dish, "item": item,
+            "selected": {int(i) for i in request.POST.getlist("modifiers") if i.isdigit()},
+            "quantity": 1, "comment": _clean_comment(request), "weight": request.POST.get("weight", ""),
+            "weight_error": error, "groups": groups, "extras": extras,
+        },
+    )
+    response["HX-Retarget"] = "#modal"
+    response["HX-Reswap"] = "innerHTML"
+    return response
 
 
 def _clean_comment(request):
@@ -323,6 +360,9 @@ def quick_add(request, dish_id):
             .first()
         ) or services.create_order(request.user, Order.OrderType.TAKEAWAY)
     dish = get_object_or_404(Dish, id=dish_id, is_available=True)
+    if dish.sold_by_weight:
+        # Вес нужно ввести: открываем экран заказа сразу с формой этого блюда
+        return redirect(f"{reverse('order_detail', args=[order.id])}?weigh={dish.id}")
     item = order.items.filter(dish=dish, status=OrderItem.Status.NEW).first()
     if item:
         item.quantity += 1
@@ -455,7 +495,9 @@ def order_detail(request, order_id):
         )
     )
     categories = [c for c in categories if c.pos_dishes]
-    context = {"categories": categories, **_panel_context(request, order)}
+    weigh = request.GET.get("weigh", "")
+    context = {"categories": categories, "weigh_dish_id": int(weigh) if weigh.isdigit() else None,
+               **_panel_context(request, order)}
     return render(request, "pos/order.html", context)
 
 
@@ -477,7 +519,7 @@ def item_form(request, order_id, dish_id):
         request,
         "pos/_item_form.html",
         {"order": order, "dish": dish, "item": None, "selected": set(), "quantity": 1, "comment": "",
-         "groups": groups, "extras": extras},
+         "weight": "", "groups": groups, "extras": extras},
     )
 
 
@@ -490,8 +532,18 @@ def add_item(request, order_id, dish_id):
         return _panel(request, order, _("«%(name)s» сейчас нет в продаже.") % {"name": dish.name}, "error")
     modifiers = _clean_modifiers(request, dish)
     comment = _clean_comment(request)
-    qty = _clean_qty(request)
 
+    if dish.sold_by_weight:
+        # Каждое взвешивание — отдельная позиция: две рыбы разного веса не складываются
+        grams, error = _clean_weight(request)
+        if error:
+            return _weight_form(request, order, dish, None, error)
+        item = OrderItem.objects.create(order=order, dish=dish, quantity=1, weight_grams=grams, comment=comment)
+        item.modifiers.set(modifiers)
+        _order_changed(order)
+        return _panel(request, order)
+
+    qty = _clean_qty(request)
     item = _find_same(order, dish, [m.id for m in modifiers], comment)
     if item:
         item.quantity = min(item.quantity + qty, 99)
@@ -506,11 +558,24 @@ def add_item(request, order_id, dish_id):
 @login_required
 def edit_item(request, order_id, item_id):
     order = _get_order(request, order_id)
-    item = get_object_or_404(OrderItem, id=item_id, order=order, status=OrderItem.Status.NEW)
+    item = get_object_or_404(OrderItem, id=item_id, order=order)
+    if item.status != OrderItem.Status.NEW and not item.by_weight:
+        raise Http404
 
     if request.method == "POST":
+        if item.by_weight:
+            grams, error = _clean_weight(request)
+            if error:
+                return _weight_form(request, order, item.dish, item, error)
+            item.weight_grams, item.quantity = grams, 1
+            if item.status != OrderItem.Status.NEW:
+                # Блюдо уже на кухне: меняется только вес (рыбу часто взвешивают после заказа)
+                item.save(update_fields=["weight_grams", "quantity"])
+                _order_changed(order)
+                return _panel(request, order, _("Вес указан."))
+        else:
+            item.quantity = _clean_qty(request)
         item.comment = _clean_comment(request)
-        item.quantity = _clean_qty(request)
         item.save()
         item.modifiers.set(_clean_modifiers(request, item.dish))
         _order_changed(order)
@@ -526,6 +591,7 @@ def edit_item(request, order_id, item_id):
             "item": item,
             "selected": {m.id for m in item.modifiers.all()},
             "quantity": item.quantity,
+            "weight": item.weight_grams or "",
             "comment": item.comment,
             "groups": groups,
             "extras": extras,
@@ -538,6 +604,9 @@ def edit_item(request, order_id, item_id):
 def change_qty(request, order_id, item_id):
     order = _get_order(request, order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order, status=OrderItem.Status.NEW)
+    if item.by_weight and request.POST.get("delta") == "1":
+        # Вторую порцию на вес добавляют отдельным взвешиванием
+        return _panel(request, order)
     item.quantity += 1 if request.POST.get("delta") == "1" else -1
     if item.quantity <= 0:
         item.delete()
@@ -789,6 +858,9 @@ def pay(request, order_id):
 
     order = _get_order(request, order_id)
     if not order.can_pay:
+        return redirect("order_detail", order_id=order.id)
+    if any(item.needs_weight for item in order.items.all()):
+        messages.error(request, _("Укажите вес у блюд на вес, потом принимайте оплату."))
         return redirect("order_detail", order_id=order.id)
 
     allowed = CafeSettings.get().payment_methods

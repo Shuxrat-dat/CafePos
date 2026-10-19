@@ -96,7 +96,7 @@
                     <div class="flex-1 min-w-0">
                       <div class="flex items-baseline justify-between gap-1">
                         <span class="text-[13px] font-bold text-ink truncate">{{ item.dish|tr }}</span>
-                        <span class="text-xs text-stone-500 font-semibold shrink-0">{{ item.quantity }} {% translate 'шт' %}</span>
+                        <span class="text-xs text-stone-500 font-semibold shrink-0">{% if item.by_weight %}{{ item|item_qty }}{% else %}{{ item.quantity }} {% translate 'шт' %}{% endif %}</span>
                       </div>
                       {% for m in item.modifiers.all %}
                         <div class="text-[11px] text-stone-400 truncate">• {{ m|tr }}</div>
@@ -178,7 +178,7 @@
               <h3 class="text-[13px] font-bold text-ink leading-tight truncate">{{ dish|tr }}</h3>
             </div>
             <div class="flex items-center justify-between mt-2 pt-1 border-t border-line/60">
-              <span class="text-[13px] font-black text-ink">{{ dish.price|num }} <span class="text-[11px] font-medium text-stone-400">{% translate 'сум' %}</span></span>
+              <span class="text-[13px] font-black text-ink">{{ dish.price|num }} <span class="text-[11px] font-medium text-stone-400">{% translate 'сум' %}{{ dish|per_kg }}</span></span>
               <form method="post" action="{% url 'quick_add' dish_id=dish.id %}" class="m-0">
                 {% csrf_token %}
                 <input type="hidden" name="order_id" value="{{ selected_order.id|default:'' }}">
@@ -288,7 +288,7 @@
           {% for item in selected_order.items.all %}
             <div class="flex items-center justify-between text-xs">
               <span class="font-bold text-ink flex-1 truncate pr-2">{{ item.dish|tr }}</span>
-              <span class="font-semibold text-stone-500 w-8 text-center">{{ item.quantity }}</span>
+              <span class="font-semibold text-stone-500 min-w-8 text-center whitespace-nowrap">{% if item.by_weight %}{{ item|item_qty }}{% else %}{{ item.quantity }}{% endif %}</span>
               <span class="font-black text-ink w-20 text-right">{{ item.line_total|num }}</span>
             </div>
           {% endfor %}

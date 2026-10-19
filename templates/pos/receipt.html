@@ -41,7 +41,7 @@
       {% for item in order_items %}
         <li>
           <div class="flex justify-between gap-2"><span>{{ item.dish|tr }}</span><span class="whitespace-nowrap tabular-nums">{{ item.line_total|num }}</span></div>
-          <div class="text-slate-500 text-[12px]">{{ item.quantity }} × {{ item.unit_total|num }}{% for m in item.modifiers.all %}, {{ m|tr }}{% endfor %}</div>
+          <div class="text-slate-500 text-[12px]">{% if item.by_weight %}{{ item.weight_grams|weight }} × {{ item.price|num }} / {% translate 'кг' %}{% else %}{{ item.quantity }} × {{ item.unit_total|num }}{% endif %}{% for m in item.modifiers.all %}, {{ m|tr }}{% endfor %}</div>
         </li>
       {% endfor %}
     </ul>

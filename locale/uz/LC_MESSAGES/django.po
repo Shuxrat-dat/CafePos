@@ -3075,3 +3075,42 @@ msgstr "Toshkent oshi: 42000 → 45000"
 
 msgid "Процент 10: постоянный гость"
 msgstr "Foiz 10: doimiy mehmon"
+
+msgid "%(name)s, %(g)s г"
+msgstr "%(name)s, %(g)s g"
+
+msgid "В граммах: 450 — это 450 г, 1030 — это 1 кг 30 г. Можно и в килограммах через запятую: 1,03."
+msgstr "Grammda: 450 — bu 450 g, 1030 — bu 1 kg 30 g. Kilogrammda vergul bilan ham yozish mumkin: 1,03."
+
+msgid "Вес должен быть от 10 г до 50 кг. Например: 450 или 1030."
+msgstr "Vazn 10 g dan 50 kg gacha boʻlishi kerak. Masalan: 450 yoki 1030."
+
+msgid "Вес, г"
+msgstr "Vazni, g"
+
+msgid "Изменить вес"
+msgstr "Vaznni oʻzgartirish"
+
+msgid "На вес"
+msgstr "Vaznga"
+
+msgid "Продаётся на вес"
+msgstr "Vaznga sotiladi"
+
+msgid "Укажите вес"
+msgstr "Vaznini kiriting"
+
+msgid "Укажите вес в граммах, например 450 или 1030."
+msgstr "Vaznni grammda kiriting, masalan 450 yoki 1030."
+
+msgid "Укажите вес у блюд на вес, потом принимайте оплату."
+msgstr "Avval vaznga sotiladigan taomlarning vaznini kiriting, keyin toʻlovni qabul qiling."
+
+msgid "Цена указывается за 1 кг, вес вводится в граммах при заказе. Техкарта — расход на 1 кг."
+msgstr "Narx 1 kg uchun koʻrsatiladi, vazn buyurtmada grammda kiritiladi. Texkarta — 1 kg uchun sarf."
+
+msgid "кг"
+msgstr "kg"
+
+msgid "Вес указан."
+msgstr "Vazn kiritildi."

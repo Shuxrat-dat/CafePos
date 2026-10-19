@@ -33,7 +33,7 @@
                 <div class="text-xs text-muted truncate max-w-[160px]">{{ o.customer_name|default:o.waiter.first_name|default:o.waiter.username }}</div>
               </td>
               <td class="px-4 py-3 hidden md:table-cell text-slate-600 max-w-[280px]">
-                <span class="line-clamp-2">{% for item in o.items.all %}{{ item.dish|tr }} ×{{ item.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+                <span class="line-clamp-2">{% for item in o.items.all %}{{ item.dish|tr }} {{ item|item_qty }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1">

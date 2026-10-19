@@ -18,6 +18,7 @@
         {% include "components/field.html" with field=form.name_uz %}
         {% include "components/field.html" with field=form.category %}
         {% include "components/field.html" with field=form.price %}
+        <div class="sm:col-span-2">{% include "components/field.html" with field=form.sold_by_weight %}</div>
         {% include "components/field.html" with field=form.description %}
         {% include "components/field.html" with field=form.description_uz %}
       </div>

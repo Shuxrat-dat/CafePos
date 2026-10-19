@@ -192,6 +192,32 @@ def qty(value):
 
 
 @register.filter
+def weight(grams):
+    """Вес блюда на вес: 450 -> «450 г», 1030 -> «1,03 кг»."""
+    try:
+        grams = int(grams)
+    except (ValueError, TypeError):
+        return ""
+    if grams < 1000:
+        return f"{grams} {_('г')}"
+    return f"{qty(Decimal(grams) / 1000)} {_('кг')}"
+
+
+@register.filter
+def item_qty(item):
+    """Сколько в позиции заказа: «× 2» или вес «1,03 кг» у блюда на вес («? г», пока вес не указан)."""
+    if getattr(item, "by_weight", False):
+        return weight(item.weight_grams) if item.weight_grams else f"? {_('г')}"
+    return f"× {item.quantity}"
+
+
+@register.filter
+def per_kg(dish):
+    """Подпись к цене блюда на вес: « / кг»."""
+    return f" / {_('кг')}" if getattr(dish, "sold_by_weight", False) else ""
+
+
+@register.filter
 def tr(obj, field="name"):
     """Название из базы на текущем языке: для узбекского берём поле name_uz, если оно заполнено."""
     from django.utils.translation import get_language

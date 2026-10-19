@@ -239,7 +239,7 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
         else:
             part = OrderItem.objects.create(
                 order=target, dish=item.dish, quantity=qty, price=item.price,
-                comment=item.comment, status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
+                by_weight=item.by_weight, weight_grams=item.weight_grams, comment=item.comment, status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
             )
             part.modifiers.set(item.modifiers.all())
             item.quantity -= qty
@@ -259,6 +259,8 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
         locked = Order.objects.select_for_update().get(pk=order.pk)
         if locked.status != Order.Status.OPEN:
             raise PaymentError(_("Заказ уже закрыт."))
+        if any(item.needs_weight for item in locked.items.all()):
+            raise PaymentError(_("Укажите вес у блюд на вес, потом принимайте оплату."))
 
         shift = get_current_shift()
         if not shift:
@@ -370,7 +372,7 @@ def refund_order(order, user, reason, return_to_stock=True):
                     StockMovement.objects.create(
                         product=recipe.product,
                         kind=StockMovement.Kind.INCOME,
-                        quantity=recipe.quantity * item.quantity * factor,
+                        quantity=recipe.quantity * item.quantity * item.weight_factor * factor,
                         order=locked,
                         comment=_("Возврат по чеку №%(id)s: %(r)s") % {"id": locked.id, "r": refund_reason},
                         created_by=user,

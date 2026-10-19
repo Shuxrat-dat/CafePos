@@ -27,14 +27,17 @@ def write_off_order(order):
             factor = Decimal(1)
             for modifier in item.modifiers.all():
                 factor *= modifier.consumption_multiplier
-            comment = f"{item.dish.name} × {item.quantity}"
+            if item.by_weight:
+                comment = _("%(name)s, %(g)s г") % {"name": item.dish.name, "g": item.weight_grams or 0}
+            else:
+                comment = f"{item.dish.name} × {item.quantity}"
             if factor != 1:
                 comment += _(", расход ×%(f)s") % {"f": f"{factor:.2f}"}
             for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
                 StockMovement.objects.create(
                     product=recipe.product,
                     kind=StockMovement.Kind.SALE,
-                    quantity=recipe.quantity * item.quantity * factor,
+                    quantity=recipe.quantity * item.quantity * item.weight_factor * factor,
                     order=order,
                     comment=comment,
                 )
@@ -60,7 +63,7 @@ def find_shortages(lines):
             factor *= modifier.consumption_multiplier
         for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
             product = recipe.product
-            need[product] = need.get(product, Decimal(0)) + recipe.quantity * qty * factor
+            need[product] = need.get(product, Decimal(0)) + recipe.quantity * qty * item.weight_factor * factor
     return [
         {"name": p.name, "need": n, "stock": p.stock, "unit": p.get_unit_display()}
         for p, n in need.items()

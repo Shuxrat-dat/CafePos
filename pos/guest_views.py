@@ -97,6 +97,11 @@ def accept_guest(request, order_id, guest_id):
             for guest_item in guest.items.select_related("dish"):
                 if not guest_item.dish.can_order:
                     continue
+                if guest_item.dish.sold_by_weight:
+                    # Вес гость не знает: каждая порция отдельной позицией, вес укажет официант
+                    for _n in range(guest_item.quantity):
+                        OrderItem.objects.create(order=order, dish=guest_item.dish, quantity=1)
+                    continue
                 item = _find_same(order, guest_item.dish, [], "")
                 if item:
                     item.quantity += guest_item.quantity

@@ -30,7 +30,7 @@
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
                 <button type="button" data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
-                  {% if dish.modifiers.all %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"
+                  {% if dish.modifiers.all or dish.sold_by_weight %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
                   class="group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition">
@@ -38,7 +38,7 @@
                   <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
                     <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
                     <span class="flex items-center justify-between gap-2">
-                      <span class="font-bold tabular-nums">{{ dish.price|money }}</span>
+                      <span class="font-bold tabular-nums">{{ dish.price|money }}{% if dish.sold_by_weight %}<span class="text-xs font-medium text-muted"> / {% translate 'кг' %}</span>{% endif %}</span>
                       {% if dish.modifiers.all %}<span class="text-slate-400" title="{% translate 'Есть варианты' %}">{% icon "more" 18 %}</span>{% endif %}
                     </span>
                   </span>
@@ -51,7 +51,7 @@
                   </span>
                   <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
                     <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
-                    <span class="font-bold tabular-nums text-slate-500">{{ dish.price|money }}</span>
+                    <span class="font-bold tabular-nums text-slate-500">{{ dish.price|money }}{{ dish|per_kg }}</span>
                   </span>
                 </div>
               {% endif %}

@@ -21,7 +21,7 @@
             <span class="w-16 h-16 rounded-xl overflow-hidden shrink-0">{% include "components/dish_image.html" with cls="w-16 h-16" size=24 %}</span>
             <div class="min-w-0 flex-1">
               <div class="font-semibold leading-snug">{{ dish|tr }}</div>
-              <div class="font-bold text-sm mt-0.5">{{ dish.price|money }}</div>
+              <div class="font-bold text-sm mt-0.5">{{ dish.price|money }}{{ dish|per_kg }}</div>
               {% include "components/dish_meta.html" %}
             </div>
             <div class="flex items-center gap-1.5 shrink-0">

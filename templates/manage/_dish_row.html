@@ -12,7 +12,7 @@
     </div>
   </td>
   <td class="px-4 py-2.5 hidden md:table-cell text-slate-600">{{ dish.category|tr }}</td>
-  <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">{{ dish.price|money }}</td>
+  <td class="px-4 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">{{ dish.price|money }}{{ dish|per_kg }}</td>
   <td class="px-4 py-2.5 text-center">
     <button hx-post="{% url 'dish_toggle' dish.id %}" hx-vals='{"field": "available"}' hx-target="#dish-{{ dish.id }}" hx-swap="outerHTML"
             class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors {% if dish.is_available %}bg-brand{% else %}bg-slate-300{% endif %}"

@@ -53,7 +53,7 @@
                 <li class="flex items-center justify-between gap-2 px-2 py-2 rounded-lg {% if item.status == 'ready' %}opacity-60{% endif %}">
                   <div class="min-w-0">
                     <div class="text-[17px] font-semibold leading-snug {% if item.status == 'ready' %}line-through decoration-2{% endif %}">
-                      <span class="inline-grid place-items-center min-w-[28px] h-7 px-1 mr-1 rounded-md bg-ink text-white text-sm font-bold">{{ item.quantity }}</span>{{ item.dish|tr }}
+                      <span class="inline-grid place-items-center min-w-[28px] h-7 px-1 mr-1 rounded-md bg-ink text-white text-sm font-bold whitespace-nowrap">{% if item.by_weight %}{{ item|item_qty }}{% else %}{{ item.quantity }}{% endif %}</span>{{ item.dish|tr }}
                     </div>
                     {% if item.target_minutes and item.status != 'ready' %}
                       <div class="pl-9 text-xs font-semibold {% if item.level == 'late' %}text-red-700{% elif item.level == 'warn' %}text-orange-700{% else %}text-muted{% endif %}">

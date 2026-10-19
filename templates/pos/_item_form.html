@@ -1,12 +1,13 @@
 {% extends "components/modal.html" %}
 {% load i18n ui %}
 {% block modal_title %}{{ dish|tr }}{% endblock %}
-{% block modal_sub %}<p class="text-sm text-muted mt-0.5 tabular-nums">{{ dish.price|money }}</p>{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5 tabular-nums">{{ dish.price|money }}{% if dish.sold_by_weight %} / {% translate 'кг' %}{% endif %}</p>{% endblock %}
 {% block modal_body %}
 <form hx-post="{% if item %}{% url 'edit_item' order.id item.id %}{% else %}{% url 'add_item' order.id dish.id %}{% endif %}"
       hx-target="#order-panel" hx-swap="innerHTML"
       hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
       class="space-y-5">
+  {% if not item or item.status == "new" %}
   {% for group, options in groups %}
     <fieldset>
       <legend class="label">{% translate group %}</legend>
@@ -43,7 +44,38 @@
     <label class="label" for="item-comment">{% translate 'Комментарий для кухни' %}</label>
     <input id="item-comment" name="comment" maxlength="200" value="{{ comment }}" placeholder="{% translate 'Например: без лука, острое' %}" class="input">
   </div>
+  {% endif %}
 
+  {% if dish.sold_by_weight %}
+    <div data-weight data-price="{{ dish.price|stringformat:'d' }}">
+      <label class="label" for="item-weight">{% translate 'Вес, г' %}</label>
+      <div class="flex items-center gap-3">
+        <input id="item-weight" name="weight" value="{{ weight }}" inputmode="decimal" autocomplete="off" required autofocus
+               placeholder="1030" class="input w-36 text-center text-lg font-bold{% if weight_error %} border-red-500{% endif %}">
+        <span class="text-lg font-black tabular-nums" data-weight-sum></span>
+      </div>
+      {% if weight_error %}<p class="text-sm text-red-700 mt-1.5">{{ weight_error }}</p>{% endif %}
+      <p class="text-xs text-muted mt-1.5">{% translate 'В граммах: 450 — это 450 г, 1030 — это 1 кг 30 г. Можно и в килограммах через запятую: 1,03.' %}</p>
+    </div>
+    <script>
+      (function () {
+        var box = document.currentScript.previousElementSibling;
+        var input = box.querySelector('input'), out = box.querySelector('[data-weight-sum]');
+        var price = +box.dataset.price, sum = '{% translate "сум" %}';
+        function grams() {
+          var raw = input.value.replace(/\s/g, '').replace(',', '.');
+          if (!raw || isNaN(+raw)) return 0;
+          return raw.indexOf('.') !== -1 ? Math.round(+raw * 1000) : Math.round(+raw);
+        }
+        function show() {
+          var g = grams();
+          out.textContent = g >= 10 ? '= ' + Math.round(price * g / 1000).toLocaleString('ru-RU') + ' ' + sum : '';
+        }
+        input.addEventListener('input', show);
+        show();
+      })();
+    </script>
+  {% else %}
   <div class="flex items-center justify-between">
     <span class="label mb-0">{% translate 'Количество' %}</span>
     <div class="flex items-center gap-2" data-qty>
@@ -52,6 +84,7 @@
       <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min(50,(+i.value||0)+1)" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
     </div>
   </div>
+  {% endif %}
 
   <div class="flex gap-2 pt-1">
     <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>

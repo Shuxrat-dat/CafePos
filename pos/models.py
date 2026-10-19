@@ -342,6 +342,9 @@ class OrderItem(models.Model):
     dish = models.ForeignKey(Dish, verbose_name=_("Блюдо"), on_delete=models.PROTECT)
     quantity = models.PositiveSmallIntegerField(_("Количество"), default=1)
     price = models.DecimalField(_("Цена на момент заказа"), max_digits=12, decimal_places=0, null=True, blank=True)
+    # Блюдо на вес: price — цена за 1 кг, сумма считается по weight_grams. Признак фиксируется при заказе.
+    by_weight = models.BooleanField(_("На вес"), default=False)
+    weight_grams = models.PositiveIntegerField(_("Вес, г"), null=True, blank=True)
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
     status = models.CharField(_("Статус"), max_length=20, choices=Status.choices, default=Status.NEW)
@@ -360,12 +363,29 @@ class OrderItem(models.Model):
         # Фиксируем цену блюда на момент заказа, чтобы старые заказы не менялись при смене цен в меню
         if self.price is None:
             self.price = self.dish.price
+        if self._state.adding and self.dish.sold_by_weight:
+            self.by_weight = True
         super().save(*args, **kwargs)
 
     @property
+    def weight_factor(self):
+        """Доля от цены и техкарты: для блюда на вес это килограммы (450 г -> 0.45), для штучного 1."""
+        if not self.by_weight:
+            return Decimal(1)
+        return Decimal(self.weight_grams or 0) / 1000
+
+    @property
+    def needs_weight(self):
+        """Блюдо на вес без указанного веса (например, из заявки гостя): оплатить его нельзя."""
+        return self.by_weight and not self.weight_grams
+
+    @property
     def unit_total(self):
-        """Цена одной штуки с учётом доплат за модификаторы."""
-        return self.price + sum(m.price_delta for m in self.modifiers.all())
+        """Цена одной штуки с учётом доплат за модификаторы. У блюда на вес — цена за его вес."""
+        extras = sum(m.price_delta for m in self.modifiers.all())
+        if self.by_weight:
+            return round_sum(self.price * self.weight_factor) + extras
+        return self.price + extras
 
     @property
     def line_total(self):
