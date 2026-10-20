@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% if printer %}{{ printer.name }}{% else %}{% translate 'Новый принтер' %}{% endif %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'manage_printers' %}" class="icon-btn" aria-label="{% translate 'Назад' %}">{% icon "arrow-left" 20 %}</a>
+  <h1 class="page-title">{% if printer %}{{ printer.name }}{% else %}{% translate 'Новый принтер' %}{% endif %}</h1>
+</div>
+
+<form method="post" class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start max-w-5xl">
+  {% csrf_token %}
+  <div class="space-y-4">
+    {% if form.non_field_errors %}<div class="alert-error">{% icon "alert" 18 %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <section class="card p-5 space-y-4">
+      <h2 class="section-title">{% translate 'Подключение' %}</h2>
+      {% include "components/field.html" with field=form.name %}
+      {% include "components/field.html" with field=form.connection %}
+      <div data-connection="network" class="grid sm:grid-cols-[1fr_140px] gap-4">
+        {% include "components/field.html" with field=form.host %}
+        {% include "components/field.html" with field=form.port %}
+      </div>
+      <div data-connection="windows">{% include "components/field.html" with field=form.windows_name %}</div>
+    </section>
+
+    <section class="card p-5 space-y-2">
+      <h2 class="section-title mb-1">{% translate 'Что печатает' %}</h2>
+      {% include "components/field.html" with field=form.prints_receipts %}
+      {% include "components/field.html" with field=form.auto_receipt %}
+      {% include "components/field.html" with field=form.prints_kitchen %}
+      <div class="pt-2">
+        <p class="label">{{ form.categories.label }}</p>
+        <p class="text-xs text-muted mb-2">{{ form.categories.help_text }}</p>
+        <div class="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+          {% for choice in form.categories %}
+            <label class="flex items-center gap-3 py-1.5 cursor-pointer">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+          {% empty %}
+            <p class="text-sm text-muted">{% translate 'Категорий пока нет.' %}</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="space-y-4 lg:sticky lg:top-4">
+    <section class="card p-5 space-y-3">
+      <h2 class="section-title">{% translate 'Лента и символы' %}</h2>
+      {% include "components/field.html" with field=form.line_width %}
+      {% include "components/field.html" with field=form.encoding %}
+      {% include "components/field.html" with field=form.codepage %}
+      {% include "components/field.html" with field=form.copies %}
+      {% include "components/field.html" with field=form.cut_paper %}
+      {% include "components/field.html" with field=form.is_active %}
+    </section>
+    <button name="action" value="save" class="btn btn-primary btn-lg w-full">{% icon "check" 18 %}{% translate 'Сохранить' %}</button>
+    <button name="action" value="test" class="btn btn-secondary btn-lg w-full">{% icon "printer" 18 %}{% translate 'Сохранить и напечатать тест' %}</button>
+  </aside>
+</form>
+
+{% if printer %}
+  <form method="post" action="{% url 'printer_delete' printer.id %}" class="mt-6" onsubmit="return confirm('{% translate "Удалить принтер? Его задания тоже удалятся." as t %}{{ t|escapejs }}')">
+    {% csrf_token %}
+    <button class="btn btn-danger">{% icon "trash" 18 %}{% translate 'Удалить принтер' %}</button>
+  </form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var select = document.getElementById('{{ form.connection.id_for_label }}');
+    function apply() {
+      document.querySelectorAll('[data-connection]').forEach(function (box) {
+        box.classList.toggle('hidden', box.dataset.connection !== select.value);
+      });
+    }
+    select.addEventListener('change', apply);
+    apply();
+  })();
+</script>
+{% endblock %}

@@ -80,7 +80,21 @@
     {% if not is_precheck %}
       <div class="alert-ok">{% icon "check-circle" 20 %}<span>{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }} оплачен{% endblocktranslate %}{% if change %} · {% translate 'сдача' %} {{ change|money }}{% endif %}</span></div>
     {% endif %}
-    <button type="button" onclick="window.print()" class="btn btn-dark btn-lg w-full">{% icon "printer" 20 %}{% if is_precheck %}{% translate 'Печать пречека' %}{% else %}{% translate 'Печать чека' %}{% endif %}</button>
+    {% if printers %}
+      <form method="post" action="{% url 'print_order' order.id %}" class="space-y-2">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="{% if is_precheck %}precheck{% else %}receipt{% endif %}">
+        {% if printers|length == 1 %}
+          <button class="btn btn-primary btn-lg w-full">{% icon "printer" 20 %}{% translate 'На принтер' %}: {{ printers.0.name }}</button>
+        {% else %}
+          {% for p in printers %}
+            <button name="printer" value="{{ p.id }}" class="btn btn-primary btn-lg w-full">{% icon "printer" 20 %}{% translate 'На принтер' %}: {{ p.name }}</button>
+          {% endfor %}
+        {% endif %}
+      </form>
+      <div hx-get="{% url 'order_print_status' order.id %}" hx-trigger="load" hx-swap="outerHTML"></div>
+    {% endif %}
+    <button type="button" onclick="window.print()" class="btn {% if printers %}btn-secondary{% else %}btn-dark{% endif %} btn-lg w-full">{% icon "printer" 20 %}{% if is_precheck %}{% translate 'Печать пречека' %}{% else %}{% translate 'Печать чека' %}{% endif %}{% if printers %} ({% translate 'через браузер' %}){% endif %}</button>
     {% if is_precheck %}
       {% if user.can_take_payment %}<a href="{% url 'pay' order.id %}" class="btn btn-primary btn-lg w-full">{% icon "wallet" 20 %}{% translate 'Перейти к оплате' %}</a>{% endif %}
       <a href="{% url 'order_detail' order.id %}" class="btn btn-secondary btn-lg w-full">{% translate 'К заказу' %}</a>

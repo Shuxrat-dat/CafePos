@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Принтеры' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="page-title">{% translate 'Настройки' %}</h1>
+  <p class="page-sub">{% translate 'Термопринтеры ESC/POS: чеки после оплаты и заказы для кухни по категориям блюд.' %}</p>
+</div>
+{% include "manage/_settings_tabs.html" %}
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <div class="space-y-4 min-w-0">
+    <div hx-get="{% url 'manage_printers' %}" hx-trigger="every 5s" hx-swap="innerHTML">
+      {% include "manage/_printers_list.html" %}
+    </div>
+
+    <section class="card p-5">
+      <h2 class="section-title mb-3">{% translate 'Последние задания' %}{% if pending %} <span class="badge bg-amber-100 text-amber-900">{% blocktranslate trimmed with n=pending %}в очереди: {{ n }}{% endblocktranslate %}</span>{% endif %}</h2>
+      {% if jobs %}
+        <ul class="divide-y divide-line text-sm">
+          {% for job in jobs %}
+            <li class="py-2 flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div><span class="font-medium">{{ job.label }}</span> <span class="text-muted">→ {{ job.printer.name }}</span></div>
+                <div class="text-xs text-muted tabular-nums">{{ job.created_at|date:"d.m H:i:s" }}</div>
+                {% if job.error %}<div class="text-xs text-red-700 font-semibold mt-0.5">{{ job.error }}</div>{% endif %}
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="badge {% if job.status == 'done' %}bg-emerald-100 text-emerald-800{% elif job.status == 'error' %}bg-red-100 text-red-800{% else %}bg-amber-100 text-amber-900{% endif %}">{{ job.get_status_display }}</span>
+                {% if job.status == 'error' %}
+                  <form method="post">{% csrf_token %}<input type="hidden" name="job" value="{{ job.id }}">
+                    <button name="action" value="retry" class="btn btn-ghost btn-sm">{% translate 'Повторить' %}</button>
+                  </form>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-sm text-muted">{% translate 'Заданий ещё не было.' %}</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="space-y-4">
+    <section class="card p-5 space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="section-title">{% translate 'Программа печати' %}</h2>
+        {% if agent.is_online %}
+          <span class="badge bg-emerald-100 text-emerald-800">{% icon "check-circle" 14 %}{% translate 'На связи' %}</span>
+        {% else %}
+          <span class="badge bg-red-100 text-red-800">{% icon "alert" 14 %}{% translate 'Не на связи' %}</span>
+        {% endif %}
+      </div>
+      <p class="text-sm text-muted">{% translate 'Касса работает через интернет, а принтеры стоят в сети кафе. Программа печати на компьютере в кафе забирает задания и отправляет их на принтеры.' %}</p>
+      {% if agent.last_seen_at %}<p class="text-xs text-muted">{% translate 'Последняя связь' %}: {{ agent.last_seen_at|date:"d.m.Y H:i:s" }}{% if agent.info %} · {{ agent.info }}{% endif %}</p>{% endif %}
+      <a href="{% url 'print_agent_download' %}" class="btn btn-primary w-full">{% icon "printer" 18 %}{% translate 'Скачать программу печати' %}</a>
+      <ol class="list-decimal pl-5 space-y-1.5 text-sm text-stone-700">
+        <li>{% translate 'На компьютере в кафе установите Python 3.10 или новее (python.org).' %}</li>
+        <li>{% translate 'Распакуйте архив, например в C:\CafePosPrint.' %}</li>
+        <li>{% translate 'Для проверки запустите start_print_agent.bat. Для автозапуска при включении — install_print_agent.bat от имени администратора.' %}</li>
+        <li>{% translate 'Добавьте принтер слева и нажмите «Тест».' %}</li>
+      </ol>
+      <details class="text-sm">
+        <summary class="cursor-pointer font-medium">{% translate 'Токен программы печати' %}</summary>
+        <p class="text-xs text-muted mt-2">{% translate 'Уже записан в архиве. Если токен попал к посторонним, создайте новый и скачайте программу заново.' %}</p>
+        <code class="block mt-2 p-2 rounded-lg bg-stone-100 text-xs break-all">{{ agent.token }}</code>
+        <form method="post" class="mt-2" onsubmit="return confirm('{% translate "Создать новый токен? Старая программа печати перестанет работать, пока вы не обновите токен." as t %}{{ t|escapejs }}')">{% csrf_token %}
+          <button name="action" value="new_token" class="btn btn-secondary btn-sm">{% translate 'Новый токен' %}</button>
+        </form>
+      </details>
+    </section>
+
+    <section class="card p-5 space-y-2 text-sm">
+      <h2 class="section-title">{% translate 'Как узнать IP принтера' %}</h2>
+      <p class="text-stone-700">{% translate 'Сетевой термопринтер печатает свои настройки, в том числе IP-адрес, на странице самотестирования. Как её распечатать, написано в инструкции к принтеру. Компьютер с программой печати и принтер должны быть в одной сети.' %}</p>
+      <p class="text-stone-700">{% translate 'Принтер по USB сначала установите в Windows с драйвером производителя, затем укажите его имя.' %}</p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

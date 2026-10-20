@@ -59,10 +59,17 @@ def set_order_type(order, order_type, table=None):
 # ---------- кухня ----------
 
 def send_to_kitchen(order):
-    """Неотправленные позиции уходят в очередь кухни. Возвращает число позиций."""
-    return order.items.filter(status=OrderItem.Status.NEW).update(
+    """Неотправленные позиции уходят в очередь кухни и на кухонные принтеры. Возвращает число позиций."""
+    from printing import services as printing
+
+    ids = list(order.items.filter(status=OrderItem.Status.NEW).values_list("id", flat=True))
+    if not ids:
+        return 0
+    count = order.items.filter(id__in=ids, status=OrderItem.Status.NEW).update(
         status=OrderItem.Status.QUEUED, sent_at=timezone.now()
     )
+    printing.after_commit(printing.queue_kitchen, order, ids)
+    return count
 
 
 def start_cooking(order):
@@ -312,6 +319,9 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
 
         write_off_order(target)
         loyalty.earn(target)
+
+        from printing import services as printing
+        printing.after_commit(printing.queue_receipt, target, auto=True)
     return target
 
 

@@ -20,6 +20,11 @@ def _nav(request):
 
     from pos.models import Order
     open_count = Order.objects.filter(status=Order.Status.OPEN).count() or 5
+    printer_problems = None
+    if has_role(user, MANAGE_ROLES):
+        from printing.services import problem_count
+
+        printer_problems = problem_count() or None
 
     items = [
         ("orders", _("Обзор"), "home", SERVICE_ROLES, {"orders", "order_view"}),
@@ -29,6 +34,7 @@ def _nav(request):
         ("new_order", _("Касса"), "wallet", SERVICE_ROLES, set()),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
+        ("manage_printers", _("Принтеры"), "printer", MANAGE_ROLES, {"manage_printers", "printer_create", "printer_edit"}, printer_problems),
         ("manage_settings", _("Настройки"), "settings", MANAGE_ROLES, {"manage_settings", "manage_staff", "staff_create", "staff_edit", "menu_qr", "tables_qr"}),
     ]
     res = []

@@ -22,6 +22,7 @@ from core.models import CafeSettings
 from menu.public_views import _qr_svg
 from inventory.services import find_shortages
 from menu.models import Category, Dish
+from printing.services import receipt_printers
 
 from . import loyalty, reviews, services
 from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table
@@ -744,7 +745,9 @@ def request_bill(request, order_id):
 @login_required
 def precheck(request, order_id):
     order = _get_order(request, order_id)
-    return render(request, "pos/receipt.html", {**_panel_context(request, order), "is_precheck": True})
+    return render(request, "pos/receipt.html", {
+        **_panel_context(request, order), "is_precheck": True, "printers": list(receipt_printers()),
+    })
 
 
 @login_required
@@ -958,6 +961,7 @@ def receipt(request, order_id):
             "is_precheck": False,
             "review_qr": _qr_svg(review_url),
             "loyalty_entry": entry,
+            "printers": list(receipt_printers()),
         },
     )
 

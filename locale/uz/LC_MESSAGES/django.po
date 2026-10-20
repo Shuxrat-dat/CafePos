@@ -3114,3 +3114,363 @@ msgstr "kg"
 
 msgid "Вес указан."
 msgstr "Vazn kiritildi."
+
+msgid "IP-адрес принтера"
+msgstr "Printerning IP-manzili"
+
+msgid "USB: принтер, установленный в Windows"
+msgstr "USB: Windowsga oʻrnatilgan printer"
+
+msgid "Windows не смог отправить данные на принтер: %(d)s."
+msgstr "Windows maʼlumotni printerga yubora olmadi: %(d)s."
+
+msgid "Включён"
+msgstr "Yoqilgan"
+
+msgid "Выключен"
+msgstr "Oʻchirilgan"
+
+msgid "Данные ESC/POS"
+msgstr "ESC/POS maʼlumotlari"
+
+msgid "Для USB-принтера на компьютере нужен модуль pywin32: py -m pip install pywin32"
+msgstr "USB-printer uchun kompyuterda pywin32 moduli kerak: py -m pip install pywin32"
+
+msgid "Для ленты 80 мм обычно 48 (шрифт A) или 42. Для 58 мм — 32."
+msgstr "80 mm lenta uchun odatda 48 (A shrift) yoki 42. 58 mm uchun — 32."
+
+msgid "Для проверки запустите start_print_agent.bat. Для автозапуска при включении — install_print_agent.bat от имени администратора."
+msgstr "Tekshirish uchun start_print_agent.bat ni ishga tushiring. Kompyuter yoqilganda avtomatik ishlashi uchun — install_print_agent.bat ni administrator nomidan."
+
+msgid "Добавить принтер"
+msgstr "Printer qoʻshish"
+
+msgid "Добавьте принтер для чеков и, если нужно, отдельный для кухни или бара."
+msgstr "Cheklar uchun printer qoʻshing, kerak boʻlsa oshxona yoki bar uchun alohida printer ham."
+
+msgid "Добавьте принтер слева и нажмите «Тест»."
+msgstr "Chapda printer qoʻshing va «Test» tugmasini bosing."
+
+msgid "Дозаказ"
+msgstr "Qoʻshimcha buyurtma"
+
+msgid "Завершено"
+msgstr "Yakunlangan"
+
+msgid "Задание"
+msgstr "Topshiriq"
+
+msgid "Задание в очереди, но программа печати не на связи. Чек напечатается, когда она запустится."
+msgstr "Topshiriq navbatda, lekin chop etish dasturi aloqada emas. Dastur ishga tushganda chek chop etiladi."
+
+msgid "Задание поставлено в очередь ещё раз."
+msgstr "Topshiriq yana navbatga qoʻyildi."
+
+msgid "Заданий ещё не было."
+msgstr "Hali topshiriqlar boʻlmagan."
+
+msgid "Имя принтера в Windows"
+msgstr "Windowsdagi printer nomi"
+
+msgid "Как узнать IP принтера"
+msgstr "Printer IP-manzilini qanday bilish mumkin"
+
+msgid "Касса работает через интернет, а принтеры стоят в сети кафе. Программа печати на компьютере в кафе забирает задания и отправляет их на принтеры."
+msgstr "Kassa internet orqali ishlaydi, printerlar esa kafe tarmogʻida turadi. Kafedagi kompyuterdagi chop etish dasturi topshiriqlarni olib, printerlarga yuboradi."
+
+msgid "Категории блюд для этого принтера"
+msgstr "Bu printer uchun taom toifalari"
+
+msgid "Категорий пока нет."
+msgstr "Hozircha toifalar yoʻq."
+
+msgid "Кодировка"
+msgstr "Kodlash"
+
+msgid "Кодировка кириллицы"
+msgstr "Kirill harflari kodlashi"
+
+msgid "Кодовая страница (ESC t)"
+msgstr "Kod sahifasi (ESC t)"
+
+msgid "Компьютер"
+msgstr "Kompyuter"
+
+msgid "Копий"
+msgstr "Nusxalar"
+
+msgid "Крупно"
+msgstr "Yirik"
+
+msgid "Кухня №%(n)s"
+msgstr "Oshxona №%(n)s"
+
+msgid "Лента и символы"
+msgstr "Lenta va belgilar"
+
+msgid "На компьютере в кафе установите Python 3.10 или новее (python.org)."
+msgstr "Kafedagi kompyuterga Python 3.10 yoki yangisini oʻrnating (python.org)."
+
+msgid "На принтер"
+msgstr "Printerga"
+
+msgid "На связи"
+msgstr "Aloqada"
+
+msgid "Напечатано"
+msgstr "Chop etildi"
+
+msgid "Например: Касса, Кухня, Бар."
+msgstr "Masalan: Kassa, Oshxona, Bar."
+
+msgid "Не на связи"
+msgstr "Aloqada emas"
+
+msgid "Неизвестный тип подключения принтера."
+msgstr "Printer ulanishining nomaʼlum turi."
+
+msgid "Нет включённых принтеров для чеков. Добавьте принтер в «Настройки → Принтеры»."
+msgstr "Cheklar uchun yoqilgan printer yoʻq. «Sozlamalar → Printerlar» boʻlimida printer qoʻshing."
+
+msgid "Нет связи с принтером: %(d)s."
+msgstr "Printer bilan aloqa yoʻq: %(d)s."
+
+msgid "Новый принтер"
+msgstr "Yangi printer"
+
+msgid "Новый токен"
+msgstr "Yangi token"
+
+msgid "Номер от 0 до 255."
+msgstr "0 dan 255 gacha raqam."
+
+msgid "Номер таблицы символов в принтере. По стандарту Epson: 17 — CP866, 46 — Windows-1251. Если вместо русских букв печатаются знаки, сверьте номер со страницей самотестирования принтера."
+msgstr "Printerdagi belgilar jadvali raqami. Epson standarti boʻyicha: 17 — CP866, 46 — Windows-1251. Agar rus harflari oʻrniga belgilar chiqsa, raqamni printerning oʻz-oʻzini tekshirish sahifasi bilan solishtiring."
+
+msgid "От 1 до 5 копий."
+msgstr "1 dan 5 tagacha nusxa."
+
+msgid "От 24 до 64 символов."
+msgstr "24 dan 64 tagacha belgi."
+
+msgid "Отметьте, что печатает принтер: чеки, заказы для кухни или и то и другое."
+msgstr "Printer nimani chop etishini belgilang: cheklar, oshxona uchun buyurtmalar yoki ikkalasi."
+
+msgid "Отправлено на принтер."
+msgstr "Printerga yuborildi."
+
+msgid "Отрезать бумагу"
+msgstr "Qogʻozni kesish"
+
+msgid "Ошибка"
+msgstr "Xato"
+
+msgid "Ошибка принтера: %(d)s"
+msgstr "Printer xatosi: %(d)s"
+
+msgid "Передано"
+msgstr "Uzatildi"
+
+msgid "Передано программе печати"
+msgstr "Chop etish dasturiga uzatildi"
+
+msgid "Печатает заказы для кухни"
+msgstr "Oshxona uchun buyurtmalarni chop etadi"
+
+msgid "Печатает чеки и пречеки"
+msgstr "Cheklar va oldindan hisoblarni chop etadi"
+
+msgid "Повторить"
+msgstr "Takrorlash"
+
+msgid "Порт"
+msgstr "Port"
+
+msgid "Порт — число от 1 до 65535. Для сетевых термопринтеров обычно 9100."
+msgstr "Port — 1 dan 65535 gacha raqam. Tarmoq termoprinterlari uchun odatda 9100."
+
+msgid "Последние задания"
+msgstr "Soʻnggi topshiriqlar"
+
+msgid "Последняя связь"
+msgstr "Soʻnggi aloqa"
+
+msgid "Пречек №%(n)s"
+msgstr "Oldindan hisob №%(n)s"
+
+msgid "Принтер"
+msgstr "Printer"
+
+msgid "Принтер %(d)s не отвечает. Проверьте, что он включён и в одной сети с компьютером."
+msgstr "%(d)s printer javob bermayapti. U yoqilganini va kompyuter bilan bir tarmoqda ekanini tekshiring."
+
+msgid "Принтер %(d)s отклонил подключение. Проверьте порт (обычно 9100)."
+msgstr "%(d)s printer ulanishni rad etdi. Portni tekshiring (odatda 9100)."
+
+msgid "Принтер не найден в Windows: %(d)s. Проверьте имя в настройках."
+msgstr "Windowsda printer topilmadi: %(d)s. Sozlamalardagi nomni tekshiring."
+
+msgid "Принтер по USB сначала установите в Windows с драйвером производителя, затем укажите его имя."
+msgstr "USB printerni avval ishlab chiqaruvchi drayveri bilan Windowsga oʻrnating, keyin uning nomini kiriting."
+
+msgid "Принтер сохранён, тестовая страница поставлена в очередь."
+msgstr "Printer saqlandi, test sahifasi navbatga qoʻyildi."
+
+msgid "Принтер сохранён."
+msgstr "Printer saqlandi."
+
+msgid "Принтер удалён."
+msgstr "Printer oʻchirildi."
+
+msgid "Принтеров пока нет"
+msgstr "Hozircha printerlar yoʻq"
+
+msgid "Принтеры"
+msgstr "Printerlar"
+
+msgid "Программа печати"
+msgstr "Chop etish dasturi"
+
+msgid "Программа печати не на связи. Чек напечатается, когда она запустится."
+msgstr "Chop etish dasturi aloqada emas. Dastur ishga tushganda chek chop etiladi."
+
+msgid "Программа печати не сообщила результат. Проверьте принтер и повторите."
+msgstr "Chop etish dasturi natijani xabar qilmadi. Printerni tekshiring va takrorlang."
+
+msgid "Распакуйте архив, например в C:\\CafePosPrint."
+msgstr "Arxivni oching, masalan C:\\CafePosPrint papkasiga."
+
+msgid "Сетевой термопринтер печатает свои настройки, в том числе IP-адрес, на странице самотестирования. Как её распечатать, написано в инструкции к принтеру. Компьютер с программой печати и принтер должны быть в одной сети."
+msgstr "Tarmoq termoprinteri oʻz sozlamalarini, jumladan IP-manzilini, oʻz-oʻzini tekshirish sahifasida chop etadi. Uni qanday chop etish printer qoʻllanmasida yozilgan. Chop etish dasturi oʻrnatilgan kompyuter va printer bir tarmoqda boʻlishi kerak."
+
+msgid "Сеть (LAN): IP-адрес и порт"
+msgstr "Tarmoq (LAN): IP-manzil va port"
+
+msgid "Символов в строке"
+msgstr "Satrdagi belgilar"
+
+msgid "Скачать программу печати"
+msgstr "Chop etish dasturini yuklab olish"
+
+msgid "Слева"
+msgstr "Chapda"
+
+msgid "Создан новый токен. Скачайте программу печати заново или впишите токен в её настройки."
+msgstr "Yangi token yaratildi. Chop etish dasturini qayta yuklab oling yoki tokenni uning sozlamalariga yozing."
+
+msgid "Создано"
+msgstr "Yaratilgan"
+
+msgid "Создать новый токен? Старая программа печати перестанет работать, пока вы не обновите токен."
+msgstr "Yangi token yaratilsinmi? Tokenni yangilamaguningizcha eski chop etish dasturi ishlamay qoladi."
+
+msgid "Сохранить и напечатать тест"
+msgstr "Saqlash va testni chop etish"
+
+msgid "Сюда уходят только блюда отмеченных категорий. Ничего не отмечено — все блюда."
+msgstr "Bu yerga faqat belgilangan toifalardagi taomlar yuboriladi. Hech narsa belgilanmasa — barcha taomlar."
+
+msgid "Термопринтеры ESC/POS: чеки после оплаты и заказы для кухни по категориям блюд."
+msgstr "ESC/POS termoprinterlari: toʻlovdan keyin cheklar va taom toifalari boʻyicha oshxona buyurtmalari."
+
+msgid "Тест"
+msgstr "Test"
+
+msgid "Тестовая печать"
+msgstr "Test chop etish"
+
+msgid "Тестовая страница в очереди, но программа печати не на связи. Запустите её на компьютере в кафе."
+msgstr "Test sahifasi navbatda, lekin chop etish dasturi aloqada emas. Uni kafedagi kompyuterda ishga tushiring."
+
+msgid "Тестовая страница отправлена на «%(name)s»."
+msgstr "Test sahifasi «%(name)s» printeriga yuborildi."
+
+msgid "Токен"
+msgstr "Token"
+
+msgid "Токен программы печати"
+msgstr "Chop etish dasturi tokeni"
+
+msgid "Точно как в «Принтеры и сканеры». Список можно получить командой программы печати --list."
+msgstr "Xuddi «Printerlar va skanerlar»dagidek. Roʻyxatni chop etish dasturining --list buyrugʻi bilan olish mumkin."
+
+msgid "Удалить принтер"
+msgstr "Printerni oʻchirish"
+
+msgid "Удалить принтер? Его задания тоже удалятся."
+msgstr "Printer oʻchirilsinmi? Uning topshiriqlari ham oʻchiriladi."
+
+msgid "Уже записан в архиве. Если токен попал к посторонним, создайте новый и скачайте программу заново."
+msgstr "Arxivga allaqachon yozilgan. Agar token begonalar qoʻliga tushsa, yangisini yarating va dasturni qayta yuklab oling."
+
+msgid "Укажите IP-адрес принтера."
+msgstr "Printerning IP-manzilini kiriting."
+
+msgid "Укажите IP-адрес, например 192.168.1.200."
+msgstr "IP-manzilni kiriting, masalan 192.168.1.200."
+
+msgid "Укажите имя принтера, как оно называется в Windows."
+msgstr "Printer nomini Windowsdagidek kiriting."
+
+msgid "Чек сразу после оплаты"
+msgstr "Toʻlovdan keyin darhol chek"
+
+msgid "Чек №%(n)s"
+msgstr "Chek №%(n)s"
+
+msgid "Чеки"
+msgstr "Cheklar"
+
+msgid "Что печатаем"
+msgstr "Nima chop etiladi"
+
+msgid "Что печатает"
+msgstr "Nimani chop etadi"
+
+msgid "в очереди: %(n)s"
+msgstr "navbatda: %(n)s"
+
+msgid "все блюда"
+msgstr "barcha taomlar"
+
+msgid "справа"
+msgstr "oʻngda"
+
+msgid "сразу после оплаты"
+msgstr "toʻlovdan keyin darhol"
+
+msgid "через браузер"
+msgstr "brauzer orqali"
+
+msgid "Подробности ошибки"
+msgstr "Xato tafsilotlari"
+
+msgid "Нет связи"
+msgstr "Aloqa yoʻq"
+
+msgid "Проверить связь"
+msgstr "Aloqani tekshirish"
+
+msgid "Проверяем связь с принтерами. Результат появится через несколько секунд."
+msgstr "Printerlar bilan aloqa tekshirilmoqda. Natija bir necha soniyadan keyin chiqadi."
+
+msgid "Проверяется"
+msgstr "Tekshirilmoqda"
+
+msgid "Программа печати не на связи, поэтому связь с принтерами не проверить и печать не идёт. Запустите её на компьютере в кафе."
+msgstr "Chop etish dasturi aloqada emas, shuning uchun printerlar bilan aloqani tekshirib boʻlmaydi va chop etish ishlamayapti. Uni kafedagi kompyuterda ishga tushiring."
+
+msgid "Программа печати не на связи, проверить принтеры нельзя. Запустите её на компьютере в кафе."
+msgstr "Chop etish dasturi aloqada emas, printerlarni tekshirib boʻlmaydi. Uni kafedagi kompyuterda ishga tushiring."
+
+msgid "Связь есть"
+msgstr "Aloqa bor"
+
+msgid "Связь неизвестна"
+msgstr "Aloqa nomaʼlum"
+
+msgid "Связь проверена"
+msgstr "Aloqa tekshirilgan"
+
+msgid "проверено"
+msgstr "tekshirildi"
