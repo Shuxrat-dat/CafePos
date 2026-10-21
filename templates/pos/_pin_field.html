@@ -1,0 +1,15 @@
+{% load i18n ui %}
+{# Поле «пароль отмены» для сотрудников, которым он нужен; остальным ничего не показывается #}
+{% if user.needs_cancel_pin %}
+  {% if user.has_cancel_pin %}
+    <div>
+      <label class="label" for="{{ field_id }}">{% translate 'Ваш пароль отмены' %}</label>
+      <input id="{{ field_id }}" name="pin" type="password" autocomplete="new-password" required autofocus class="input" placeholder="••••">
+    </div>
+  {% else %}
+    <div class="alert-warn">{% icon "lock" 18 %}
+      <span>{% translate 'Чтобы отменять заказы и блюда, сначала задайте свой пароль отмены.' %}
+        <a href="{% url 'cancel_pin_settings' %}?next={{ request.get_full_path|urlencode }}" class="block mt-1 font-semibold underline">{% translate 'Задать пароль отмены' %}</a></span>
+    </div>
+  {% endif %}
+{% endif %}

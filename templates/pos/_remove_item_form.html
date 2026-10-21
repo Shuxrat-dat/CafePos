@@ -1,0 +1,19 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{% translate 'Убрать блюдо из заказа?' %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item.weight_grams|weight }}{% else %} × {{ item.quantity }}{% endif %} · {{ item.line_total|money }}</p>{% endblock %}
+{% block modal_body %}
+<form hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" hx-swap="innerHTML"
+      hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
+      class="space-y-4">
+  {% if item.status != 'new' %}
+    <div class="alert-warn">{% icon "alert" 18 %}{% translate 'Блюдо уже отправлено на кухню. Об этом узнает владелец.' %}</div>
+  {% endif %}
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}<span>{{ error }}</span></div>{% endif %}
+  {% include "pos/_pin_field.html" with field_id="remove-pin" %}
+  <div class="flex gap-2">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Оставить' %}</button>
+    <button class="btn btn-lg flex-1 bg-red-600 text-white hover:bg-red-700" {% if user.needs_cancel_pin and not user.has_cancel_pin %}disabled{% endif %}>{% icon "trash" 18 %}{% translate 'Убрать' %}</button>
+  </div>
+</form>
+{% endblock %}

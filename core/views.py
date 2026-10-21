@@ -14,6 +14,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from accounts import cancel_pin
 from accounts.permissions import MANAGE_ROLES, role_required
 from pos.models import Hall, Table
 
@@ -231,6 +232,10 @@ def staff_form(request, user_id=None):
     if request.method == "POST":
         if form.is_valid():
             user = form.save()
+            if form.cleaned_data.get("reset_cancel_pin") and target is not None:
+                cancel_pin.reset_pin(user)
+                audit.record(request.user, audit.A.CANCEL_PIN_SET,
+                             detail=_("Пароль отмены сотрудника «%(name)s» сброшен") % {"name": user.get_full_name() or user.username})
             messages.success(
                 request, _("Сотрудник «%(name)s» сохранён.") % {"name": user.get_full_name() or user.username}
             )

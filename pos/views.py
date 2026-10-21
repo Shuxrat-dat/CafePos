@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from accounts import cancel_pin
 from accounts.permissions import DISCOUNT_ROLES, has_role
 from core import audit, telegram
 from core.models import CafeSettings
@@ -48,7 +49,27 @@ def _get_order(request, order_id, open_only=True):
 
 
 def _can_cancel(user, order):
-    return order.status == Order.Status.OPEN and (not order.has_sent_items or user.can_cancel_sent_orders)
+    # Кассир видит отмену всегда: окно с паролем подскажет, что его нужно задать, а без пароля отмена не пройдёт
+    return order.status == Order.Status.OPEN and (
+        not order.has_sent_items or user.can_cancel_sent_orders or user.needs_cancel_pin
+    )
+
+
+def _pin_error(request):
+    """Проверка пароля отмены из формы. Пусто, если всё верно или пароль этому сотруднику не нужен."""
+    try:
+        cancel_pin.check(request.user, request.POST.get("pin"))
+    except cancel_pin.PinError as exc:
+        return str(exc)
+    return ""
+
+
+def _remove_form(request, order, item, error=""):
+    """Окно подтверждения удаления блюда с вводом пароля отмены (с ошибкой, если пароль не подошёл)."""
+    response = render(request, "pos/_remove_item_form.html", {"order": order, "item": item, "error": error})
+    response["HX-Retarget"] = "#modal"
+    response["HX-Reswap"] = "innerHTML"
+    return response
 
 
 def _items(order):
@@ -608,6 +629,9 @@ def change_qty(request, order_id, item_id):
     if item.by_weight and request.POST.get("delta") == "1":
         # Вторую порцию на вес добавляют отдельным взвешиванием
         return _panel(request, order)
+    if request.POST.get("delta") != "1" and item.quantity <= 1 and request.user.needs_cancel_pin:
+        # Убрать последнюю порцию то же самое, что удалить блюдо: нужен пароль отмены
+        return _remove_form(request, order, item)
     item.quantity += 1 if request.POST.get("delta") == "1" else -1
     if item.quantity <= 0:
         item.delete()
@@ -624,14 +648,26 @@ def remove_item(request, order_id, item_id):
     """Удалить позицию. Уже отправленную на кухню может убрать только тот, кто вправе отменять такие заказы."""
     order = _get_order(request, order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
+    error = _pin_error(request)
+    if error:
+        return _remove_form(request, order, item, error)
     if item.status != OrderItem.Status.NEW and not request.user.can_cancel_sent_orders:
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
     if item.status != OrderItem.Status.NEW:
         audit.record(request.user, audit.A.ITEM_REMOVE, order=order, amount=item.line_total,
                      detail=f"{item.dish.name} × {item.quantity}")
+        telegram.notify_item_removed(order, item, request.user)
     item.delete()
     _order_changed(order)
     return _panel(request, order, _("Позиция удалена."))
+
+
+@login_required
+def remove_item_form(request, order_id, item_id):
+    """Окно «Убрать блюдо?» с паролем отмены."""
+    order = _get_order(request, order_id)
+    item = get_object_or_404(OrderItem, id=item_id, order=order)
+    return _remove_form(request, order, item)
 
 
 @login_required
@@ -762,12 +798,22 @@ def cancel_form(request, order_id):
 @require_POST
 def cancel_order(request, order_id):
     order = _get_order(request, order_id)
-    if not _can_cancel(request.user, order):
-        messages.error(request, _("Заказ уже на кухне. Отменить его может администратор."))
+    htmx = bool(request.headers.get("HX-Request"))
+    reason = request.POST.get("reason", "")
+    # Сначала пароль отмены (у кассира он обязателен), потом права на этот заказ
+    error = _pin_error(request)
+    if not error and not _can_cancel(request.user, order):
+        error = _("Заказ уже на кухне. Отменить его может администратор.")
+    if error:
+        if htmx:
+            return render(request, "pos/_cancel_form.html", {"order": order, "error": error, "reason": reason})
+        messages.error(request, error)
         return redirect("order_detail", order_id=order.id)
-    services.cancel_order(order, request.user, request.POST.get("reason", ""))
+    services.cancel_order(order, request.user, reason)
     telegram.notify_order_cancelled(order, request.user)
     messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.id})
+    if htmx:
+        return HttpResponse(headers={"HX-Redirect": reverse("floor")})
     return redirect("floor")
 
 
@@ -975,6 +1021,10 @@ def refund_order_view(request, order_id):
     if not request.user.can_take_payment:
         raise PermissionDenied
     order = get_object_or_404(Order, id=order_id, status=Order.Status.PAID)
+    error = _pin_error(request)
+    if error:
+        messages.error(request, error)
+        return redirect("order_view", order_id=order.id)
     reason = request.POST.get("reason", "").strip()
     return_to_stock = request.POST.get("return_to_stock") == "1"
     try:

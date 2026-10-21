@@ -79,7 +79,7 @@
             <td class="px-4 py-2.5 whitespace-nowrap tabular-nums text-muted">{{ e.created_at|date:"d.m H:i" }}</td>
             <td class="px-4 py-2.5 whitespace-nowrap font-medium">{{ e.user_name|default:"—" }}</td>
             <td class="px-4 py-2.5 whitespace-nowrap">
-              <span class="badge {% if e.action == 'order_cancel' or e.action == 'refund' or e.action == 'item_remove' %}bg-orange-100 text-orange-800{% elif e.action == 'login_failed' %}bg-red-100 text-red-700{% else %}bg-stone-100 text-stone-700{% endif %}">{{ e.get_action_display }}</span>
+              <span class="badge {% if e.action == 'order_cancel' or e.action == 'refund' or e.action == 'item_remove' %}bg-orange-100 text-orange-800{% elif e.action == 'login_failed' or e.action == 'cancel_pin_locked' %}bg-red-100 text-red-700{% else %}bg-stone-100 text-stone-700{% endif %}">{{ e.get_action_display }}</span>
             </td>
             <td class="px-4 py-2.5 text-stone-700">
               {% if e.order_id %}<a href="{% url 'order_view' order_id=e.order_id %}" class="font-semibold text-brand hover:underline">#{{ e.order_id }}</a> {% endif %}{{ e.detail|tr_text }}

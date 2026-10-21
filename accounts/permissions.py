@@ -6,6 +6,9 @@ KITCHEN_ROLES = {"owner", "admin", "cook"}               # экран кухни
 REPORT_ROLES = {"owner", "admin"}                        # отчёты
 SEE_ALL_ROLES = {"owner", "admin", "cashier"}            # видят заказы всех официантов
 CANCEL_SENT_ROLES = {"owner", "admin"}                   # могут отменить заказ, уже ушедший на кухню
+# Этим ролям отмена заказа, удаление блюда и возврат разрешены только по их собственному паролю отмены.
+# С паролем они могут отменять и то, что уже ушло на кухню.
+PIN_CANCEL_ROLES = {"cashier"}
 STOCK_ROLES = {"owner", "admin"}                         # склад: приход и пересчёт
 MANAGE_ROLES = {"owner", "admin"}                        # меню, персонал, столы, настройки
 

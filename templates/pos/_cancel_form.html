@@ -2,20 +2,22 @@
 {% load i18n ui %}
 {% block modal_title %}{% blocktranslate trimmed with n=order.id %}Отменить заказ №{{ n }}?{% endblocktranslate %}{% endblock %}
 {% block modal_body %}
-<form method="post" action="{% url 'cancel_order' order.id %}" class="space-y-4">
+<form hx-post="{% url 'cancel_order' order.id %}" hx-target="#modal" hx-swap="innerHTML" class="space-y-4">
   {% csrf_token %}
   {% if order.has_sent_items %}
     <div class="alert-warn">{% icon "alert" 18 %}{% translate 'Часть блюд уже отправлена на кухню. Заказ останется в истории как отменённый.' %}</div>
   {% else %}
     <p class="text-sm text-muted">{% translate 'Заказ останется в истории как отменённый.' %}</p>
   {% endif %}
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}<span>{{ error }}</span></div>{% endif %}
   <div>
     <label class="label" for="cancel-reason">{% translate 'Причина отмены' %}</label>
-    <input id="cancel-reason" name="reason" class="input" maxlength="200" placeholder="{% translate 'Гость ушёл, ошибка кассира…' %}" autofocus>
+    <input id="cancel-reason" name="reason" class="input" maxlength="200" value="{{ reason|default:'' }}" placeholder="{% translate 'Гость ушёл, ошибка кассира…' %}" {% if not user.needs_cancel_pin %}autofocus{% endif %}>
   </div>
+  {% include "pos/_pin_field.html" with field_id="cancel-pin" %}
   <div class="flex gap-2">
     <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Не отменять' %}</button>
-    <button class="btn btn-lg flex-1 bg-red-600 text-white hover:bg-red-700">{% translate 'Отменить заказ' %}</button>
+    <button class="btn btn-lg flex-1 bg-red-600 text-white hover:bg-red-700" {% if user.needs_cancel_pin and not user.has_cancel_pin %}disabled{% endif %}>{% translate 'Отменить заказ' %}</button>
   </div>
 </form>
 {% endblock %}

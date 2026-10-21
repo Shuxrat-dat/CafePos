@@ -83,6 +83,16 @@
           <label class="block text-stone-600 mb-1">{% translate 'Причина возврата:' %}</label>
           <input type="text" name="reason" required placeholder="{% translate 'Отказ гостя / ошибка пробития' %}" class="input w-full bg-white text-xs px-2.5 py-1.5">
         </div>
+        {% if user.needs_cancel_pin %}
+          {% if user.has_cancel_pin %}
+            <div>
+              <label class="block text-stone-600 mb-1">{% translate 'Ваш пароль отмены' %}</label>
+              <input type="password" name="pin" required autocomplete="new-password" placeholder="••••" class="input w-full bg-white text-xs px-2.5 py-1.5">
+            </div>
+          {% else %}
+            <a href="{% url 'cancel_pin_settings' %}?next={{ request.get_full_path|urlencode }}" class="block text-orange-800 font-semibold underline">{% translate 'Чтобы оформить возврат, задайте пароль отмены' %}</a>
+          {% endif %}
+        {% endif %}
         <label class="flex items-center gap-2 text-stone-700 cursor-pointer">
           <input type="checkbox" name="return_to_stock" value="1" checked class="rounded text-brand">
           <span>{% translate 'Вернуть списанные ингредиенты на склад' %}</span>

@@ -19,6 +19,7 @@ urlpatterns = [
     path("sw.js", core_pwa.service_worker, name="pwa_service_worker"),
     path("offline/", core_pwa.offline, name="pwa_offline"),
     path("demo/login/", core_views.demo_login, name="demo_login"),
+    path("account/", include("accounts.urls")),
     path("kitchen/", include("kitchen.urls")),
     path("reports/", include("reports.urls")),
     path("stock/", include("inventory.urls")),

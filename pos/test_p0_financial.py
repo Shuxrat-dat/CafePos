@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal
 
+from accounts import cancel_pin
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -15,6 +16,7 @@ User = get_user_model()
 class P0FinancialTests(TestCase):
     def setUp(self):
         self.cashier = User.objects.create_user(username="cashier_p0", password="password123", role="cashier")
+        cancel_pin.set_pin(self.cashier, "7391")
         self.waiter = User.objects.create_user(username="waiter_p0", password="password123", role="waiter")
         self.hall = Hall.objects.create(name="Главный зал")
         self.table = Table.objects.create(hall=self.hall, number="10")
@@ -215,6 +217,7 @@ class P0FinancialTests(TestCase):
         res = self.client.post(f"/orders/{order.id}/refund/", {
             "reason": "Блюдо не понравилось гостю",
             "return_to_stock": "1",
+            "pin": "7391",
         })
         self.assertEqual(res.status_code, 302)
         order.refresh_from_db()

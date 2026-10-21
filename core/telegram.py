@@ -143,6 +143,39 @@ def notify_order_cancelled(order, user):
         return False
 
 
+def notify_item_removed(order, item, user):
+    """Блюдо, уже отправленное на кухню, убрали из заказа."""
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            lines = [
+                "🗑 " + _("Убрано блюдо с кухни · %(cafe)s") % {"cafe": cafe.name},
+                _("Заказ №%(id)s, %(place)s") % {"id": order.id, "place": order.place_label},
+                _("Блюдо: %(dish)s, %(sum)s") % {"dish": item.dish.name, "sum": money(item.line_total)},
+                _("Кто убрал: %(name)s") % {"name": _person(user)},
+            ]
+        return send("\n".join(lines), "cancel")
+    except Exception:
+        log.exception("Telegram: сообщение об удалении блюда не собрано")
+        return False
+
+
+def notify_pin_locked(user):
+    """Кто-то несколько раз подряд ввёл неверный пароль отмены."""
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            lines = [
+                "🔒 " + _("Пароль отмены заблокирован · %(cafe)s") % {"cafe": cafe.name},
+                _("Сотрудник: %(name)s") % {"name": _person(user)},
+                _("Несколько раз подряд введён неверный пароль. Если это не он, проверьте, кто работает на кассе."),
+            ]
+        return send("\n".join(lines), "cancel")
+    except Exception:
+        log.exception("Telegram: сообщение о блокировке не собрано")
+        return False
+
+
 def notify_discount(order, user):
     """Сообщает, если скидка не меньше порога из настроек."""
     try:

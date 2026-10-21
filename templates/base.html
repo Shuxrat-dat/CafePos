@@ -140,6 +140,12 @@
           {% icon "wallet" 16 %}
           <span class="hidden xl:inline">{% translate 'Кассовая смена' %}</span>
         </button>
+        {% if user.needs_cancel_pin %}
+          <a href="{% url 'cancel_pin_settings' %}" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold {% if user.has_cancel_pin %}text-stone-600 hover:text-brand{% else %}text-orange-700 bg-orange-50{% endif %} hover:bg-white transition-colors" title="{% translate 'Пароль отмены' %}">
+            {% icon "lock" 16 %}
+            <span class="hidden xl:inline">{% translate 'Пароль отмены' %}{% if not user.has_cancel_pin %} · {% translate 'задайте' %}{% endif %}</span>
+          </a>
+        {% endif %}
         <button type="button" data-install-app class="hidden w-full items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-brand hover:bg-white transition-colors" title="{% translate 'Установить приложение' %}">
           {% icon "arrow-down" 16 %}
           <span class="hidden xl:inline">{% translate 'Установить приложение' %}</span>
@@ -176,6 +182,9 @@
           {% endif %}
         {% endfor %}
         <div class="border-t border-line my-2"></div>
+        {% if user.needs_cancel_pin %}
+          <a href="{% url 'cancel_pin_settings' %}" class="flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 {% if not user.has_cancel_pin %}text-orange-700 font-semibold{% endif %}">{% icon "lock" 18 %}{% translate 'Пароль отмены' %}{% if not user.has_cancel_pin %} · {% translate 'задайте' %}{% endif %}</a>
+        {% endif %}
         <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
         <div class="px-1">{% include "components/lang_switch.html" %}</div>
         <form method="post" action="{% url 'logout' %}" class="mt-1">{% csrf_token %}

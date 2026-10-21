@@ -3486,3 +3486,159 @@ msgstr "Internet yoki Wi-Fi ni tekshiring. Aloqa paydo boʻlishi bilan sahifa o�
 
 msgid "Установить приложение"
 msgstr "Ilovani oʻrnatish"
+
+msgid "Блюдо уже отправлено на кухню. Об этом узнает владелец."
+msgstr "Taom allaqachon oshxonaga yuborilgan. Egasi bu haqda xabardor boʻladi."
+
+msgid "Блюдо: %(dish)s, %(sum)s"
+msgstr "Taom: %(dish)s, %(sum)s"
+
+msgid "Ваш пароль для входа"
+msgstr "Tizimga kirish parolingiz"
+
+msgid "Ваш пароль отмены"
+msgstr "Bekor qilish parolingiz"
+
+msgid "Введите пароль отмены."
+msgstr "Bekor qilish parolini kiriting."
+
+msgid "Для чего он нужен"
+msgstr "U nima uchun kerak"
+
+msgid "Если забыли пароль, попросите владельца сбросить его и задайте новый."
+msgstr "Agar parolni unutsangiz, egasidan uni tiklashni soʻrang va yangisini kiriting."
+
+msgid "Заблокирован"
+msgstr "Bloklangan"
+
+msgid "Заблокирован на %(m)s мин. после неверных попыток"
+msgstr "Notoʻgʻri urinishlardan keyin %(m)s daqiqaga bloklandi"
+
+msgid "Задан"
+msgstr "Kiritilgan"
+
+msgid "Задать пароль отмены"
+msgstr "Bekor qilish parolini kiritish"
+
+msgid "Каждая отмена записывается в журнал на ваше имя и отправляется владельцу."
+msgstr "Har bir bekor qilish sizning nomingizdan jurnalga yoziladi va egasiga yuboriladi."
+
+msgid "Кто убрал: %(name)s"
+msgstr "Kim olib tashladi: %(name)s"
+
+msgid "Не задан"
+msgstr "Kiritilmagan"
+
+msgid "Неверный пароль для входа."
+msgstr "Tizimga kirish paroli notoʻgʻri."
+
+msgid "Неверный пароль отмены. Осталось попыток: %(n)s."
+msgstr "Bekor qilish paroli notoʻgʻri. Qolgan urinishlar: %(n)s."
+
+msgid "Несколько раз подряд введён неверный пароль. Если это не он, проверьте, кто работает на кассе."
+msgstr "Notoʻgʻri parol ketma-ket bir necha marta kiritildi. Agar bu u emas boʻlsa, kassada kim ishlayotganini tekshiring."
+
+msgid "Новый пароль отмены"
+msgstr "Yangi bekor qilish paroli"
+
+msgid "Оставить"
+msgstr "Qoldirish"
+
+msgid "От 4 до 32 символов: цифры или буквы. Не такой же, как пароль для входа. Никому его не говорите."
+msgstr "4 dan 32 tagacha belgi: raqam yoki harf. Kirish parolingiz bilan bir xil boʻlmasin. Uni hech kimga aytmang."
+
+msgid "Пароли не совпадают."
+msgstr "Parollar mos kelmadi."
+
+msgid "Пароль ещё не задан: отменять заказы и блюда пока нельзя."
+msgstr "Parol hali kiritilmagan: buyurtma va taomlarni bekor qilib boʻlmaydi."
+
+msgid "Пароль задан"
+msgstr "Parol kiritildi"
+
+msgid "Пароль задан. Здесь его можно сменить."
+msgstr "Parol kiritilgan. Uni shu yerda almashtirish mumkin."
+
+msgid "Пароль изменён"
+msgstr "Parol almashtirildi"
+
+msgid "Пароль отмены"
+msgstr "Bekor qilish paroli"
+
+msgid "Пароль отмены должен отличаться от пароля для входа."
+msgstr "Bekor qilish paroli kirish parolidan farq qilishi kerak."
+
+msgid "Пароль отмены заблокирован"
+msgstr "Bekor qilish paroli bloklandi"
+
+msgid "Пароль отмены заблокирован · %(cafe)s"
+msgstr "Bekor qilish paroli bloklandi · %(cafe)s"
+
+msgid "Пароль отмены задаёт сам сотрудник. После сброса он задаст новый, пока этого не сделано, отмены недоступны."
+msgstr "Bekor qilish parolini xodimning oʻzi kiritadi. Tiklangandan keyin u yangisini kiritadi, bunga qadar bekor qilish mumkin emas."
+
+msgid "Пароль отмены не должен совпадать с логином."
+msgstr "Bekor qilish paroli login bilan bir xil boʻlmasligi kerak."
+
+msgid "Пароль отмены слишком длинный: не больше %(n)s символов."
+msgstr "Bekor qilish paroli juda uzun: %(n)s belgidan oshmasligi kerak."
+
+msgid "Пароль отмены слишком короткий: нужно не меньше %(n)s символов."
+msgstr "Bekor qilish paroli juda qisqa: kamida %(n)s belgi kerak."
+
+msgid "Пароль отмены слишком простой. Придумайте другой."
+msgstr "Bekor qilish paroli juda oddiy. Boshqasini oylab toping."
+
+msgid "Пароль отмены сотрудника «%(name)s» сброшен"
+msgstr "«%(name)s» xodimining bekor qilish paroli tiklandi"
+
+msgid "Пароль отмены сохранён."
+msgstr "Bekor qilish paroli saqlandi."
+
+msgid "Пароль отмены: задан, изменён или сброшен"
+msgstr "Bekor qilish paroli: kiritildi, almashtirildi yoki tiklandi"
+
+msgid "Повторите пароль отмены"
+msgstr "Bekor qilish parolini takrorlang"
+
+msgid "Сбросить пароль отмены"
+msgstr "Bekor qilish parolini tiklash"
+
+msgid "Слишком много неверных попыток. Пароль отмены заблокирован на %(m)s мин."
+msgstr "Notoʻgʻri urinishlar juda koʻp. Bekor qilish paroli %(m)s daqiqaga bloklandi."
+
+msgid "Слишком много неверных попыток. Попробуйте через %(m)s мин. или попросите владельца сбросить пароль."
+msgstr "Notoʻgʻri urinishlar juda koʻp. %(m)s daqiqadan keyin urinib koʻring yoki egasidan parolni tiklashni soʻrang."
+
+msgid "Сначала задайте свой пароль отмены: пункт «Пароль отмены» в меню слева."
+msgstr "Avval oʻzingizning bekor qilish parolingizni kiriting: chapdagi menyuda «Bekor qilish paroli» bandi."
+
+msgid "Сотрудник: %(name)s"
+msgstr "Xodim: %(name)s"
+
+msgid "Сохранить пароль отмены"
+msgstr "Bekor qilish parolini saqlash"
+
+msgid "Тот, которым вы входите в систему. Нужен, чтобы подтвердить, что это вы."
+msgstr "Tizimga kirishda ishlatadigan parolingiz. Bu siz ekaningizni tasdiqlash uchun kerak."
+
+msgid "Убрано блюдо с кухни · %(cafe)s"
+msgstr "Oshxonadan taom olib tashlandi · %(cafe)s"
+
+msgid "Убрать"
+msgstr "Olib tashlash"
+
+msgid "Убрать блюдо из заказа?"
+msgstr "Taom buyurtmadan olib tashlansinmi?"
+
+msgid "Чтобы отменить заказ, убрать блюдо из заказа или вернуть чек, нужно ввести этот пароль. Его знаете только вы."
+msgstr "Buyurtmani bekor qilish, taomni buyurtmadan olib tashlash yoki chekni qaytarish uchun shu parolni kiritish kerak. Uni faqat siz bilasiz."
+
+msgid "Чтобы отменять заказы и блюда, сначала задайте свой пароль отмены."
+msgstr "Buyurtma va taomlarni bekor qilish uchun avval oʻzingizning bekor qilish parolingizni kiriting."
+
+msgid "Чтобы оформить возврат, задайте пароль отмены"
+msgstr "Qaytarishni rasmiylashtirish uchun bekor qilish parolini kiriting"
+
+msgid "задайте"
+msgstr "kiriting"

@@ -1,6 +1,7 @@
 """Тесты новых возможностей кассы: типы заказов, скидки, обслуживание, смешанная оплата, кухня, заказы, роли."""
 from decimal import Decimal
 
+from accounts import cancel_pin
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -20,6 +21,7 @@ User = get_user_model()
 class Base(TestCase):
     def setUp(self):
         self.cashier = User.objects.create_user(username="kas", password="pass12345", role="cashier")
+        cancel_pin.set_pin(self.cashier, "7391")
         self.waiter = User.objects.create_user(username="ofi", password="pass12345", role="waiter")
         self.admin = User.objects.create_user(username="adm", password="pass12345", role="admin")
         self.cook = User.objects.create_user(username="osh", password="pass12345", role="cook")
@@ -156,7 +158,7 @@ class OrderFlowTests(Base):
         self.client.post(reverse("change_qty", args=[order.id, item.id]), {"delta": "-1"})
         item.refresh_from_db()
         self.assertEqual(item.quantity, 1)
-        self.client.post(reverse("remove_item", args=[order.id, item.id]))
+        self.client.post(reverse("remove_item", args=[order.id, item.id]), {"pin": "7391"})
         self.assertFalse(order.items.exists())
 
     def test_stop_list_dish_cannot_be_added(self):
@@ -209,7 +211,7 @@ class OrderFlowTests(Base):
 
     def test_cancel_keeps_history(self):
         order = self.order((self.plov, 1), table=self.table, status=OrderItem.Status.NEW)
-        self.client.post(reverse("cancel_order", args=[order.id]), {"reason": "Гость ушёл"})
+        self.client.post(reverse("cancel_order", args=[order.id]), {"reason": "Гость ушёл", "pin": "7391"})
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.CANCELLED)
         self.assertEqual(order.cancel_reason, "Гость ушёл")

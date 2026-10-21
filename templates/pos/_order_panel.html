@@ -86,11 +86,15 @@
           {% elif item.quantity > 1 %}<div class="text-xs text-muted tabular-nums">{{ item.unit_total|num }} × {{ item.quantity }}</div>{% endif %}
         </div>
       </div>
-      {% if item.status == "new" or item.status == "ready" or user.can_cancel_sent_orders %}
+      {% if item.status == "new" or item.status == "ready" or user.can_cancel_sent_orders or user.needs_cancel_pin %}
       <div class="flex items-center justify-between gap-2 mt-2">
         {% if item.status == "new" and item.by_weight %}
           <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="btn btn-sm btn-secondary">{% icon "pencil" 16 %}{% translate 'Изменить вес' %}</button>
-          <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          {% if user.needs_cancel_pin %}
+            <button hx-get="{% url 'remove_item_form' order.id item.id %}" hx-target="#modal" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          {% else %}
+            <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          {% endif %}
         {% elif item.status == "new" %}
           <div class="flex items-center gap-1.5">
             <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel" class="icon-btn w-10 h-10" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
@@ -99,7 +103,11 @@
           </div>
           <div class="flex items-center gap-1">
             <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="icon-btn w-10 h-10 border-0" title="{% translate 'Комментарий и варианты' %}" aria-label="{% translate 'Изменить' %}">{% icon "pencil" 17 %}</button>
+            {% if user.needs_cancel_pin %}
+            <button hx-get="{% url 'remove_item_form' order.id item.id %}" hx-target="#modal" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          {% else %}
             <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+          {% endif %}
           </div>
         {% else %}
           {% if item.by_weight %}
@@ -109,7 +117,9 @@
             {% if item.status == "ready" %}
               <button hx-post="{% url 'serve_item' order.id item.id %}" hx-target="#order-panel" class="btn btn-sm btn-primary">{% icon "check" 16 %}{% translate 'Подано' %}</button>
             {% endif %}
-            {% if user.can_cancel_sent_orders %}
+            {% if user.needs_cancel_pin %}
+              <button hx-get="{% url 'remove_item_form' order.id item.id %}" hx-target="#modal" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
+            {% elif user.can_cancel_sent_orders %}
               <button hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" hx-confirm="{% translate 'Блюдо уже на кухне. Убрать его из заказа?' %}" class="icon-btn w-10 h-10 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 17 %}</button>
             {% endif %}
           </div>

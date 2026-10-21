@@ -28,6 +28,8 @@ class AuditLog(models.Model):
         LOGIN_FAILED = "login_failed", _("Неудачный вход")
         BACKUP = "backup", _("Резервная копия")
         MENU_IMPORT = "menu_import", _("Импорт меню")
+        CANCEL_PIN_SET = "cancel_pin_set", _("Пароль отмены: задан, изменён или сброшен")
+        CANCEL_PIN_LOCKED = "cancel_pin_locked", _("Пароль отмены заблокирован")
 
     created_at = models.DateTimeField(_("Время"), auto_now_add=True, db_index=True)
     user = models.ForeignKey(

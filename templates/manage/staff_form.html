@@ -17,6 +17,15 @@
   {% include "components/field.html" with field=form.role %}
   {% include "components/field.html" with field=form.password %}
   {% include "components/field.html" with field=form.is_active %}
+  {% if target and target.needs_cancel_pin %}
+    <div class="rounded-xl bg-[#FAF6EF] border border-line p-3.5 space-y-1">
+      <div class="text-sm font-semibold flex items-center gap-2">{% icon "lock" 16 %}{% translate 'Пароль отмены' %}
+        {% if target.has_cancel_pin %}<span class="badge bg-emerald-100 text-emerald-800">{% translate 'Задан' %}</span>{% else %}<span class="badge bg-amber-100 text-amber-900">{% translate 'Не задан' %}</span>{% endif %}
+        {% if target.cancel_pin_is_locked %}<span class="badge bg-red-100 text-red-800">{% translate 'Заблокирован' %}</span>{% endif %}
+      </div>
+      {% include "components/field.html" with field=form.reset_cancel_pin %}
+    </div>
+  {% endif %}
   <button class="btn btn-primary btn-lg w-full">{% translate 'Сохранить' %}</button>
 </form>
 {% endblock %}

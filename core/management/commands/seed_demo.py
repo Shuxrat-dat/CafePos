@@ -10,6 +10,7 @@ from datetime import datetime, time, timedelta
 from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 
+from accounts import cancel_pin
 from django.conf import settings
 from django.utils.translation import gettext_noop as N_
 from django.contrib.auth import get_user_model
@@ -27,6 +28,7 @@ from pos.models import GuestOrder, GuestOrderItem, Hall, Order, OrderItem, Table
 
 User = get_user_model()
 PASSWORD = "demo1234"  # только для демо-базы; записан в docs/DEMO.md
+CANCEL_PIN = "demo-5827"  # пароль отмены демо-кассира, чтобы на показе работала отмена; тоже только для демо
 
 USERS = [
     ("owner", "Aziz", "Karimov", "owner"),
@@ -277,6 +279,8 @@ class Command(BaseCommand):
             user = User(username=username, first_name=first, last_name=last, role=role)
             user.set_password(PASSWORD)
             user.save()
+            if user.needs_cancel_pin:
+                cancel_pin.set_pin(user, CANCEL_PIN)
             self.users[username] = user
         self.waiters = [self.users["ofitsiant"], self.users["ofitsiant2"]]
 

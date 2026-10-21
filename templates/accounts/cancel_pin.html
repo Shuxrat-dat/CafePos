@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Пароль отмены' %}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{% url 'floor' %}" class="icon-btn" aria-label="{% translate 'Назад' %}">{% icon "arrow-left" 20 %}</a>
+  <div>
+    <h1 class="page-title">{% translate 'Пароль отмены' %}</h1>
+    <p class="page-sub">{% if has_pin %}{% translate 'Пароль задан. Здесь его можно сменить.' %}{% else %}{% translate 'Пароль ещё не задан: отменять заказы и блюда пока нельзя.' %}{% endif %}</p>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start max-w-4xl">
+  <form method="post" class="card p-5 space-y-4" autocomplete="off">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert-error">{% icon "alert" 18 %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    {% include "components/field.html" with field=form.account_password %}
+    {% include "components/field.html" with field=form.pin %}
+    {% include "components/field.html" with field=form.pin2 %}
+    <button class="btn btn-primary btn-lg w-full">{% icon "lock" 18 %}{% translate 'Сохранить пароль отмены' %}</button>
+  </form>
+
+  <aside class="card p-5 space-y-2 text-sm">
+    <h2 class="section-title">{% translate 'Для чего он нужен' %}</h2>
+    <p class="text-stone-700">{% translate 'Чтобы отменить заказ, убрать блюдо из заказа или вернуть чек, нужно ввести этот пароль. Его знаете только вы.' %}</p>
+    <p class="text-stone-700">{% translate 'Каждая отмена записывается в журнал на ваше имя и отправляется владельцу.' %}</p>
+    <p class="text-stone-700">{% translate 'Если забыли пароль, попросите владельца сбросить его и задайте новый.' %}</p>
+  </aside>
+</div>
+{% endblock %}

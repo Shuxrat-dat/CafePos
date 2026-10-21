@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from accounts import cancel_pin
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -18,6 +19,7 @@ class WriteOffTests(TestCase):
         self.cashier = User.objects.create_user(
             username="cashier_stock", password="pass12345", role="cashier"
         )
+        cancel_pin.set_pin(self.cashier, "7391")
         hall = Hall.objects.create(name="Основной зал")
         self.table = Table.objects.create(hall=hall, number="1")
         category = Category.objects.create(name="Горячее")
@@ -83,7 +85,7 @@ class WriteOffTests(TestCase):
 
     def test_cancelled_order_writes_nothing(self):
         order, _ = self._order_with(self.plov, 1, status=OrderItem.Status.NEW)
-        self.client.post(reverse("cancel_order", args=[order.id]))
+        self.client.post(reverse("cancel_order", args=[order.id]), {"pin": "7391"})
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.CANCELLED)
         self.assertEqual(self._stock(), Decimal("1000"))

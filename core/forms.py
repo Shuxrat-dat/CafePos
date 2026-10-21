@@ -141,6 +141,10 @@ User = get_user_model()
 
 
 class StaffForm(StyledModelForm):
+    reset_cancel_pin = forms.BooleanField(
+        label=_("Сбросить пароль отмены"), required=False,
+        help_text=_("Пароль отмены задаёт сам сотрудник. После сброса он задаст новый, пока этого не сделано, отмены недоступны."),
+    )
     password = forms.CharField(
         label=_("Пароль"), required=False, widget=forms.PasswordInput(render_value=False),
         help_text=_("Для нового сотрудника обязателен. Для существующего — оставьте пустым, чтобы не менять."),

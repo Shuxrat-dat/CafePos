@@ -274,12 +274,19 @@
             <a href="{% url 'order_detail' order_id=selected_order.id %}" class="text-blue-600 hover:text-blue-700 text-xs font-bold">
               {% translate 'Редактировать' %}
             </a>
-            <form method="post" action="{% url 'cancel_order' order_id=selected_order.id %}" onsubmit="return confirm('{% translate "Отменить этот заказ?" as t %}{{ t|escapejs }}');" class="m-0">
-              {% csrf_token %}
-              <button class="text-red-500 hover:text-red-700 p-1" title="{% translate 'Отменить заказ' %}">
+            {% if user.needs_cancel_pin %}
+              {# Кассиру нужен пароль отмены: открываем окно с вводом пароля #}
+              <button type="button" hx-get="{% url 'cancel_form' order_id=selected_order.id %}" hx-target="#modal" class="text-red-500 hover:text-red-700 p-1" title="{% translate 'Отменить заказ' %}">
                 {% icon "trash" 16 %}
               </button>
-            </form>
+            {% else %}
+              <form method="post" action="{% url 'cancel_order' order_id=selected_order.id %}" onsubmit="return confirm('{% translate "Отменить этот заказ?" as t %}{{ t|escapejs }}');" class="m-0">
+                {% csrf_token %}
+                <button class="text-red-500 hover:text-red-700 p-1" title="{% translate 'Отменить заказ' %}">
+                  {% icon "trash" 16 %}
+                </button>
+              </form>
+            {% endif %}
           </div>
         </div>
 
