@@ -6,7 +6,8 @@ from django.shortcuts import redirect
 from .permissions import KITCHEN_ROLES, MANAGE_ROLES, PAYMENT_ROLES, REPORT_ROLES, SERVICE_ROLES, STOCK_ROLES
 
 PAY_RE = re.compile(r"^/orders/\d+/(pay|receipt)/$")
-OPEN_PREFIXES = ("/admin/", "/login/", "/logout/", "/static/", "/media/", "/menu/", "/lang/", "/demo/", "/ping/")
+OPEN_PREFIXES = ("/admin/", "/login/", "/logout/", "/static/", "/media/", "/menu/", "/lang/", "/demo/", "/ping/",
+                 "/manifest.webmanifest", "/sw.js", "/offline/")
 
 
 class RoleAccessMiddleware:

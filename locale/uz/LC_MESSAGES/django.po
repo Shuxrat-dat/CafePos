@@ -3474,3 +3474,15 @@ msgstr "Aloqa tekshirilgan"
 
 msgid "проверено"
 msgstr "tekshirildi"
+
+msgid "Касса, заказы, кухня и склад заведения"
+msgstr "Kassa, buyurtmalar, oshxona va muassasa ombori"
+
+msgid "Нажмите «Поделиться» внизу экрана, затем «На экран „Домой“»."
+msgstr "Ekran pastidagi «Ulashish» tugmasini bosing, keyin «Bosh ekranga qoʻshish»ni tanlang."
+
+msgid "Проверьте интернет или Wi-Fi. Как только связь появится, страница откроется сама."
+msgstr "Internet yoki Wi-Fi ni tekshiring. Aloqa paydo boʻlishi bilan sahifa oʻzi ochiladi."
+
+msgid "Установить приложение"
+msgstr "Ilovani oʻrnatish"

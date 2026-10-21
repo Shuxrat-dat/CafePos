@@ -5,6 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#F7F3EC">
+  {# Установка как приложение: манифест, иконки и название под иконкой на iPhone #}
+  <link rel="manifest" href="{% url 'pwa_manifest' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="{{ cafe.name|truncatechars:12 }}">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>{% block title %}{% endblock %} · {{ cafe.name }}</title>
   <script src="{% static 'js/tailwind.js' %}"></script>
   <script>
@@ -132,6 +140,10 @@
           {% icon "wallet" 16 %}
           <span class="hidden xl:inline">{% translate 'Кассовая смена' %}</span>
         </button>
+        <button type="button" data-install-app class="hidden w-full items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-brand hover:bg-white transition-colors" title="{% translate 'Установить приложение' %}">
+          {% icon "arrow-down" 16 %}
+          <span class="hidden xl:inline">{% translate 'Установить приложение' %}</span>
+        </button>
         <form method="post" action="{% url 'logout' %}" class="m-0">{% csrf_token %}
           <button class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-red-700 hover:bg-white transition-colors" title="{% translate 'Выйти' %}">
             {% icon "log-out" 16 %}
@@ -164,6 +176,7 @@
           {% endif %}
         {% endfor %}
         <div class="border-t border-line my-2"></div>
+        <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
         <div class="px-1">{% include "components/lang_switch.html" %}</div>
         <form method="post" action="{% url 'logout' %}" class="mt-1">{% csrf_token %}
           <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-red-700">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
@@ -285,6 +298,34 @@
     document.body.addEventListener('htmx:afterRequest', function (e) { if (e.detail.successful) offline = false; });
     var data = document.getElementById('django-messages');
     if (data) JSON.parse(data.textContent).forEach(function (m) { showToast(m.text, m.kind); });
+    // Приложение: service worker (работает только по https и на localhost) и кнопка «Установить»
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('{% url "pwa_service_worker" %}', { scope: '/' }).catch(function () {});
+      });
+    }
+    (function () {
+      var buttons = document.querySelectorAll('[data-install-app]');
+      if (!buttons.length) return;
+      var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      var deferred = null;
+      function show(on) { buttons.forEach(function (b) { b.classList.toggle('hidden', !on); b.classList.toggle('flex', on); }); }
+      window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; show(!standalone); });
+      window.addEventListener('appinstalled', function () { deferred = null; show(false); });
+      // iPhone и iPad не показывают окно установки: подсказываем, где нажать
+      var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (ios && !standalone) show(true);
+      buttons.forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (deferred) {
+            deferred.prompt();
+            deferred.userChoice.then(function () { deferred = null; show(false); });
+          } else {
+            showToast('{% translate "Нажмите «Поделиться» внизу экрана, затем «На экран „Домой“»." as t %}{{ t|escapejs }}', 'success');
+          }
+        });
+      });
+    })();
     // Обычные формы: защита от двойного нажатия на кнопку отправки
     document.addEventListener('submit', function (e) {
       var form = e.target;

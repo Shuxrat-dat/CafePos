@@ -4,6 +4,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+from core import pwa as core_pwa
 from core import views as core_views
 from printing import urls as printing_urls
 
@@ -13,6 +14,10 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("lang/", core_views.set_language, name="set_language"),
     path("ping/", core_views.ping, name="ping"),
+    # Установка как приложение: манифест, service worker (должен быть в корне) и страница «нет связи»
+    path("manifest.webmanifest", core_pwa.manifest, name="pwa_manifest"),
+    path("sw.js", core_pwa.service_worker, name="pwa_service_worker"),
+    path("offline/", core_pwa.offline, name="pwa_offline"),
     path("demo/login/", core_views.demo_login, name="demo_login"),
     path("kitchen/", include("kitchen.urls")),
     path("reports/", include("reports.urls")),
