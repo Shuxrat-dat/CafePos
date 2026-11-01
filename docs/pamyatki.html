@@ -1,0 +1,299 @@
+<title>CafePOS xodim eslatmalari</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap">
+<style>
+  /* Layout: one card per role, one A4 sheet each when printed; button names look like the app's own buttons */
+  :root {
+    --bg: #f6f2ec;
+    --paper: #ffffff;
+    --ink: #2a211b;
+    --muted: #6f6258;
+    --line: #e4dbd0;
+    --brand: #7a3e1d;
+    --brand-soft: #f6e6d2;
+    --warn: #9a3b12;
+    --warn-soft: #fbeee4;
+    --font: "Manrope", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1714; --paper: #26201b; --ink: #f2ebe3; --muted: #b4a79b; --line: #3b322b;
+      --brand: #e0a676; --brand-soft: #3a2a1e; --warn: #f0a07a; --warn-soft: #3a2219; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1714; --paper: #26201b; --ink: #f2ebe3; --muted: #b4a79b; --line: #3b322b;
+    --brand: #e0a676; --brand-soft: #3a2a1e; --warn: #f0a07a; --warn-soft: #3a2219; color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.45;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 48px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 28px; }
+  header.intro { display: grid; gap: 8px; }
+  header.intro h1 { font-size: 26px; font-weight: 800; margin: 0; text-wrap: balance; }
+  header.intro p { margin: 0; color: var(--muted); max-width: 65ch; }
+  nav.roles { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  nav.roles a {
+    color: var(--brand); background: var(--brand-soft); text-decoration: none; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px; font-size: 14px;
+  }
+  nav.roles a:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 20px; min-width: 0; }
+  .card > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  .card h2 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+  .card h2 small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .card .who { font-size: 13px; color: var(--muted); }
+
+  section.block { display: grid; gap: 10px; min-width: 0; }
+  section.block h3 {
+    margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand);
+  }
+  section.block h3 span { color: var(--muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
+  section.block > p { margin: 0; }
+
+  ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 10px; }
+  ol.steps li { counter-increment: s; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; }
+  ol.steps li::before {
+    content: counter(s); width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--paper);
+    display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  }
+  ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+  .uz { font-weight: 600; }
+  .ru { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* Названия кнопок оформлены как кнопки в программе */
+  .btn {
+    display: inline-block; font-weight: 700; font-size: 0.92em; color: var(--brand);
+    background: var(--brand-soft); border: 1px solid var(--line);
+    border-radius: 7px; padding: 0 6px; line-height: 1.5;
+  }
+  .arrow { color: var(--muted); padding: 0 3px; }
+
+  .note { background: var(--warn-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; }
+  .note b { color: var(--warn); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+  @media print {
+    :root { --bg: #fff; --paper: #fff; --ink: #000; --muted: #444; --line: #888; --brand: #000; --brand-soft: #fff; --warn: #000; --warn-soft: #f2f2f2; }
+    body { padding: 0; font-size: 12.5pt; }
+    header.intro { display: none; }
+    .wrap { gap: 0; max-width: none; }
+    .card { border: 0; border-radius: 0; padding: 0; break-after: page; }
+    @page { size: A4; margin: 14mm; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>CafePOS: har bir xodim uchun eslatma</h1>
+    <p>Памятки для сотрудников. Каждая роль на отдельном листе A4: распечатайте и положите на кассе, на кухне и у официантов. Названия кнопок такие же, как в программе.</p>
+    <nav class="roles" aria-label="Rollar">
+      <a href="#ofitsiant">Ofitsiant</a>
+      <a href="#kassir">Kassir</a>
+      <a href="#oshpaz">Oshpaz</a>
+      <a href="#egasi">Egasi va administrator</a>
+    </nav>
+  </header>
+
+  <!-- ===================== ОФИЦИАНТ ===================== -->
+  <article class="card" id="ofitsiant">
+    <header>
+      <h2>Ofitsiant <small>Официант</small></h2>
+      <span class="who">Telefonda ishlaydi · работает с телефона</span>
+    </header>
+
+    <section class="block">
+      <h3>Yangi mehmon <span>· новый гость</span></h3>
+      <ol class="steps">
+        <li><div><span class="uz"><span class="btn">Buyurtmalar</span><span class="arrow">→</span><span class="btn">Stollar navbati</span><span class="arrow">→</span><span class="btn">Boʻshlar</span><span class="arrow">→</span>stolni tanlang<span class="arrow">→</span><span class="btn">Ochish</span></span>
+          <span class="ru">Заказы → Очередь на столы → Свободные → выберите стол → Открыть</span></div></li>
+        <li><div><span class="uz">Taomlarni bosing. Bir bosish — 1 dona.</span>
+          <span class="ru">Нажимайте на блюда. Одно нажатие — одна порция.</span></div></li>
+        <li><div><span class="uz">Izoh kerak boʻlsa (piyozsiz, achchiq): taomdagi <span class="btn">···</span><span class="arrow">→</span><span class="btn">Oshxona uchun izoh</span></span>
+          <span class="ru">Нужен комментарий (без лука, острое): «···» на блюде → Комментарий для кухни</span></div></li>
+        <li><div><span class="uz"><span class="btn">Oshxonaga yuborish</span> — buyurtma oshxonaga ketdi.</span>
+          <span class="ru">Отправить на кухню — заказ ушёл на кухню.</span></div></li>
+      </ol>
+    </section>
+
+    <div class="grid2">
+      <section class="block">
+        <h3>Taom tayyor <span>· блюдо готово</span></h3>
+        <ol class="steps">
+          <li><div><span class="uz">Kartada <span class="btn">Tayyor</span> koʻrinadi. Oshxonadan olib keling.</span>
+            <span class="ru">На карточке заказа видно «Tayyor». Заберите с кухни.</span></div></li>
+          <li><div><span class="uz">Mehmonga berib, <span class="btn">Barcha tayyorlari berildi</span> ni bosing.</span>
+            <span class="ru">Отнесли гостю — нажмите «Всё готовое подано».</span></div></li>
+        </ol>
+      </section>
+      <section class="block">
+        <h3>Mehmon hisob soʻradi <span>· гость просит счёт</span></h3>
+        <ol class="steps">
+          <li><div><span class="uz">Buyurtmani oching<span class="arrow">→</span><span class="btn">Oldindan hisob</span><span class="arrow">→</span>chop eting.</span>
+            <span class="ru">Откройте заказ → Пречек → распечатайте.</span></div></li>
+          <li><div><span class="uz">Hisobni mehmonga bering. Toʻlovni <b>kassir</b> qabul qiladi.</span>
+            <span class="ru">Отдайте пречек гостю. Оплату принимает кассир.</span></div></li>
+        </ol>
+      </section>
+    </div>
+
+    <section class="block">
+      <h3>QR-kod orqali buyurtma <span>· заказ гостя по QR</span></h3>
+      <ul class="plain">
+        <li><span class="uz">Mehmon stoldagi QR-koddan buyurtma bersa, kartada <span class="btn">Mehmon soʻrovi</span> chiqadi: tekshirib <span class="btn">Qabul qilish</span> yoki <span class="btn">Rad etish</span> ni bosing.</span>
+          <span class="ru">Гость заказал по QR — на карточке появится «Заявка гостя»: проверьте и нажмите «Принять» или «Отклонить».</span></li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <span class="uz"><b>Oʻzingiz qila olmaysiz:</b> toʻlov qabul qilish, oshxonaga ketgan taomni olib tashlash, buyurtmani bekor qilish. Kassir yoki administratorni chaqiring. Hali yuborilmagan taomni oʻzingiz oʻchira olasiz.</span>
+      <span class="ru">Самому нельзя: принять оплату, убрать блюдо, ушедшее на кухню, отменить заказ — зовите кассира или администратора. Ещё не отправленное блюдо можно удалить самому.</span>
+      <span class="uz"><b>Qizil yozuv «Kassa bilan aloqa yoʻq»:</b> Wi-Fi ni tekshiring. Aloqa qaytguncha buyurtma yubormang.</span>
+      <span class="ru">Красная надпись «Нет связи с кассой»: проверьте Wi-Fi и не отправляйте заказ, пока связь не вернётся.</span>
+    </div>
+  </article>
+
+  <!-- ===================== КАССИР ===================== -->
+  <article class="card" id="kassir">
+    <header>
+      <h2>Kassir <small>Кассир</small></h2>
+      <span class="who">Kassadagi kompyuter · компьютер на кассе</span>
+    </header>
+
+    <div class="grid2">
+      <section class="block">
+        <h3>Kun boshida <span>· начало дня</span></h3>
+        <ol class="steps">
+          <li><div><span class="uz">Kassadagi pulni sanang.</span>
+            <span class="ru">Пересчитайте деньги в кассе.</span></div></li>
+          <li><div><span class="uz"><span class="btn">Kassa smenasi</span><span class="arrow">→</span>summani yozing<span class="arrow">→</span><span class="btn">Smenani ochish</span></span>
+            <span class="ru">Кассовая смена → впишите сумму → Открыть смену</span></div></li>
+        </ol>
+        <p class="ru">Smena ochilmasa, toʻlov qabul qilinmaydi. · Без открытой смены оплату принять нельзя.</p>
+      </section>
+      <section class="block">
+        <h3>Kun oxirida <span>· конец дня</span></h3>
+        <ol class="steps">
+          <li><div><span class="uz">Pulni yana sanang.</span>
+            <span class="ru">Ещё раз пересчитайте деньги.</span></div></li>
+          <li><div><span class="uz"><span class="btn">Kassa smenasi</span><span class="arrow">→</span>sanagan summani yozing<span class="arrow">→</span><span class="btn">Smenani yopish (Z-hisobot)</span></span>
+            <span class="ru">Кассовая смена → впишите пересчитанную сумму → Закрыть смену (Z-отчёт)</span></div></li>
+        </ol>
+      </section>
+    </div>
+
+    <section class="block">
+      <h3>Toʻlov qabul qilish <span>· принять оплату</span></h3>
+      <ol class="steps">
+        <li><div><span class="uz">Buyurtmani oching<span class="arrow">→</span><span class="btn">Toʻlovga oʻtish</span></span>
+          <span class="ru">Откройте заказ → Перейти к оплате</span></div></li>
+        <li><div><span class="uz"><span class="btn">Naqd</span>, <span class="btn">Karta</span> yoki <span class="btn">Aralash</span> ni tanlang.</span>
+          <span class="ru">Выберите: наличные, карта или смешанная оплата.</span></div></li>
+        <li><div><span class="uz">Naqd boʻlsa, mehmon bergan summani yozing: qaytimni dastur oʻzi hisoblaydi.</span>
+          <span class="ru">Наличными — впишите, сколько дал гость: сдачу программа посчитает сама.</span></div></li>
+        <li><div><span class="uz"><span class="btn">Toʻlovni qabul qilish</span><span class="arrow">→</span>chekni bering.</span>
+          <span class="ru">Принять оплату → отдайте чек.</span></div></li>
+      </ol>
+      <p class="ru">Har kim oʻzi uchun toʻlasa: <span class="btn">Hisobni boʻlish</span>. · Каждый платит за себя: «Разделить счёт».</p>
+    </section>
+
+    <section class="block">
+      <h3>Kam boʻladigan ishlar <span>· редкие действия</span></h3>
+      <ul class="plain">
+        <li><span class="uz"><b>Bir marta:</b> chap menyudan <span class="btn">Bekor qilish paroli</span> ni oʻrnating. Uni hech kimga aytmang.</span>
+          <span class="ru">Один раз: задайте пароль отмены (меню слева). Никому его не говорите.</span></li>
+        <li><span class="uz"><b>Chegirma:</b> buyurtmada <span class="btn">Chegirma</span>. Katta chegirmani faqat administrator beradi.</span>
+          <span class="ru">Скидка: кнопка «Скидка» в заказе. Большую скидку даёт только администратор.</span></li>
+        <li><span class="uz"><b>Bekor qilish yoki taomni olib tashlash:</b> sababini yozing va bekor qilish parolini kiriting.</span>
+          <span class="ru">Отмена заказа или удаление блюда: укажите причину и введите пароль отмены.</span></li>
+        <li><span class="uz"><b>Pulni qaytarish:</b> <span class="btn">Umumiy koʻrinish</span><span class="arrow">→</span>toʻlangan buyurtma<span class="arrow">→</span><span class="btn">Qaytarish</span><span class="arrow">→</span>sabab va parol. Faqat joriy smena cheklari.</span>
+          <span class="ru">Возврат: Обзор → оплаченный заказ → Возврат → причина и пароль. Только чеки текущей смены.</span></li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <span class="uz"><b>Parolni 5 marta notoʻgʻri kiritsangiz,</b> u 10 daqiqaga bloklanadi va egasiga xabar boradi. Unutsangiz, egasidan tiklashni soʻrang.</span>
+      <span class="ru">5 неверных паролей подряд — блокировка на 10 минут, владелец получит сообщение. Забыли пароль — попросите владельца сбросить его.</span>
+    </div>
+  </article>
+
+  <!-- ===================== ПОВАР ===================== -->
+  <article class="card" id="oshpaz">
+    <header>
+      <h2>Oshpaz <small>Повар</small></h2>
+      <span class="who">Oshxonadagi ekran · экран на кухне</span>
+    </header>
+
+    <section class="block">
+      <h3>Ishni boshlash <span>· начало работы</span></h3>
+      <ul class="plain">
+        <li><span class="uz"><span class="btn">Oshxona</span> ekrani kun boʻyi ochiq turadi. Bir marta <span class="btn">Ovozni yoqish</span> ni bosing: yangi buyurtmada signal chalinadi.</span>
+          <span class="ru">Экран «Кухня» открыт весь день. Один раз нажмите «Включить звук» — на каждый новый заказ будет сигнал.</span></li>
+      </ul>
+    </section>
+
+    <section class="block">
+      <h3>Buyurtma yoʻli <span>· путь заказа: три колонки слева направо</span></h3>
+      <ol class="steps">
+        <li><div><span class="uz"><b>Yangilar</b> ustunida yangi buyurtma paydo boʻladi<span class="arrow">→</span><span class="btn">Tayyorlashni boshlash</span></span>
+          <span class="ru">Колонка «Новые»: появился заказ → Начать готовить</span></div></li>
+        <li><div><span class="uz"><b>Tayyorlanmoqda</b>: bitta taom tayyor — <span class="btn">Pozitsiya tayyor</span>, hammasi tayyor — <span class="btn">Buyurtma tayyor</span></span>
+          <span class="ru">Колонка «Готовятся»: готово одно блюдо — «Позиция готова», готово всё — «Заказ готов»</span></div></li>
+        <li><div><span class="uz"><b>Berishga tayyor</b>: ofitsiant olib ketgach <span class="btn">Zalga berildi</span> (olib ketishda <span class="btn">Mijozga berildi</span>)</span>
+          <span class="ru">Колонка «Готово к выдаче»: официант забрал → «Отдано в зал» (навынос — «Выдано клиенту»)</span></div></li>
+      </ol>
+    </section>
+
+    <div class="note">
+      <span class="uz"><b>Vaqt qizil boʻlsa,</b> buyurtma kechikmoqda: uni birinchi tayyorlang. «Taomlar sovib qolmoqda» yozuvi chiqsa, ofitsiantni chaqiring.</span>
+      <span class="ru">Время стало красным — заказ опаздывает, готовьте его первым. Надпись «Блюда остывают» — зовите официанта.</span>
+    </div>
+  </article>
+
+  <!-- ===================== ВЛАДЕЛЕЦ / АДМИН ===================== -->
+  <article class="card" id="egasi">
+    <header>
+      <h2>Egasi va administrator <small>Владелец и администратор</small></h2>
+      <span class="who">Har qanday qurilma · любое устройство</span>
+    </header>
+
+    <section class="block">
+      <h3>Har kuni, 5 daqiqa <span>· каждый день, 5 минут</span></h3>
+      <ol class="steps">
+        <li><div><span class="uz"><span class="btn">Hisobotlar</span>: bugungi tushum, naqd va karta.</span>
+          <span class="ru">Отчёты: выручка за день, наличные и карты.</span></div></li>
+        <li><div><span class="uz">Telegram: bekor qilishlar, katta chegirmalar, qaytarishlar va smena yopilishi oʻzi keladi.</span>
+          <span class="ru">Telegram: отмены, большие скидки, возвраты и закрытие смены приходят сами.</span></div></li>
+        <li><div><span class="uz">Smena yopilganda pul kam yoki ortiq chiqsa, kassir bilan gaplashing.</span>
+          <span class="ru">Если при закрытии смены недостача или излишек — разберитесь с кассиром.</span></div></li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <h3>Kerak boʻlganda <span>· по необходимости</span></h3>
+      <ul class="plain">
+        <li><span class="uz"><b>Taom tugadi:</b> <span class="btn">Menyu</span><span class="arrow">→</span>taom<span class="arrow">→</span><span class="btn">Stop-list</span>. Yana paydo boʻlsa — <span class="btn">Sotuvda</span>.</span>
+          <span class="ru">Блюдо закончилось: Меню → блюдо → Стоп-лист. Появилось снова — «В продаже».</span></li>
+        <li><span class="uz"><b>Yangi xodim:</b> <span class="btn">Sozlamalar</span><span class="arrow">→</span><span class="btn">Xodimlar</span><span class="arrow">→</span><span class="btn">Xodim qoʻshish</span>. Har kimga oʻz login va toʻgʻri rol.</span>
+          <span class="ru">Новый сотрудник: Настройки → Персонал → Добавить сотрудника. Каждому свой логин и правильная роль.</span></li>
+        <li><span class="uz"><b>Xodim ishdan ketdi:</b> uning kartasida <span class="btn">Tizimga kira oladi</span> belgisini olib tashlang. Oʻchirmang: tarix saqlanib qoladi.</span>
+          <span class="ru">Сотрудник уволился: снимите в его карточке галочку «Может входить». Не удаляйте — история сохранится.</span></li>
+        <li><span class="uz"><b>Kassir parolni unutdi:</b> xodim kartasi<span class="arrow">→</span><span class="btn">Bekor qilish parolini tiklash</span>.</span>
+          <span class="ru">Кассир забыл пароль отмены: карточка сотрудника → Сбросить пароль отмены.</span></li>
+        <li><span class="uz"><b>Kim nima qildi:</b> <span class="btn">Sozlamalar</span><span class="arrow">→</span><span class="btn">Jurnal</span>.</span>
+          <span class="ru">Кто что делал: Настройки → Журнал.</span></li>
+      </ul>
+    </section>
+
+    <div class="note">
+      <span class="uz"><b>Asosiy qoidalar:</b> hammaga bitta umumiy login bermang. Ofitsiantga kassir rolini bermang. Parollarni yozib, kassaga yopishtirmang.</span>
+      <span class="ru">Главные правила: не давайте всем один общий логин, не давайте официанту роль кассира, не клейте пароли на кассу.</span>
+    </div>
+  </article>
+</div>
