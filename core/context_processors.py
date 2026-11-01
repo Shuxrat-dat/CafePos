@@ -31,7 +31,8 @@ def _nav(request):
         ("floor", _("Заказы"), "receipt", SERVICE_ROLES, {"floor"} | order_pages, open_count),
         ("manage_menu", _("Меню"), "utensils", MANAGE_ROLES, {"manage_menu", "dish_create", "dish_edit", "manage_categories", "manage_categories_edit", "manage_modifiers", "manage_modifiers_edit"}),
         ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
-        ("new_order", _("Касса"), "wallet", SERVICE_ROLES, set()),
+        # Кнопка создаёт заказ навынос, так и называем
+        ("new_order", _("Навынос"), "shopping-bag", SERVICE_ROLES, set()),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
         ("manage_printers", _("Принтеры"), "printer", MANAGE_ROLES, {"manage_printers", "printer_create", "printer_edit"}, printer_problems),

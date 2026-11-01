@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .permissions import CANCEL_SENT_ROLES, PAYMENT_ROLES, PIN_CANCEL_ROLES, SEE_ALL_ROLES
+from .permissions import CANCEL_SENT_ROLES, MANAGE_ROLES, PAYMENT_ROLES, PIN_CANCEL_ROLES, SEE_ALL_ROLES
 
 
 class User(AbstractUser):
@@ -32,6 +32,11 @@ class User(AbstractUser):
     @property
     def cancel_pin_is_locked(self):
         return bool(self.cancel_pin_locked_until) and self.cancel_pin_locked_until > timezone.now()
+
+    @property
+    def manages_cafe(self):
+        """Владелец и администратор: им нужны фильтры и сортировки, рядовым сотрудникам нет."""
+        return self.is_superuser or self.role in MANAGE_ROLES
 
     @property
     def simple_floor(self):

@@ -3684,3 +3684,9 @@ msgstr "Bu QR-kod eskirgan. Buyurtmani ofitsiant qabul qilsin."
 
 msgid "Отнёс гостю"
 msgstr "Mehmonga berdim"
+
+msgid "Другие действия: внесение, инкассация"
+msgstr "Boshqa amallar: kirim, inkassatsiya"
+
+msgid "Закрыть смену"
+msgstr "Smenani yopish"

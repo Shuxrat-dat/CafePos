@@ -79,6 +79,27 @@ class FloorButtonsTests(TestCase):
         self.client.post(reverse("toggle_order_stage", args=[order.id]))
         self.assertEqual(order.items.get().status, OrderItem.Status.SERVED)
 
+    def test_cashier_sees_orders_waiting_for_payment_first(self):
+        cashier = User.objects.create_user(username="k1", password="x", role="cashier")
+        cooking = self._order(cashier, OrderItem.Status.NEW)
+        to_pay = self._order(cashier, OrderItem.Status.SERVED)
+        self.client.force_login(cashier)
+        response = self.client.get(reverse("floor"))
+        self.assertEqual([o.id for o in response.context["current_orders"]], [to_pay.id, cooking.id])
+        self.assertNotContains(response, 'data-sort="time"')
+        self.assertNotContains(response, "data-cat-filter")
+        self.assertContains(response, 'id="quick-items-grid"')
+
+    def test_shift_window_hides_close_form_and_expected_hint(self):
+        from .testing import open_shift_for_tests
+
+        cashier = User.objects.create_user(username="k1", password="x", role="cashier")
+        open_shift_for_tests(cashier)
+        self.client.force_login(cashier)
+        page = self.client.get(reverse("floor")).content.decode()
+        self.assertIn('id="close-shift-box" class="hidden', page)
+        self.assertNotRegex(page, r'name="actual_cash"[^>]*placeholder')
+
     def test_waiter_floor_is_simplified(self):
         self._order(self.waiter, OrderItem.Status.NEW)
         self.client.force_login(self.waiter)

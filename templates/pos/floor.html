@@ -8,8 +8,8 @@
   {# ЛЕВАЯ И ЦЕНТРАЛЬНАЯ ЧАСТЬ (Категории, Текущие заказы, Быстрые позиции) #}
   <div class="flex-1 flex flex-col min-w-0">
     
-    {# 1. ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ КАТЕГОРИЙ (официанту не нужна: блюда он добавляет в самом заказе) #}
-    {% if not user.simple_floor %}
+    {# 1. ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ КАТЕГОРИЙ: фильтр быстрых позиций, нужен только владельцу и администратору #}
+    {% if user.manages_cafe %}
     <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 mb-5">
       <button type="button" data-cat-filter="all" class="cat-pill active flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shrink-0 bg-brand text-white">
         {% icon "layout-grid" 16 %}
@@ -48,7 +48,7 @@
           <h2 class="text-[17px] font-bold text-ink tracking-tight whitespace-nowrap">{% translate 'Текущие заказы' %}</h2>
           <span class="px-2 py-0.5 rounded-full bg-[#F8ECDA] text-brand font-bold text-xs">{{ current_orders|length }}</span>
         </div>
-        {% if not user.simple_floor %}
+        {% if user.manages_cafe %}
         <div class="flex items-center bg-[#EFE8DC] p-1 rounded-xl gap-1 text-xs font-semibold whitespace-nowrap max-w-full overflow-x-auto">
           <button type="button" data-sort="time" class="sort-btn px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
           <button type="button" data-sort="table" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
@@ -58,7 +58,7 @@
       </div>
 
       {# Сетка заказов #}
-      <div id="orders-grid" data-tour="2" data-tour-title="{% translate 'Текущие заказы' %}" data-tour-text="{% translate 'Кнопка на карточке двигает заказ по этапам: приготовить, выдать, оплатить. Нажмите на саму карточку, чтобы увидеть детали справа.' %}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div id="orders-grid" data-tour="2" data-tour-title="{% translate 'Текущие заказы' %}" data-tour-text="{% translate 'Кнопка на карточке двигает заказ по этапам: приготовить, выдать, оплатить. Нажмите на саму карточку, чтобы увидеть детали справа.' %}" class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3.5">
         {% for o in current_orders %}
           <div class="order-card card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
                data-id="{{ o.id }}" data-age="{{ o.age_seconds }}" data-stage="{{ o.stage_rank }}" data-place="{{ o.place_label }}"

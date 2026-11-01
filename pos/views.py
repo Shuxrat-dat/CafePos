@@ -285,6 +285,9 @@ def _floor_context(request):
             o.status_color, o.stage_rank = "green", 3
             o.action_label = _("К оплате")
             o.ready_to_pay = True
+    if user.can_take_payment:
+        # Кассе первыми нужны заказы, которые ждут оплаты
+        current_orders.sort(key=lambda o: (not getattr(o, "ready_to_pay", False), o.id))
 
     order_id = request.GET.get("order_id")
     selected_order = None
