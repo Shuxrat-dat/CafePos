@@ -52,8 +52,39 @@ class FloorButtonsTests(TestCase):
         self.assertTrue(card.ready_to_pay)
         self.assertContains(response, reverse("pay", args=[order.id]))
 
-    def test_stage_button_advances_new_to_cooking(self):
+    def test_stage_button_sends_new_items_to_kitchen(self):
         order = self._order(self.owner, OrderItem.Status.NEW)
         self.client.force_login(self.owner)
         self.client.post(reverse("toggle_order_stage", args=[order.id]))
+        self.assertEqual(order.items.get().status, OrderItem.Status.QUEUED)
+
+    def test_waiter_cannot_mark_kitchen_ready_when_cook_works(self):
+        User.objects.create_user(username="cook", password="x", role="cook")
+        order = self._order(self.waiter, OrderItem.Status.COOKING)
+        self.client.force_login(self.waiter)
+        response = self.client.get(reverse("floor"))
+        self.assertEqual(response.context["current_orders"][0].stage_action, "wait")
+        self.client.post(reverse("toggle_order_stage", args=[order.id]))
         self.assertEqual(order.items.get().status, OrderItem.Status.COOKING)
+
+    def test_without_cook_hall_marks_ready(self):
+        order = self._order(self.waiter, OrderItem.Status.COOKING)
+        self.client.force_login(self.waiter)
+        self.client.post(reverse("toggle_order_stage", args=[order.id]))
+        self.assertEqual(order.items.get().status, OrderItem.Status.READY)
+
+    def test_ready_items_are_served_by_card_button(self):
+        order = self._order(self.waiter, OrderItem.Status.READY)
+        self.client.force_login(self.waiter)
+        self.client.post(reverse("toggle_order_stage", args=[order.id]))
+        self.assertEqual(order.items.get().status, OrderItem.Status.SERVED)
+
+    def test_waiter_floor_is_simplified(self):
+        self._order(self.waiter, OrderItem.Status.NEW)
+        self.client.force_login(self.waiter)
+        response = self.client.get(reverse("floor"))
+        self.assertNotContains(response, 'id="quick-items-grid"')
+        self.assertNotContains(response, 'data-sort="time"')
+        self.assertNotContains(response, 'onclick="openShiftModal()"')
+        self.client.force_login(self.owner)
+        self.assertContains(self.client.get(reverse("floor")), 'id="quick-items-grid"')

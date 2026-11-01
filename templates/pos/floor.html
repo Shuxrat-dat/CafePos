@@ -8,7 +8,8 @@
   {# ЛЕВАЯ И ЦЕНТРАЛЬНАЯ ЧАСТЬ (Категории, Текущие заказы, Быстрые позиции) #}
   <div class="flex-1 flex flex-col min-w-0">
     
-    {# 1. ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ КАТЕГОРИЙ #}
+    {# 1. ГОРИЗОНТАЛЬНАЯ ПАНЕЛЬ КАТЕГОРИЙ (официанту не нужна: блюда он добавляет в самом заказе) #}
+    {% if not user.simple_floor %}
     <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 mb-5">
       <button type="button" data-cat-filter="all" class="cat-pill active flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shrink-0 bg-brand text-white">
         {% icon "layout-grid" 16 %}
@@ -38,6 +39,7 @@
         {% icon "chevron-right" 16 %}
       </button>
     </div>
+    {% endif %}
 
     {# 2. РАЗДЕЛ: ТЕКУЩИЕ ЗАКАЗЫ #}
     <div class="mb-6">
@@ -46,11 +48,13 @@
           <h2 class="text-[17px] font-bold text-ink tracking-tight whitespace-nowrap">{% translate 'Текущие заказы' %}</h2>
           <span class="px-2 py-0.5 rounded-full bg-[#F8ECDA] text-brand font-bold text-xs">{{ current_orders|length }}</span>
         </div>
+        {% if not user.simple_floor %}
         <div class="flex items-center bg-[#EFE8DC] p-1 rounded-xl gap-1 text-xs font-semibold whitespace-nowrap max-w-full overflow-x-auto">
           <button type="button" data-sort="time" class="sort-btn px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
           <button type="button" data-sort="table" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
           <button type="button" data-sort="stage" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
         </div>
+        {% endif %}
       </div>
 
       {# Сетка заказов #}
@@ -58,7 +62,7 @@
         {% for o in current_orders %}
           <div class="order-card card p-4 flex flex-col justify-between hover:shadow-md transition relative group cursor-pointer {% if selected_order and selected_order.id == o.id %}ring-2 ring-brand/50{% endif %}"
                data-id="{{ o.id }}" data-age="{{ o.age_seconds }}" data-stage="{{ o.stage_rank }}" data-place="{{ o.place_label }}"
-               onclick="if (!event.target.closest('button, a, form')) window.location.href='?order_id={{ o.id }}'">
+               onclick="if (!event.target.closest('button, a, form')) window.location.href='{% if user.simple_floor %}{% url 'order_detail' order_id=o.id %}{% else %}?order_id={{ o.id }}{% endif %}'">
             <div>
               {# Шапка карточки: #ID, таймер, стол, гости #}
               <div class="flex items-center justify-between mb-2">
@@ -131,6 +135,12 @@
                   {% icon "printer" 16 %}
                   <span>{% translate 'Пречек' %}</span>
                 </a>
+                {% elif o.stage_action == 'wait' %}
+                {# Блюда на кухне: нажимать нечего, ждём повара #}
+                <span class="flex-1 h-9 rounded-xl bg-[#E1EAF3] text-[#2F5F8A] font-bold text-xs flex items-center justify-center gap-1.5">
+                  {% icon "clock" 16 %}
+                  <span>{{ o.action_label }}</span>
+                </span>
                 {% else %}
                 <form method="post" action="{% url 'toggle_order_stage' order_id=o.id %}" class="flex-1 m-0">
                   {% csrf_token %}
@@ -141,11 +151,11 @@
                     </button>
                   {% elif o.status_color == 'blue' %}
                     <button class="w-full h-9 rounded-xl bg-[#E1EAF3] hover:bg-[#CFDDEB] text-[#2F5F8A] font-bold text-xs flex items-center justify-center gap-1.5 transition">
-                      {% icon "clock" 16 %}
+                      {% icon "check" 16 %}
                       <span>{{ o.action_label }}</span>
                     </button>
                   {% else %}
-                    <button class="w-full h-9 rounded-xl bg-[#DCEBE0] hover:bg-[#C6DFCD] text-[#3C6A4A] font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    <button class="w-full h-9 rounded-xl bg-[#4E7B5C] hover:bg-[#3C6A4A] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
                       {% icon "check" 16 %}
                       <span>{{ o.action_label }}</span>
                     </button>
@@ -159,7 +169,8 @@
       </div>
     </div>
 
-    {# 3. РАЗДЕЛ: БЫСТРЫЕ ПОЗИЦИИ #}
+    {# 3. РАЗДЕЛ: БЫСТРЫЕ ПОЗИЦИИ (быстрая продажа на кассе, официанту не нужна) #}
+    {% if not user.simple_floor %}
     <div>
       <div class="flex items-center justify-between gap-3 mb-3">
         <h2 class="text-[17px] font-bold text-ink tracking-tight">{% translate 'Быстрые позиции' %}</h2>
@@ -197,22 +208,23 @@
         {% endfor %}
       </div>
     </div>
+    {% endif %}
 
   </div>
 
-  {# ПРАВАЯ КОЛОНКА (Очередь на столы + Детали активного заказа #215) #}
-  <div class="w-full xl:w-[380px] shrink-0 flex flex-col gap-4">
-    
-    {# 1. КАРТОЧКА: ОЧЕРЕДЬ НА СТОЛЫ #}
+  {# ПРАВАЯ КОЛОНКА (Столы + Детали активного заказа). У официанта на телефоне столы идут первыми: с них начинается заказ #}
+  <div class="w-full xl:w-[380px] shrink-0 flex flex-col gap-4 {% if user.simple_floor %}order-first xl:order-none{% endif %}">
+
+    {# 1. КАРТОЧКА: СТОЛЫ #}
     <div class="card p-4">
       <div class="flex items-center justify-between gap-2 mb-3">
-        <h3 class="text-[15px] font-bold text-ink tracking-tight">{% translate 'Очередь на столы' %}</h3>
+        <h3 class="text-[15px] font-bold text-ink tracking-tight">{% translate 'Столы' %}</h3>
         <form method="post" action="{% url 'new_order' %}" class="m-0">
           {% csrf_token %}
           <input type="hidden" name="type" value="takeaway">
-          <button class="bg-brand hover:bg-brand-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
+          <button class="bg-white border border-line hover:bg-stone-50 text-stone-700 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition">
             {% icon "plus" 14 %}
-            <span>{% translate 'Новый заказ' %}</span>
+            <span>{% translate 'Навынос' %}</span>
           </button>
         </form>
       </div>
@@ -261,7 +273,7 @@
                 <form method="post" action="{% url 'open_table' table_id=item.table_id %}" class="m-0">
                   {% csrf_token %}
                   <button class="bg-[#7A3F1E] hover:bg-[#6A3418] text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-sm transition">
-                    {% translate 'Принять' %}
+                    {% if item.kind == 'pending' %}{% translate 'Принять' %}{% else %}{% translate 'Открыть' %}{% endif %}
                   </button>
                 </form>
               {% endif %}
@@ -273,7 +285,8 @@
 
     {# 2. КАРТОЧКА: ДЕТАЛИ И ОПЛАТА АКТИВНОГО ЗАКАЗА #}
     {% if selected_order %}
-      <div class="card p-5">
+      {# Официант на телефоне открывает заказ целиком, сводка справа нужна только на широком экране #}
+      <div class="card p-5 {% if user.simple_floor %}hidden xl:block{% endif %}">
         <div class="flex items-center justify-between pb-3 border-b border-line mb-3">
           <span class="text-xl font-black text-ink">#{{ selected_order.id }}</span>
           <div class="flex items-center gap-3">

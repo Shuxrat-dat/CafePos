@@ -18,7 +18,8 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts import cancel_pin
-from accounts.permissions import DISCOUNT_ROLES, MANAGE_ROLES, has_role
+from accounts.models import User
+from accounts.permissions import DISCOUNT_ROLES, KITCHEN_ROLES, MANAGE_ROLES, has_role
 from core import audit, telegram
 from core.models import CafeSettings
 from menu.public_views import _qr_svg
@@ -258,6 +259,7 @@ def _floor_context(request):
         if o.items.all() and (user.sees_all_orders or o.waiter_id == user.id)
     ]
     now = timezone.now()
+    marks_ready = _can_mark_ready(user)
     for o in current_orders:
         seconds = int((now - o.created_at).total_seconds())
         if seconds >= 86400:
@@ -267,20 +269,21 @@ def _floor_context(request):
         else:
             o.timer_display = f"{seconds // 60:02d}:{seconds % 60:02d}"
         o.age_seconds = seconds
-        statuses = {i.status for i in o.items.all()}
-        if OrderItem.Status.COOKING in statuses:
-            o.status_color, o.stage_rank = "blue", 1
-            o.action_label, o.action_icon = _("Готовится"), "clock"
-        elif OrderItem.Status.READY in statuses:
-            o.status_color, o.stage_rank = "green", 2
-            o.action_label, o.action_icon = _("Готово"), "check"
-        elif statuses & {OrderItem.Status.NEW, OrderItem.Status.QUEUED}:
+        o.stage_action = _stage_action({i.status for i in o.items.all()}, marks_ready)
+        if o.stage_action == "send":
             o.status_color, o.stage_rank = "orange", 0
-            o.action_label, o.action_icon = _("Готовить"), "chef-hat"
+            o.action_label = _("Отправить на кухню")
+        elif o.stage_action == "serve":
+            o.status_color, o.stage_rank = "green", 2
+            o.action_label = _("Отнёс гостю")
+        elif o.stage_action in ("ready", "wait"):
+            # Блюда на кухне: готовность отмечает повар на экране кухни
+            o.status_color, o.stage_rank = "blue", 1
+            o.action_label = _("Готово") if o.stage_action == "ready" else _("Готовится")
         else:
             # Всё выдано гостю: остаётся принять оплату
             o.status_color, o.stage_rank = "green", 3
-            o.action_label, o.action_icon = _("К оплате"), "credit-card"
+            o.action_label = _("К оплате")
             o.ready_to_pay = True
 
     order_id = request.GET.get("order_id")
@@ -350,20 +353,37 @@ def _floor_context(request):
     }
 
 
+def _can_mark_ready(user):
+    """Готовность блюд отмечает кухня. Без повара в программе (некому смотреть экран кухни) это делает зал."""
+    if has_role(user, KITCHEN_ROLES):
+        return True
+    return not User.objects.filter(role=User.Role.COOK, is_active=True).exists()
+
+
+def _stage_action(statuses, marks_ready):
+    """Следующий шаг по карточке заказа: send — на кухню, serve — отнести гостю, ready — отметить готовым,
+    wait — ждём кухню (кнопки нет), пусто — всё подано."""
+    if OrderItem.Status.NEW in statuses:
+        return "send"
+    if OrderItem.Status.READY in statuses:
+        return "serve"
+    if statuses & {OrderItem.Status.QUEUED, OrderItem.Status.COOKING}:
+        return "ready" if marks_ready else "wait"
+    return ""
+
+
 @login_required
 @require_POST
 def toggle_order_stage(request, order_id):
+    """Кнопка на карточке заказа: делает тот же шаг, что написан на ней."""
     order = _get_order(request, order_id, open_only=False)
-    for item in order.items.all():
-        if item.status in (OrderItem.Status.NEW, OrderItem.Status.QUEUED):
-            item.status = OrderItem.Status.COOKING
-            item.save(update_fields=["status"])
-        elif item.status == OrderItem.Status.COOKING:
-            item.status = OrderItem.Status.READY
-            item.save(update_fields=["status"])
-        elif item.status == OrderItem.Status.READY:
-            item.status = OrderItem.Status.SERVED
-            item.save(update_fields=["status"])
+    action = _stage_action({i.status for i in order.items.all()}, _can_mark_ready(request.user))
+    if action == "send":
+        services.send_to_kitchen(order)
+    elif action == "serve":
+        services.serve_ready(order)
+    elif action == "ready":
+        services.mark_items_ready(order.items.all())
     return redirect("floor")
 
 

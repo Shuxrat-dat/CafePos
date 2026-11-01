@@ -17,6 +17,8 @@
     {% endif %}
   </div>
 
+  {# Официанту за столом тип заказа не нужен: в зале он всегда «В зале» #}
+  {% if not user.simple_floor or not order.is_dine_in %}
   <div class="seg mt-3" role="group" aria-label="{% translate 'Тип заказа' %}">
     {% for value, label in order.OrderType.choices %}
       <button type="button" hx-post="{% url 'set_type' order.id %}" hx-vals='{"type": "{{ value }}"}' hx-target="#order-panel"
@@ -25,6 +27,7 @@
       </button>
     {% endfor %}
   </div>
+  {% endif %}
 
   {% if not order.is_dine_in %}
     <button type="button" hx-get="{% url 'customer_form' order.id %}" hx-target="#modal"

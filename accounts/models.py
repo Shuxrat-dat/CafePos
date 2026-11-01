@@ -34,6 +34,11 @@ class User(AbstractUser):
         return bool(self.cancel_pin_locked_until) and self.cancel_pin_locked_until > timezone.now()
 
     @property
+    def simple_floor(self):
+        """Официанту экран зала без лишнего: без быстрых продаж, сортировок и кассовых кнопок."""
+        return not self.is_superuser and self.role == self.Role.WAITER
+
+    @property
     def can_take_payment(self):
         return self.is_superuser or self.role in PAYMENT_ROLES
 

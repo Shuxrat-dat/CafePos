@@ -815,7 +815,7 @@ msgid "Позиций нет"
 msgstr "Pozitsiyalar yoʻq"
 
 msgid "Подытог"
-msgstr "Oraliq jami"
+msgstr "Taomlar summasi"
 
 msgid "Скидка"
 msgstr "Chegirma"
@@ -1796,7 +1796,7 @@ msgid "Быстрая настройка завершена"
 msgstr "Tezkor sozlash yakunlandi"
 
 msgid "Быстрые позиции"
-msgstr "Tezkor taomlar"
+msgstr "Tez qoʻshish"
 
 msgid "В Telegram откройте @BotFather и создайте бота командой /newbot."
 msgstr "Telegramda @BotFather ni oching va /newbot buyrugʻi bilan bot yarating."
@@ -2072,7 +2072,7 @@ msgid "Зал и столы"
 msgstr "Zal va stollar"
 
 msgid "Занятые"
-msgstr "Bandlar"
+msgstr "Band"
 
 msgid "Записей нет"
 msgstr "Yozuvlar yoʻq"
@@ -2081,7 +2081,7 @@ msgid "Запустите программу снова."
 msgstr "Dasturni qayta ishga tushiring."
 
 msgid "Заявки"
-msgstr "Arizalar"
+msgstr "Soʻrovlar"
 
 msgid "Звук включён"
 msgstr "Ovoz yoqilgan"
@@ -2333,10 +2333,10 @@ msgid "Начальный остаток не может быть отрицат
 msgstr "Boshlangʻich qoldiq manfiy boʻlishi mumkin emas."
 
 msgid "Начальный размен:"
-msgstr "Boshlangʻich maydalash:"
+msgstr "Smena boshida kassada:"
 
 msgid "Начальный разменный фонд (сум):"
-msgstr "Boshlangʻich maydalash fondi (soʻm):"
+msgstr "Smena boshida kassadagi pul (soʻm):"
 
 msgid "Начать работу"
 msgstr "Ishni boshlash"
@@ -2447,7 +2447,7 @@ msgid "Открыть заказ"
 msgstr "Buyurtmani ochish"
 
 msgid "Открыть мастер"
-msgstr "Ustani ochish"
+msgstr "Sozlashni boshlash"
 
 msgid "Открыть смену"
 msgstr "Smenani ochish"
@@ -2648,7 +2648,7 @@ msgid "Сверьте с кухней: блюдо могли приготови�
 msgstr "Oshxona bilan solishtiring: taom tayyorlanib, berilgan boʻlishi mumkin."
 
 msgid "Свободные"
-msgstr "Boʻshlar"
+msgstr "Boʻsh"
 
 msgid "Сделать копию"
 msgstr "Nusxa yaratish"
@@ -2888,7 +2888,7 @@ msgid "выходные +%(b)s%%"
 msgstr "dam olish kunlari +%(b)s%%"
 
 msgid "д"
-msgstr "k"
+msgstr "kun"
 
 msgid "дн."
 msgstr "kun"
@@ -2945,7 +2945,7 @@ msgid "у остальных в среднем %(a)s"
 msgstr "boshqalarda oʻrtacha %(a)s"
 
 msgid "ч"
-msgstr "s"
+msgstr "soat"
 
 msgid "…и ещё %(n)s"
 msgstr "…va yana %(n)s"
@@ -2975,7 +2975,7 @@ msgid "Добавить в заказ"
 msgstr "Buyurtmaga qoʻshish"
 
 msgid "Дополнительный разменный фонд"
-msgstr "Qoʻshimcha maydalash fondi"
+msgstr "Kassaga qoʻshimcha pul"
 
 msgid "Единица"
 msgstr "Birlik"
@@ -3681,3 +3681,6 @@ msgstr "Buyurtma berish uchun stoldagi QR-kodni skanerlang yoki ofitsiantni chaq
 
 msgid "Этот QR-код устарел. Попросите официанта принять заказ."
 msgstr "Bu QR-kod eskirgan. Buyurtmani ofitsiant qabul qilsin."
+
+msgid "Отнёс гостю"
+msgstr "Mehmonga berdim"
