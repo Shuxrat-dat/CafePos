@@ -41,12 +41,12 @@
 
     {# 2. РАЗДЕЛ: ТЕКУЩИЕ ЗАКАЗЫ #}
     <div class="mb-6">
-      <div class="flex items-center justify-between gap-3 mb-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div class="flex items-center gap-2.5">
-          <h2 class="text-[17px] font-bold text-ink tracking-tight">{% translate 'Текущие заказы' %}</h2>
+          <h2 class="text-[17px] font-bold text-ink tracking-tight whitespace-nowrap">{% translate 'Текущие заказы' %}</h2>
           <span class="px-2 py-0.5 rounded-full bg-[#F8ECDA] text-brand font-bold text-xs">{{ current_orders|length }}</span>
         </div>
-        <div class="flex items-center bg-[#EFE8DC] p-1 rounded-xl gap-1 text-xs font-semibold">
+        <div class="flex items-center bg-[#EFE8DC] p-1 rounded-xl gap-1 text-xs font-semibold whitespace-nowrap max-w-full overflow-x-auto">
           <button type="button" data-sort="time" class="sort-btn px-3 py-1 rounded-lg bg-white text-ink shadow-sm">{% translate 'По времени' %}</button>
           <button type="button" data-sort="table" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По столам' %}</button>
           <button type="button" data-sort="stage" class="sort-btn px-3 py-1 rounded-lg text-stone-600 hover:text-ink">{% translate 'По статусу' %}</button>
@@ -120,10 +120,16 @@
                 <a href="{% url 'order_detail' order_id=o.id %}" class="w-10 h-9 rounded-xl bg-[#FAF6EF] border border-line flex items-center justify-center text-stone-600 hover:bg-[#EFE8DC] transition shrink-0" title="{% translate 'Открыть заказ' %}">
                   {% icon "pencil" 16 %}
                 </a>
-                {% if o.ready_to_pay %}
+                {% if o.ready_to_pay and user.can_take_payment %}
                 <a href="{% url 'pay' order_id=o.id %}" class="flex-1 h-9 rounded-xl bg-brand hover:bg-brand-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
                   {% icon "credit-card" 16 %}
                   <span>{{ o.action_label }}</span>
+                </a>
+                {% elif o.ready_to_pay %}
+                {# Официант оплату не принимает: печатает гостю пречек, оплату примет кассир #}
+                <a href="{% url 'precheck' order_id=o.id %}" target="_blank" class="flex-1 h-9 rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                  {% icon "printer" 16 %}
+                  <span>{% translate 'Пречек' %}</span>
                 </a>
                 {% else %}
                 <form method="post" action="{% url 'toggle_order_stage' order_id=o.id %}" class="flex-1 m-0">
@@ -331,12 +337,14 @@
         <div class="flex items-center gap-2">
           <a href="{% url 'precheck' order_id=selected_order.id %}" target="_blank" class="flex-1 min-h-[42px] rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
             {% icon "printer" 16 %}
-            <span>{% translate 'Печать чека' %}</span>
+            <span>{% translate 'Печать пречека' %}</span>
           </a>
+          {% if user.can_take_payment %}
           <a href="{% url 'pay' order_id=selected_order.id %}" class="flex-1 min-h-[42px] rounded-xl bg-brand hover:bg-brand-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
             {% icon "credit-card" 16 %}
             <span>{% translate 'Оплата' %}</span>
           </a>
+          {% endif %}
         </div>
       </div>
     {% endif %}

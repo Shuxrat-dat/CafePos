@@ -8,6 +8,7 @@ from inventory.models import Product, RecipeItem, StockMovement
 from menu.models import Category, Dish
 
 from .models import Hall, Order, OrderItem, Table
+from .testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -24,6 +25,7 @@ class ShortageWarningTests(TestCase):
         self.beef = Product.objects.create(name="Говядина", unit="g", cost_per_unit=80)
         RecipeItem.objects.create(dish=self.plov, product=self.beef, quantity=200)
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def _order(self, quantity):
         order = Order.objects.create(table=self.table, waiter=self.cashier)

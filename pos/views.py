@@ -13,11 +13,12 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts import cancel_pin
-from accounts.permissions import DISCOUNT_ROLES, has_role
+from accounts.permissions import DISCOUNT_ROLES, MANAGE_ROLES, has_role
 from core import audit, telegram
 from core.models import CafeSettings
 from menu.public_views import _qr_svg
@@ -743,8 +744,10 @@ def discount_form(request, order_id):
     order = _get_order(request, order_id)
     error = ""
     if request.method == "POST":
+        max_percent = None if has_role(request.user, MANAGE_ROLES) else CafeSettings.get().cashier_max_discount
         error = services.apply_discount(
-            order, request.POST.get("kind", ""), request.POST.get("value", ""), request.POST.get("reason", "")
+            order, request.POST.get("kind", ""), request.POST.get("value", ""), request.POST.get("reason", ""),
+            max_percent=max_percent,
         )
         if not error:
             if order.discount_kind:
@@ -1025,14 +1028,30 @@ def refund_order_view(request, order_id):
     if error:
         messages.error(request, error)
         return redirect("order_view", order_id=order.id)
+    if request.user.needs_cancel_pin:
+        # Кассир возвращает только чеки своей текущей смены, старые чеки возвращает администратор
+        shift = services.get_current_shift()
+        if shift is None or order.shift_id != shift.id:
+            messages.error(request, _("Кассир может вернуть только чек текущей смены. Старый чек возвращает администратор."))
+            return redirect("order_view", order_id=order.id)
     reason = request.POST.get("reason", "").strip()
     return_to_stock = request.POST.get("return_to_stock") == "1"
     try:
         services.refund_order(order, request.user, reason, return_to_stock=return_to_stock)
-        messages.success(request, _("Заказ №%(id)s успешно возвращён.") % {"id": order.id})
     except services.PaymentError as exc:
         messages.error(request, str(exc))
+    else:
+        telegram.notify_refund(order, request.user, reason)
+        messages.success(request, _("Заказ №%(id)s успешно возвращён.") % {"id": order.id})
     return redirect("order_view", order_id=order.id)
+
+
+def _next_or_floor(request):
+    """Куда вернуться после действия со сменой: только на свой же сайт."""
+    target = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return target
+    return "floor"
 
 
 @login_required
@@ -1056,7 +1075,7 @@ def shift_open(request):
         messages.success(request, _("Кассовая смена №%(id)s открыта.") % {"id": shift.id})
     except services.PaymentError as exc:
         messages.error(request, str(exc))
-    return redirect(request.POST.get("next") or "floor")
+    return redirect(_next_or_floor(request))
 
 
 @login_required
@@ -1109,5 +1128,5 @@ def shift_movement(request):
         )
     except services.PaymentError as exc:
         messages.error(request, str(exc))
-    return redirect(request.POST.get("next") or "floor")
+    return redirect(_next_or_floor(request))
 

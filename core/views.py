@@ -211,9 +211,15 @@ def hall_delete(request, hall_id):
 # ---------- персонал ----------
 
 def _can_edit_user(editor, target):
+    """Владелец правит всех, кроме суперпользователя. Администратор — себя и рядовых сотрудников:
+    иначе он мог бы сменить пароль другому администратору и работать под его именем."""
     if editor.is_superuser:
         return True
-    return not (target.is_superuser or (target.role == User.Role.OWNER and editor.role != User.Role.OWNER))
+    if target.is_superuser:
+        return False
+    if editor.role == User.Role.OWNER or target.pk == editor.pk:
+        return True
+    return target.role not in (User.Role.OWNER, User.Role.ADMIN)
 
 
 @manager_only

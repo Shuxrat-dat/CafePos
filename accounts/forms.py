@@ -1,9 +1,43 @@
 from django import forms
+from django.contrib.admin.forms import AdminAuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from core.forms import style_form
 
-from . import cancel_pin
+from . import cancel_pin, login_guard
+
+
+class GuardedLoginMixin:
+    """Не даёт подбирать пароль: после нескольких ошибок вход на время закрыт (см. login_guard)."""
+
+    locked_minutes = 0
+
+    def clean(self):
+        username = self.cleaned_data.get("username")
+        self.locked_minutes = login_guard.locked_minutes(self.request, username)
+        if self.locked_minutes:
+            raise forms.ValidationError(
+                gettext("Слишком много неверных попыток. Попробуйте через %(m)s мин.") % {"m": self.locked_minutes},
+                code="locked",
+            )
+        try:
+            data = super().clean()
+        except forms.ValidationError:
+            login_guard.register_failure(self.request, username)
+            self.locked_minutes = login_guard.locked_minutes(self.request, username)
+            raise
+        login_guard.reset(self.request, username)
+        return data
+
+
+class LoginForm(GuardedLoginMixin, AuthenticationForm):
+    pass
+
+
+class AdminLoginForm(GuardedLoginMixin, AdminAuthenticationForm):
+    pass
 
 
 class CancelPinForm(forms.Form):

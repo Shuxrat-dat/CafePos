@@ -21,6 +21,7 @@ from pos.models import Hall, Order, OrderItem, Table
 from . import services
 from .escpos import CUT, INIT, Ticket
 from .models import PrintAgent, Printer, PrintJob
+from pos.testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -69,6 +70,7 @@ class PrintFlowTests(TestCase):
         self.bar = Printer.objects.create(name="Бар", host="192.168.1.52", prints_receipts=False, prints_kitchen=True)
         self.bar.categories.set([self.drinks])
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def test_kitchen_items_go_to_printers_by_category(self):
         OrderItem.objects.create(order=self.order, dish=self.plov, quantity=2, comment="без лука")

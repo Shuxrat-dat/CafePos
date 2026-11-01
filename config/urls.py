@@ -4,13 +4,14 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+from accounts.forms import LoginForm
 from core import pwa as core_pwa
 from core import views as core_views
 from printing import urls as printing_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("login/", auth_views.LoginView.as_view(), name="login"),
+    path("login/", auth_views.LoginView.as_view(authentication_form=LoginForm), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("lang/", core_views.set_language, name="set_language"),
     path("ping/", core_views.ping, name="ping"),

@@ -47,6 +47,18 @@ class Table(models.Model):
     def is_reserved(self):
         return bool(self.reserved_for or self.reserved_at)
 
+    @property
+    def menu_key(self):
+        """Ключ из QR-кода стола. Без него заказать нельзя: номера столов идут подряд и их легко перебрать."""
+        from django.utils.crypto import salted_hmac
+
+        return salted_hmac("table-menu", str(self.pk)).hexdigest()[:16]
+
+    def menu_path(self):
+        from django.urls import reverse
+
+        return f"{reverse('table_menu', args=[self.pk])}?k={self.menu_key}"
+
 
 class CashShift(models.Model):
     class Status(models.TextChoices):

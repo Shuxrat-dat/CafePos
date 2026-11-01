@@ -211,6 +211,7 @@ class P0FinancialTests(TestCase):
     def test_refund_endpoint(self):
         """Проверка эндпоинта возврата заказа."""
         self.client.force_login(self.cashier)
+        services.open_shift(self.cashier)
         order = self.create_order([(self.dish_plov, 1)])
         services.pay_order(order, self.cashier, Order.PaymentMethod.CASH, Decimal("50000"), None)
 
@@ -227,6 +228,7 @@ class P0FinancialTests(TestCase):
     def test_pay_view_idempotency_via_http(self):
         """Двойной POST-запрос с одинаковым idempotency_key не приводит к повторному платежу."""
         self.client.force_login(self.cashier)
+        services.open_shift(self.cashier)
         order = self.create_order([(self.dish_plov, 1)])
         key = str(uuid.uuid4())
 

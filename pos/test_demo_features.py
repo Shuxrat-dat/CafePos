@@ -14,6 +14,7 @@ from menu.models import Category, Dish, Modifier
 
 from . import services
 from .models import Hall, Order, OrderItem, Table
+from .testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -31,6 +32,7 @@ class Base(TestCase):
         self.category = Category.objects.create(name="Горячее")
         self.plov = Dish.objects.create(category=self.category, name="Плов", price=45000)
         self.tea = Dish.objects.create(category=self.category, name="Чай", price=10000)
+        open_shift_for_tests()
 
     def order(self, *lines, order_type="dine_in", table=None, status=OrderItem.Status.SERVED, waiter=None):
         order = services.create_order(waiter or self.cashier, order_type, table if order_type == "dine_in" else None)

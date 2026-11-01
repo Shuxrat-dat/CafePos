@@ -10,6 +10,7 @@ from menu.models import Category, Dish
 
 from . import loyalty, reviews, services
 from .models import Customer, Hall, LoyaltyEntry, Order, OrderItem, Review, Table
+from .testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -24,6 +25,7 @@ class GuestFeaturesBase(TestCase):
         self.dish = Dish.objects.create(
             category=category, name="Плов", price=Decimal("50000"), allergens="gluten,spicy", prep_minutes=15
         )
+        open_shift_for_tests()
 
     def paid_order(self, phone="+998 90 123-45-67", name="Рустам"):
         order = services.create_order(self.cashier, Order.OrderType.DINE_IN, self.table)

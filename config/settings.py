@@ -199,6 +199,13 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 USE_HTTPS = os.environ.get("DJANGO_HTTPS", "False") == "True"
 SESSION_COOKIE_SECURE = USE_HTTPS
 CSRF_COOKIE_SECURE = USE_HTTPS
+# Сайт за обратным прокси (Caddy, nginx), который сам принимает HTTPS. Тогда адрес посетителя и признак HTTPS
+# берутся из заголовков прокси. Без прокси не включать: заголовки сможет подделать кто угодно.
+BEHIND_PROXY = os.environ.get("DJANGO_BEHIND_PROXY", "False") == "True"
+if BEHIND_PROXY:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Адреса сайта для защиты форм, например https://cafe.example.uz (через запятую)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 60 * 60 * 12  # сессия живёт 12 часов
 X_FRAME_OPTIONS = "DENY"

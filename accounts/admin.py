@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
+from .forms import AdminLoginForm
 from .models import User
+
+admin.site.login_form = AdminLoginForm
 
 
 @admin.register(User)

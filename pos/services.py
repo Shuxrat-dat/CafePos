@@ -88,8 +88,9 @@ def serve_ready(order):
 
 # ---------- скидка ----------
 
-def apply_discount(order, kind, raw_value, reason=""):
-    """Ставит или снимает скидку. Возвращает текст ошибки или пустую строку."""
+def apply_discount(order, kind, raw_value, reason="", max_percent=None):
+    """Ставит или снимает скидку. Возвращает текст ошибки или пустую строку.
+    max_percent — предел для кассира (сумма пересчитывается в процент от заказа)."""
     if kind == "":
         order.discount_kind, order.discount_value, order.discount_reason = "", 0, ""
         order.save(update_fields=["discount_kind", "discount_value", "discount_reason"])
@@ -106,6 +107,10 @@ def apply_discount(order, kind, raw_value, reason=""):
         return _("Скидка не может быть больше 100%.")
     if kind == Order.DiscountKind.AMOUNT and value > order.subtotal:
         return _("Скидка больше суммы заказа.")
+    if max_percent is not None:
+        percent = value if kind == Order.DiscountKind.PERCENT else value * 100 / order.subtotal
+        if percent > max_percent:
+            return _("Скидка больше %(n)s%% — её может дать только владелец или администратор.") % {"n": max_percent}
     order.discount_kind, order.discount_value, order.discount_reason = kind, value, reason.strip()[:100]
     order.save(update_fields=["discount_kind", "discount_value", "discount_reason"])
     return ""
@@ -138,6 +143,10 @@ def check_payment(due, method, received_raw, card_raw, allowed):
 
 
 # ---------- кассовые смены ----------
+
+def no_shift_message():
+    return _("Кассовая смена не открыта. Откройте смену и укажите, сколько денег в кассе.")
+
 
 def get_current_shift():
     """Возвращает текущую открытую кассовую смену или None."""
@@ -271,7 +280,8 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
 
         shift = get_current_shift()
         if not shift:
-            shift = open_shift(cashier, initial_cash=0)
+            # Смену открывают явно, с пересчитанным остатком в кассе, иначе наличные не с чем сверять
+            raise PaymentError(no_shift_message())
 
         send_to_kitchen(locked)
         if selected:
@@ -346,7 +356,7 @@ def refund_order(order, user, reason, return_to_stock=True):
 
         shift = get_current_shift()
         if not shift:
-            shift = open_shift(user, initial_cash=0)
+            raise PaymentError(no_shift_message())
 
         refund_reason = (reason or "").strip()[:200]
         if not refund_reason:

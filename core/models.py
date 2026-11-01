@@ -104,6 +104,11 @@ class CafeSettings(models.Model):
     tg_notify_stock = models.BooleanField(_("Заканчиваются продукты"), default=True)
     setup_done = models.BooleanField(_("Быстрая настройка завершена"), default=False)
     tg_notify_review = models.BooleanField(_("Плохие отзывы гостей"), default=True)
+    cashier_max_discount = models.PositiveSmallIntegerField(
+        _("Скидка кассира, не больше %"), default=20,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text=_("Скидку больше этой может дать только владелец или администратор."),
+    )
     loyalty_percent = models.PositiveSmallIntegerField(
         _("Баллы гостям, % от суммы"), default=0,
         validators=[MinValueValidator(0), MaxValueValidator(30)],

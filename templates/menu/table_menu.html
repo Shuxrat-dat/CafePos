@@ -10,6 +10,8 @@
   {% endif %}
   {% if error %}
     <p class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium">{{ error }}</p>
+  {% elif not can_order %}
+    <p class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-medium">{% translate 'Чтобы заказать, отсканируйте QR-код на столе или позовите официанта.' %}</p>
   {% endif %}
 
   {% for category in categories %}
@@ -24,13 +26,13 @@
               <div class="font-bold text-sm mt-0.5">{{ dish.price|money }}{{ dish|per_kg }}</div>
               {% include "components/dish_meta.html" %}
             </div>
-            <div class="flex items-center gap-1.5 shrink-0">
+            {% if can_order %}<div class="flex items-center gap-1.5 shrink-0">
               <button type="button" data-delta="-1" class="qty-btn w-10 h-10 rounded-full bg-slate-100 text-xl font-bold" aria-label="{% translate 'Уменьшить' %}">−</button>
               <input type="number" name="qty_{{ dish.id }}" value="{{ dish.picked }}" min="0" max="20"
                      data-price="{{ dish.price|stringformat:'d' }}" inputmode="numeric"
                      class="qty w-11 text-center border border-line rounded-lg py-2 font-semibold">
               <button type="button" data-delta="1" class="qty-btn w-10 h-10 rounded-full bg-brand text-white text-xl font-bold" aria-label="{% translate 'Увеличить' %}">+</button>
-            </div>
+            </div>{% endif %}
           </div>
         {% endfor %}
       </div>
@@ -39,6 +41,7 @@
     <p class="text-center text-muted py-10">{% translate 'Меню скоро появится.' %}</p>
   {% endfor %}
 
+  {% if can_order %}
   <div class="fixed bottom-0 inset-x-0 bg-white border-t border-line p-3">
     <div class="max-w-xl mx-auto flex items-center gap-3">
       <div class="flex-1">
@@ -48,6 +51,7 @@
       <button class="px-5 h-14 rounded-xl bg-brand text-white text-base font-bold">{% translate 'Отправить официанту' %}</button>
     </div>
   </div>
+  {% endif %}
 </form>
 {% endblock %}
 {% block scripts %}
@@ -56,6 +60,7 @@
     var form = document.getElementById('guest-form');
     var inputs = form.querySelectorAll('.qty');
     var out = document.getElementById('total');
+    if (!out) return;
     function recalc() {
       var sum = 0;
       inputs.forEach(function (i) { sum += (parseInt(i.value, 10) || 0) * (parseFloat(i.dataset.price) || 0); });

@@ -21,7 +21,8 @@
     <h1 class="text-xl font-bold mb-4">{% translate 'Вход для сотрудников' %}</h1>
     <form method="post" class="space-y-4">
       {% csrf_token %}
-      {% if form.errors %}<div class="alert-error">{% icon "alert" 18 %}{% translate 'Неверный логин или пароль.' %}</div>{% endif %}
+      {% if form.locked_minutes %}<div class="alert-error">{% icon "alert" 18 %}{% blocktranslate trimmed with m=form.locked_minutes %}Слишком много неверных попыток. Попробуйте через {{ m }} мин.{% endblocktranslate %}</div>
+      {% elif form.errors %}<div class="alert-error">{% icon "alert" 18 %}{% translate 'Неверный логин или пароль.' %}</div>{% endif %}
       <div>
         <label for="id_username" class="label">{% translate 'Логин' %}</label>
         <input id="id_username" name="username" autofocus autocomplete="username" autocapitalize="none" class="input text-lg" value="{{ form.username.value|default:'' }}">

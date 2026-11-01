@@ -14,6 +14,7 @@ from pos import services
 from pos.models import Hall, Order, OrderItem, Table
 
 from . import cancel_pin
+from pos.testing import open_shift_for_tests
 
 User = get_user_model()
 HTMX = {"HTTP_HX_REQUEST": "true"}
@@ -29,6 +30,7 @@ class Base(TestCase):
         category = Category.objects.create(name="Горячее")
         self.plov = Dish.objects.create(category=category, name="Плов", price=45000)
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def order(self, quantity=1, status=OrderItem.Status.NEW, waiter=None):
         order = Order.objects.create(table=self.table, waiter=waiter or self.cashier)

@@ -1,13 +1,16 @@
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from accounts import login_guard
 from accounts.permissions import REPORT_ROLES
 from menu.models import Category, Dish
 from menu.public_views import _qr_svg
@@ -19,11 +22,30 @@ MAX_LINES = 20
 MAX_QTY = 20
 MAX_PENDING_PER_TABLE = 3
 COOLDOWN_SECONDS = 60
+MAX_ORDERS_PER_IP_HOUR = 40
+
+
+def _ip_allows_order(request):
+    """Ограничение по адресу: сессию гость может сбросить, адрес нет.
+    Предел мягкий: гости в одном Wi-Fi кафе выходят в интернет с одного адреса."""
+    ip = login_guard.client_ip(request)
+    return (cache.get(f"guest-hour:{ip}") or 0) < MAX_ORDERS_PER_IP_HOUR
+
+
+def _remember_ip_order(request):
+    ip = login_guard.client_ip(request)
+    cache.add(f"guest-hour:{ip}", 0, 3600)
+    try:
+        cache.incr(f"guest-hour:{ip}")
+    except ValueError:
+        cache.set(f"guest-hour:{ip}", 1, 3600)
 
 
 def table_menu(request, table_id):
-    """Меню стола для гостя: без входа, заказ уходит официанту на подтверждение."""
+    """Меню стола для гостя: без входа, заказ уходит официанту на подтверждение.
+    Заказать можно только по ссылке из QR-кода (с ключом стола), без ключа меню только для просмотра."""
     table = get_object_or_404(Table, id=table_id)
+    can_order = constant_time_compare(request.GET.get("k", ""), table.menu_key)
     categories = Category.objects.filter(is_active=True).prefetch_related(
         Prefetch("dishes", queryset=Dish.objects.filter(is_available=True, is_hidden=False), to_attr="available")
     )
@@ -40,8 +62,12 @@ def table_menu(request, table_id):
         now = timezone.now().timestamp()
         last = request.session.get("guest_last_order", 0)
         pending = GuestOrder.objects.filter(table=table, status=GuestOrder.Status.PENDING).count()
-        if now - last < COOLDOWN_SECONDS:
+        if not can_order:
+            error = _("Этот QR-код устарел. Попросите официанта принять заказ.")
+        elif now - last < COOLDOWN_SECONDS:
             error = _("Подождите минуту перед следующим заказом.")
+        elif not _ip_allows_order(request):
+            error = _("Слишком много заказов. Попросите официанта.")
         elif not picked:
             error = _("Выберите хотя бы одно блюдо.")
         elif len(picked) > MAX_LINES:
@@ -55,13 +81,15 @@ def table_menu(request, table_id):
                     [GuestOrderItem(guest_order=guest, dish=dishes[i], quantity=q) for i, q in picked.items()]
                 )
             request.session["guest_last_order"] = now
-            return redirect(f"{reverse('table_menu', args=[table.id])}?sent=1")
+            _remember_ip_order(request)
+            return redirect(f"{table.menu_path()}&sent=1")
 
     for category in categories:
         for dish in category.available:
             dish.picked = picked.get(dish.id, 0)
     context = {
         "table": table,
+        "can_order": can_order,
         "categories": categories,
         "error": error,
         "sent": request.GET.get("sent") == "1",
@@ -78,7 +106,7 @@ def tables_qr(request):
     host = request.get_host().split(":")[0]
     items = []
     for table in Table.objects.select_related("hall").order_by("hall__sort_order", "hall_id", "number"):
-        url = request.build_absolute_uri(reverse("table_menu", args=[table.id]))
+        url = request.build_absolute_uri(table.menu_path())
         items.append({"table": table, "url": url, "qr": _qr_svg(url)})
     context = {"items": items, "is_local": host in ("localhost", "127.0.0.1")}
     return render(request, "menu/tables_qr.html", context)

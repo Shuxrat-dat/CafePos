@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 
 from menu.models import Category, Dish
@@ -16,7 +17,8 @@ class GuestOrderTests(TestCase):
         self.plov = Dish.objects.create(category=category, name="Плов", price=40000)
         self.tea = Dish.objects.create(category=category, name="Чай", price=5000)
         self.gone = Dish.objects.create(category=category, name="Снятое", price=1000, is_available=False)
-        self.url = f"/menu/t/{self.table.id}/"
+        self.url = self.table.menu_path()
+        cache.clear()
 
     def _send(self, quantities):
         data = {f"qty_{dish.id}": str(qty) for dish, qty in quantities.items()}
@@ -34,7 +36,7 @@ class GuestOrderTests(TestCase):
 
     def test_post_creates_pending_request(self):
         response = self._send({self.plov: 2, self.tea: 1})
-        self.assertRedirects(response, self.url + "?sent=1")
+        self.assertRedirects(response, self.url + "&sent=1")
         guest = GuestOrder.objects.get()
         self.assertEqual(guest.status, GuestOrder.Status.PENDING)
         self.assertEqual(guest.table, self.table)

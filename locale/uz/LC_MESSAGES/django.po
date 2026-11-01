@@ -3642,3 +3642,42 @@ msgstr "Qaytarishni rasmiylashtirish uchun bekor qilish parolini kiriting"
 
 msgid "задайте"
 msgstr "kiriting"
+
+msgid "Возврат по чеку №%(id)s · %(cafe)s"
+msgstr "№%(id)s chek boʻyicha qaytarish · %(cafe)s"
+
+msgid "Кассир может вернуть только чек текущей смены. Старый чек возвращает администратор."
+msgstr "Kassir faqat joriy smena chekini qaytara oladi. Eski chekni administrator qaytaradi."
+
+msgid "Кассовая смена не открыта"
+msgstr "Kassa smenasi ochilmagan"
+
+msgid "Кассовая смена не открыта. Откройте смену и укажите, сколько денег в кассе."
+msgstr "Kassa smenasi ochilmagan. Smenani oching va kassada qancha pul borligini kiriting."
+
+msgid "Кто оформил: %(name)s"
+msgstr "Kim rasmiylashtirgan: %(name)s"
+
+msgid "Пересчитайте деньги в кассе и откройте смену, потом принимайте оплату."
+msgstr "Kassadagi pulni sanab, smenani oching, keyin toʻlov qabul qiling."
+
+msgid "Скидка больше %(n)s%% — её может дать только владелец или администратор."
+msgstr "%(n)s%% dan katta chegirmani faqat egasi yoki administrator bera oladi."
+
+msgid "Скидка кассира, не больше %"
+msgstr "Kassir chegirmasi, koʻpi bilan %"
+
+msgid "Скидку больше этой может дать только владелец или администратор."
+msgstr "Bundan katta chegirmani faqat egasi yoki administrator bera oladi."
+
+msgid "Слишком много заказов. Попросите официанта."
+msgstr "Buyurtmalar juda koʻp. Ofitsiantni chaqiring."
+
+msgid "Слишком много неверных попыток. Попробуйте через %(m)s мин."
+msgstr "Notoʻgʻri urinishlar juda koʻp. %(m)s daqiqadan keyin urinib koʻring."
+
+msgid "Чтобы заказать, отсканируйте QR-код на столе или позовите официанта."
+msgstr "Buyurtma berish uchun stoldagi QR-kodni skanerlang yoki ofitsiantni chaqiring."
+
+msgid "Этот QR-код устарел. Попросите официанта принять заказ."
+msgstr "Bu QR-kod eskirgan. Buyurtmani ofitsiant qabul qilsin."

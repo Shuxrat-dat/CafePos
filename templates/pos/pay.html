@@ -10,6 +10,22 @@
   </div>
 </div>
 
+{% if not current_shift %}
+<form method="post" action="{% url 'shift_open' %}" class="card p-4 mb-4 flex flex-wrap items-end gap-3 border-amber-300 bg-amber-50">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <div class="flex-1 min-w-[220px]">
+    <p class="font-bold text-amber-900">{% translate 'Кассовая смена не открыта' %}</p>
+    <p class="text-sm text-amber-800">{% translate 'Пересчитайте деньги в кассе и откройте смену, потом принимайте оплату.' %}</p>
+  </div>
+  <label class="block">
+    <span class="label">{% translate 'Начальный разменный фонд (сум):' %}</span>
+    <input type="number" name="initial_cash" value="0" min="0" required class="input w-40">
+  </label>
+  <button class="btn btn-primary">{% translate 'Открыть смену' %}</button>
+</form>
+{% endif %}
+
 <form method="post" id="pay-form" class="grid lg:grid-cols-[minmax(0,1fr)_440px] gap-4 items-start"
       data-percent="{{ percent_discount|default:0 }}" data-service="{{ order.service_percent }}" data-split="{{ split|yesno:'1,0' }}"
       data-total="{{ totals.total|stringformat:'d' }}" data-currency="{% translate 'сум' %}">

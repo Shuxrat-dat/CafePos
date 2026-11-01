@@ -11,6 +11,7 @@ from menu.models import Category, Dish
 
 from . import services
 from .models import GuestOrder, GuestOrderItem, Hall, Order, OrderItem, Table
+from .testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -24,6 +25,7 @@ class WeightDishTests(TestCase):
         self.tea = Dish.objects.create(category=category, name="Чай", price=5000)
         self.order = Order.objects.create(table=self.table, waiter=self.cashier)
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def add_fish(self, raw):
         return self.client.post(reverse("add_item", args=[self.order.id, self.fish.id]), {"weight": raw})

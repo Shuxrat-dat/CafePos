@@ -57,7 +57,7 @@ class CafeSettingsForm(StyledModelForm):
         fields = [
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
             "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_mixed", "kitchen_warn_minutes",
-            "loyalty_percent",
+            "loyalty_percent", "cashier_max_discount",
         ]
 
     def clean(self):
@@ -172,9 +172,10 @@ class StaffForm(StyledModelForm):
         super().__init__(*args, **kwargs)
         self.editor = editor
         roles = list(User.Role.choices)
-        # Администратор не может назначать владельцев
+        # Администратор не назначает владельцев и других администраторов (свою роль видит, чтобы её сохранить)
         if editor is not None and not editor.is_superuser and editor.role != User.Role.OWNER:
-            roles = [r for r in roles if r[0] != User.Role.OWNER]
+            own = self.instance.pk is not None and self.instance.pk == editor.pk
+            roles = [r for r in roles if r[0] != User.Role.OWNER and (r[0] != User.Role.ADMIN or own)]
         self.fields["role"].choices = roles
 
     def clean_password(self):

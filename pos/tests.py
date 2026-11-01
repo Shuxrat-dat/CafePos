@@ -7,6 +7,7 @@ from django.urls import reverse
 from menu.models import Category, Dish
 
 from .models import Hall, Order, OrderItem, Table
+from .testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -27,6 +28,7 @@ class CashPaymentTests(TestCase):
             order=self.order, dish=dish, quantity=2, status=OrderItem.Status.SERVED
         )
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def test_total_is_calculated(self):
         self.assertEqual(self.order.total, Decimal("50000"))
@@ -77,6 +79,7 @@ class SplitPaymentTests(TestCase):
                     order=self.order, dish=self.tea, quantity=1, status=OrderItem.Status.SERVED
                 )
                 self.client.force_login(self.cashier)
+                open_shift_for_tests()
 
             def _post_split(self, plov_qty, tea_qty, received="100000"):
                 return self.client.post(

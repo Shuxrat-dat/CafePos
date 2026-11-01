@@ -143,6 +143,23 @@ def notify_order_cancelled(order, user):
         return False
 
 
+def notify_refund(order, user, reason):
+    """Возврат оплаченного заказа: деньги уходят из кассы, владелец должен знать сразу."""
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            lines = [
+                "↩️ " + _("Возврат по чеку №%(id)s · %(cafe)s") % {"id": order.id, "cafe": cafe.name},
+                _("Сумма: %(sum)s, %(place)s") % {"sum": money(order.total), "place": order.place_label},
+                _("Кто оформил: %(name)s") % {"name": _person(user)},
+                _("Причина: %(text)s") % {"text": reason or _("не указана")},
+            ]
+        return send("\n".join(lines), "cancel")
+    except Exception:
+        log.exception("Telegram: сообщение о возврате не собрано")
+        return False
+
+
 def notify_item_removed(order, item, user):
     """Блюдо, уже отправленное на кухню, убрали из заказа."""
     try:

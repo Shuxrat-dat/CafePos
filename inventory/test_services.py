@@ -10,6 +10,7 @@ from pos.models import Hall, Order, OrderItem, Table
 
 from .models import Product, RecipeItem, StockMovement
 from .services import write_off_order
+from pos.testing import open_shift_for_tests
 
 User = get_user_model()
 
@@ -33,6 +34,7 @@ class WriteOffTests(TestCase):
 
         self.double = Modifier.objects.create(name="Двойная порция", consumption_multiplier=2)
         self.client.force_login(self.cashier)
+        open_shift_for_tests()
 
     def _order_with(self, dish, quantity, modifiers=(), status=OrderItem.Status.SERVED):
         order = Order.objects.create(table=self.table, waiter=self.cashier)
