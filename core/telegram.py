@@ -6,9 +6,11 @@
 """
 import json
 import logging
+import os
 import threading
 import urllib.error
 import urllib.request
+import uuid
 
 from django.conf import settings
 from django.utils import translation
@@ -19,6 +21,7 @@ from .models import CafeSettings
 log = logging.getLogger(__name__)
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
+API_DOCUMENT = "https://api.telegram.org/bot{token}/sendDocument"
 TIMEOUT = 6
 
 
@@ -77,6 +80,60 @@ def send(text, event):
         return True
     except Exception:  # уведомление не должно ломать работу кассы
         log.exception("Telegram: не удалось поставить сообщение в очередь")
+        return False
+
+
+def send_document(path, caption=""):
+    """Отправляет файл владельцу (например, копию базы). Синхронно: вызывается из команды, не из кассы.
+    Возвращает (успех, пояснение)."""
+    cafe = CafeSettings.get()
+    if not is_configured(cafe):
+        return False, _("Укажите токен бота и номер чата.")
+    boundary = uuid.uuid4().hex
+    with open(path, "rb") as fh:
+        content = fh.read()
+    parts = []
+    for name, value in (("chat_id", cafe.telegram_chat_id.strip()), ("caption", caption)):
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode())
+    filename = os.path.basename(path)
+    parts.append(
+        f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="{filename}"\r\n'
+        f"Content-Type: application/octet-stream\r\n\r\n".encode() + content + b"\r\n"
+    )
+    parts.append(f"--{boundary}--\r\n".encode())
+    request = urllib.request.Request(
+        API_DOCUMENT.format(token=cafe.telegram_bot_token.strip()), data=b"".join(parts),
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"}, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return 200 <= response.status < 300, ""
+    except urllib.error.HTTPError as exc:
+        return False, _("Telegram вернул ошибку %(code)s.") % {"code": exc.code}
+    except (urllib.error.URLError, OSError, ValueError):
+        return False, _("Нет связи с Telegram. Проверьте интернет.")
+
+
+def notify_server_error(path, error):
+    """Ошибка сервера (500). Без подробностей запроса: там могут быть личные данные."""
+    try:
+        cafe = CafeSettings.get()
+        if not is_configured(cafe):
+            return False
+        with _lang(cafe):
+            lines = ["⚠️ " + _("Ошибка на сервере %(cafe)s") % {"cafe": cafe.name}]
+            details = " · ".join(p for p in (path, error) if p)
+            if details:
+                lines.append(details)
+            lines.append(_("Если повторяется, сообщите тому, кто обслуживает кассу."))
+        args = (cafe.telegram_bot_token.strip(), cafe.telegram_chat_id.strip(), "\n".join(lines))
+        if getattr(settings, "TELEGRAM_SYNC", False):
+            _post(*args)
+        else:
+            threading.Thread(target=_safe_post, args=args, daemon=True).start()
+        return True
+    except Exception:  # оповещение об ошибке само не должно ничего ломать
+        log.exception("Telegram: сообщение об ошибке сервера не собрано")
         return False
 
 

@@ -1,0 +1,12 @@
+# Ночная копия базы CafePOS (и отправка владельцу в Telegram, если бот подключён).
+# Установка: см. README, раздел «Сервер на Linux».
+[Unit]
+Description=CafePOS: nightly database backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=cafepos
+Group=cafepos
+WorkingDirectory=/opt/cafepos/app
+ExecStart=/opt/cafepos/app/.venv/bin/python manage.py backup_db --telegram

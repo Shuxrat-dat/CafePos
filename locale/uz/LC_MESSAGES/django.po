@@ -3690,3 +3690,9 @@ msgstr "Boshqa amallar: kirim, inkassatsiya"
 
 msgid "Закрыть смену"
 msgstr "Smenani yopish"
+
+msgid "Если повторяется, сообщите тому, кто обслуживает кассу."
+msgstr "Takrorlansa, kassaga xizmat koʻrsatadigan odamga xabar bering."
+
+msgid "Ошибка на сервере %(cafe)s"
+msgstr "%(cafe)s serverida xatolik"

@@ -210,6 +210,19 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 60 * 60 * 12  # сессия живёт 12 часов
 X_FRAME_OPTIONS = "DENY"
 
+# Ошибки сервера (500) уходят владельцу в Telegram, если бот подключён в настройках. Вывод в консоль как прежде.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "telegram": {"class": "core.error_alerts.TelegramErrorHandler", "level": "ERROR"},
+    },
+    "loggers": {
+        "django.request": {"handlers": ["console", "telegram"], "level": "ERROR", "propagate": False},
+    },
+}
+
 # Быстрый хеш паролей только при запуске тестов (на боевом сервере не действует).
 # Тесты проверяют исходные (русские) тексты, поэтому запускаются на русском.
 if "test" in sys.argv:

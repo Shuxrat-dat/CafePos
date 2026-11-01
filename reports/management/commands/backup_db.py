@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 KEEP = 30  # сколько последних копий каждого типа хранить
+TELEGRAM_LIMIT = 50 * 1024 * 1024  # больше бот отправить не может
 
 
 def _find_pg_dump():
@@ -29,6 +30,12 @@ def _prune(folder, prefix, suffix):
 
 class Command(BaseCommand):
     help = "Резервная копия базы (SQLite: копия файла, PostgreSQL: pg_dump)"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--telegram", action="store_true",
+            help="Отправить копию владельцу в Telegram: копия хранится не только на этом сервере",
+        )
 
     def handle(self, *args, **options):
         folder = os.path.join(settings.BASE_DIR, "backups")
@@ -63,3 +70,21 @@ class Command(BaseCommand):
             raise CommandError("Эта база не поддерживается бэкапом.")
 
         self.stdout.write(self.style.SUCCESS(f"Копия создана: {target}"))
+        if options["telegram"]:
+            self._send_to_telegram(target)
+
+    def _send_to_telegram(self, target):
+        """Сбой отправки не отменяет копию на диске: сообщаем и выходим с ошибкой, чтобы это было видно в журнале."""
+        from core import telegram
+        from core.models import CafeSettings
+
+        if not telegram.is_configured():
+            self.stdout.write("Telegram не подключён: копия только на этом сервере.")
+            return
+        if os.path.getsize(target) > TELEGRAM_LIMIT:
+            raise CommandError("Копия больше 50 МБ: Telegram её не примет. Храните копии в другом месте.")
+        caption = f"{CafeSettings.get().name}: {os.path.basename(target)}"
+        ok, reason = telegram.send_document(target, caption)
+        if not ok:
+            raise CommandError(f"Копия не отправлена в Telegram: {reason}")
+        self.stdout.write(self.style.SUCCESS("Копия отправлена в Telegram."))

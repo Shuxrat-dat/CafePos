@@ -1,0 +1,10 @@
+# Каждый день в 04:00 по Ташкенту. Persistent: если сервер был выключен, копия делается после включения.
+[Unit]
+Description=CafePOS: nightly database backup at 04:00
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Asia/Tashkent
+Persistent=true
+
+[Install]
+WantedBy=timers.target
