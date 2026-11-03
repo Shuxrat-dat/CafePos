@@ -3699,3 +3699,6 @@ msgstr "%(cafe)s serverida xatolik"
 
 msgid "Нажмите на стол, чтобы открыть заказ."
 msgstr "Buyurtmani ochish uchun stolni bosing."
+
+msgid "Стол занят: заказ ведёт другой официант."
+msgstr "Stol band: buyurtmani boshqa ofitsiant yuritmoqda."

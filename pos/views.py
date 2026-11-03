@@ -496,8 +496,14 @@ def open_table(request, table_id):
     )
     if order is None:
         order = services.create_order(request.user, Order.OrderType.DINE_IN, table)
+    elif order.n_items == 0 and order.waiter_id != request.user.id:
+        # Пустой черновик, который кто-то открыл и бросил, стол не занимает (на схеме он свободен):
+        # заказ переходит к тому, кто нажал на стол
+        order.waiter = request.user
+        order.save(update_fields=["waiter"])
     elif not request.user.sees_all_orders and order.waiter_id != request.user.id:
-        raise PermissionDenied
+        messages.error(request, _("Стол занят: заказ ведёт другой официант."))
+        return redirect("table_map")
     if table.is_reserved:
         # Гость по брони пришёл: бронь снимается, стол становится занятым
         table.reserved_for, table.reserved_at = "", None

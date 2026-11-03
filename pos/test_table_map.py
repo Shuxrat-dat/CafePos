@@ -70,12 +70,28 @@ class TableMapTests(TestCase):
 
     def test_waiter_cannot_open_another_waiters_table_but_cashier_can(self):
         self.client.force_login(self.waiter)
-        self.assertEqual(self.client.post(reverse("open_table", args=[self.theirs.id])).status_code, 403)
+        response = self.client.post(reverse("open_table", args=[self.theirs.id]), follow=True)
+        self.assertRedirects(response, reverse("table_map"))
+        self.assertContains(response, "Стол занят: заказ ведёт другой официант.")
+        self.their_order.refresh_from_db()
+        self.assertEqual(self.their_order.waiter, self.other)
         page = self.client.get(reverse("table_map")).content.decode()
         self.assertNotIn(reverse("open_table", args=[self.theirs.id]), page)
         self.client.force_login(self.cashier)
         response = self.client.post(reverse("open_table", args=[self.theirs.id]))
         self.assertRedirects(response, reverse("order_detail", args=[self.their_order.id]))
+
+    def test_empty_draft_left_by_someone_else_does_not_block_a_free_table(self):
+        """Кассир нажал на стол и ничего не добавил: стол на схеме свободен, и официант должен его открыть."""
+        draft = Order.objects.create(table=self.free, waiter=self.cashier)
+        self.client.force_login(self.waiter)
+        page = self.client.get(reverse("table_map")).content.decode()
+        self.assertIn('data-table="1" data-state="free"', page)
+        response = self.client.post(reverse("open_table", args=[self.free.id]))
+        self.assertRedirects(response, reverse("order_detail", args=[draft.id]))
+        draft.refresh_from_db()
+        self.assertEqual(draft.waiter, self.waiter)
+        self.assertEqual(Order.objects.filter(table=self.free).count(), 1)
 
     def test_refresh_returns_only_the_grid_without_takeaway_list(self):
         Order.objects.create(waiter=self.waiter, order_type=Order.OrderType.TAKEAWAY)
