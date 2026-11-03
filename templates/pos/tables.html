@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Столы' %}{% endblock %}
+{% block content %}
+<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <h1 class="page-title">{% translate 'Столы' %}</h1>
+    <p class="page-sub">{% translate 'Нажмите на стол, чтобы открыть заказ.' %}</p>
+  </div>
+  <div class="relative w-full sm:w-56">
+    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
+    <input id="table-search" type="search" class="input pl-10" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
+  </div>
+</div>
+
+<div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Свободно' %}</div>
+    <div class="text-2xl font-black text-emerald-600 mt-1">{{ counts.free }}</div>
+  </div>
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Занято' %}</div>
+    <div class="text-2xl font-black text-brand mt-1">{{ counts.busy|add:counts.bill }}</div>
+  </div>
+  <div class="card p-4">
+    <div class="text-xs text-muted font-semibold">{% translate 'Забронировано' %}</div>
+    <div class="text-2xl font-black text-blue-600 mt-1">{{ counts.reserved }}</div>
+  </div>
+</div>
+
+<div id="table-filter" class="flex flex-wrap gap-2 mb-4">
+  <button type="button" data-filter="all" class="chip chip-active">{% translate 'Все' %}</button>
+  <button type="button" data-filter="free" class="chip">{% translate 'Свободные' %}</button>
+  <button type="button" data-filter="busy" class="chip">{% translate 'Занятые' %}</button>
+  <button type="button" data-filter="reserved" class="chip">{% translate 'Бронь' %}</button>
+</div>
+
+{# Столы обновляются сами: видно, когда стол освободился или гость сделал заявку #}
+<div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
+  {% include "pos/_floor_grid.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var box = document.getElementById('tables-grid');
+    var search = document.getElementById('table-search');
+    var chips = document.getElementById('table-filter');
+    var state = 'all';
+    function match(s) {
+      if (state === 'all') return true;
+      if (state === 'busy') return s === 'busy' || s === 'bill' || s === 'locked';
+      return s === state;
+    }
+    function apply() {
+      var term = search.value.trim().toLowerCase(), any = false;
+      box.querySelectorAll('[data-hall-section]').forEach(function (section) {
+        var visible = false;
+        section.querySelectorAll('[data-table]').forEach(function (t) {
+          var ok = match(t.dataset.state) && (term === '' || t.dataset.table.toLowerCase().indexOf(term) !== -1);
+          t.classList.toggle('hidden', !ok);
+          if (ok) visible = true;
+        });
+        section.classList.toggle('hidden', !visible);
+        if (visible) any = true;
+      });
+      var empty = document.getElementById('floor-empty');
+      if (empty) empty.classList.toggle('hidden', any);
+    }
+    search.addEventListener('input', apply);
+    chips.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-filter]');
+      if (!b) return;
+      state = b.dataset.filter;
+      chips.querySelectorAll('[data-filter]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
+      apply();
+    });
+    // После автообновления фильтр и поиск остаются
+    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target === box) apply(); });
+  })();
+</script>
+{% endblock %}

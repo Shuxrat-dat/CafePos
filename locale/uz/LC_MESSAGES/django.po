@@ -3696,3 +3696,6 @@ msgstr "Takrorlansa, kassaga xizmat koʻrsatadigan odamga xabar bering."
 
 msgid "Ошибка на сервере %(cafe)s"
 msgstr "%(cafe)s serverida xatolik"
+
+msgid "Нажмите на стол, чтобы открыть заказ."
+msgstr "Buyurtmani ochish uchun stolni bosing."

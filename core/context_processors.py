@@ -29,6 +29,8 @@ def _nav(request):
     items = [
         ("orders", _("Обзор"), "home", SERVICE_ROLES, {"orders", "order_view"}),
         ("floor", _("Заказы"), "receipt", SERVICE_ROLES, {"floor"} | order_pages, open_count),
+        # Схема столов для зала: у владельца и администратора свой пункт «Столы» (управление), второй им не нужен
+        ("table_map", _("Столы"), "table", SERVICE_ROLES, {"table_map"}),
         ("manage_menu", _("Меню"), "utensils", MANAGE_ROLES, {"manage_menu", "dish_create", "dish_edit", "manage_categories", "manage_categories_edit", "manage_modifiers", "manage_modifiers_edit"}),
         ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
         # Кнопка создаёт заказ навынос, так и называем
@@ -46,6 +48,8 @@ def _nav(request):
         roles = entry[3]
         pages = entry[4]
         badge = entry[5] if len(entry) > 5 else None
+        if name == "table_map" and has_role(user, MANAGE_ROLES):
+            continue
         if has_role(user, roles):
             res.append({
                 "url": reverse(name),

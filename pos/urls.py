@@ -5,6 +5,7 @@ from . import guest_views, orders_views, views
 urlpatterns = [
     path("", views.floor, name="floor"),
     path("floor/grid/", views.floor_grid, name="floor_grid"),
+    path("tables/", views.table_map, name="table_map"),
     path("search/", views.global_search, name="global_search"),
     path("quick-add/<int:dish_id>/", views.quick_add, name="quick_add"),
     path("orders/<int:order_id>/toggle-stage/", views.toggle_order_stage, name="toggle_order_stage"),

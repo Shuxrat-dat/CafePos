@@ -456,6 +456,17 @@ def floor_grid(request):
 
 
 @login_required
+def table_map(request):
+    """Схема залов для официанта и кассира: нажал на стол, открылся его заказ (или новый, если стол свободен).
+    Официант видит чужие занятые столы, но открыть их не может, кассир открывает любые."""
+    context = _floor_context(request)
+    context["counter_orders"] = []  # навынос и доставка живут в «Заказах», здесь только столы
+    if request.headers.get("HX-Request"):
+        return render(request, "pos/_floor_grid.html", context)
+    return render(request, "pos/tables.html", context)
+
+
+@login_required
 @require_POST
 def new_order(request):
     """Новый заказ навынос или на доставку. Пустой черновик того же типа переиспользуем."""
