@@ -210,6 +210,11 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 60 * 60 * 12  # сессия живёт 12 часов
 X_FRAME_OPTIONS = "DENY"
 
+# Центральный Telegram-бот (папка hub/). Если задан, в настройках «Telegram» появляется быстрое подключение:
+# владелец нажимает ссылку и получает уведомления без токенов и номеров чатов.
+HUB_URL = os.environ.get("HUB_URL", "").strip()
+HUB_REGISTRATION_TOKEN = os.environ.get("HUB_REGISTRATION_TOKEN", "").strip()
+
 # Ошибки сервера (500) уходят владельцу в Telegram, если бот подключён в настройках. Вывод в консоль как прежде.
 LOGGING = {
     "version": 1,

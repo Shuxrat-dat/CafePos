@@ -98,6 +98,7 @@ class CafeSettings(models.Model):
 
     telegram_bot_token = models.CharField(_("Токен Telegram-бота"), max_length=100, blank=True)
     telegram_chat_id = models.CharField(_("Чат для уведомлений"), max_length=40, blank=True)
+    hub_key = models.CharField(max_length=80, blank=True, editable=False)  # ключ заведения в центральном боте
     tg_notify_shift = models.BooleanField(_("Закрытие смены"), default=True)
     tg_notify_cancel = models.BooleanField(_("Отмена заказов"), default=True)
     tg_notify_discount = models.BooleanField(_("Крупные скидки"), default=True)

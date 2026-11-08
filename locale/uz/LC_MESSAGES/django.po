@@ -3702,3 +3702,75 @@ msgstr "Buyurtmani ochish uchun stolni bosing."
 
 msgid "Стол занят: заказ ведёт другой официант."
 msgstr "Stol band: buyurtmani boshqa ofitsiant yuritmoqda."
+
+msgid "Быстрое подключение"
+msgstr "Tez ulanish"
+
+msgid "Быстрое подключение не настроено на сервере."
+msgstr "Tez ulanish serverda sozlanmagan."
+
+msgid "В Telegram нажмите «Start»."
+msgstr "Telegram’da «Start» tugmasini bosing."
+
+msgid "Добавить получателя"
+msgstr "Qabul qiluvchi qoʻshish"
+
+msgid "Ждём вас в Telegram"
+msgstr "Telegram’da kutyapmiz"
+
+msgid "Нажмите кнопку на телефоне или наведите камеру на QR-код."
+msgstr "Telefonda tugmani bosing yoki kamerani QR-kodga qarating."
+
+msgid "Нет связи с центром уведомлений. Проверьте интернет и попробуйте ещё раз."
+msgstr "Bildirishnomalar markazi bilan aloqa yoʻq. Internetni tekshirib, qayta urinib koʻring."
+
+msgid "Никто из получателей не включил копии базы."
+msgstr "Hech bir qabul qiluvchi baza nusxasini yoqmagan."
+
+msgid "Отключить"
+msgstr "Uzish"
+
+msgid "Отключить Telegram у всех получателей?"
+msgstr "Telegram barcha qabul qiluvchilar uchun uzilsinmi?"
+
+msgid "Отключить этого получателя?"
+msgstr "Bu qabul qiluvchi uzilsinmi?"
+
+msgid "Открыть в Telegram"
+msgstr "Telegram’da ochish"
+
+msgid "Подключение занимает полминуты: нажмите кнопку, откройте ссылку в Telegram и нажмите «Start». Токены и номера чатов не нужны."
+msgstr "Ulanish yarim daqiqa oladi: tugmani bosing, havolani Telegram’da oching va «Start» ni bosing. Token va chat raqami kerak emas."
+
+msgid "Подключить Telegram"
+msgstr "Telegram’ni ulash"
+
+msgid "Пока некому отправлять: подключите хотя бы одного получателя."
+msgstr "Hozircha yuboradigan kishi yoʻq: kamida bitta qabul qiluvchini ulang."
+
+msgid "Получатель отключён."
+msgstr "Qabul qiluvchi uzildi."
+
+msgid "Прибыль по себестоимости: %(sum)s"
+msgstr "Tannarx boʻyicha foyda: %(sum)s"
+
+msgid "Свой бот (для опытных)"
+msgstr "Oʻz botingiz (tajribali foydalanuvchilar uchun)"
+
+msgid "Связь с центром уведомлений потеряна. Подключите Telegram заново."
+msgstr "Bildirishnomalar markazi bilan aloqa uzildi. Telegram’ni qaytadan ulang."
+
+msgid "Ссылка одноразовая и действует двое суток. Каждый, кто её откроет первым, станет получателем, поэтому не пересылайте её посторонним."
+msgstr "Havola bir martalik va ikki kun amal qiladi. Uni birinchi ochgan kishi qabul qiluvchi boʻladi, shuning uchun begonalarga yubormang."
+
+msgid "Центр не принял секрет подключения. Проверьте HUB_REGISTRATION_TOKEN в файле .env."
+msgstr "Markaz ulanish sirini qabul qilmadi. .env faylidagi HUB_REGISTRATION_TOKEN ni tekshiring."
+
+msgid "Центр уведомлений вернул ошибку %(code)s."
+msgstr "Bildirishnomalar markazi %(code)s xatosini qaytardi."
+
+msgid "Центр уведомлений сейчас недоступен. Обновите страницу через минуту."
+msgstr "Bildirishnomalar markazi hozir mavjud emas. Sahifani bir daqiqadan keyin yangilang."
+
+msgid "Эта страница обновится сама."
+msgstr "Bu sahifa oʻzi yangilanadi."

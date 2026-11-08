@@ -16,6 +16,7 @@ from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
 
+from . import hub
 from .models import CafeSettings
 
 log = logging.getLogger(__name__)
@@ -34,8 +35,19 @@ def money(value):
 
 
 def is_configured(cafe=None):
+    """Уведомления подключены: через центрального бота (быстрое подключение) или через свой токен."""
     cafe = cafe or CafeSettings.get()
+    if hub.connected(cafe):
+        return True
     return bool(cafe.telegram_bot_token.strip() and cafe.telegram_chat_id.strip())
+
+
+def _dispatch(func, *args):
+    """Отправка в фоне, чтобы касса не ждала сеть. В тестах (TELEGRAM_SYNC) выполняется сразу."""
+    if getattr(settings, "TELEGRAM_SYNC", False):
+        func(*args)
+    else:
+        threading.Thread(target=func, args=args, daemon=True).start()
 
 
 def _post(token, chat_id, text):
@@ -61,6 +73,8 @@ def _post(token, chat_id, text):
 def send_now(text, cafe=None):
     """Синхронная отправка для кнопки «Отправить тест»: нужно показать результат."""
     cafe = cafe or CafeSettings.get()
+    if hub.connected(cafe):
+        return hub.send_test(cafe)
     if not is_configured(cafe):
         return False, _("Укажите токен бота и номер чата.")
     return _post(cafe.telegram_bot_token.strip(), cafe.telegram_chat_id.strip(), text)
@@ -72,6 +86,9 @@ def send(text, event):
         cafe = CafeSettings.get()
         if not is_configured(cafe) or not getattr(cafe, f"tg_notify_{event}", False):
             return False
+        if hub.connected(cafe):
+            _dispatch(hub.send_event, cafe, event, text)
+            return True
         args = (cafe.telegram_bot_token.strip(), cafe.telegram_chat_id.strip(), text)
         if getattr(settings, "TELEGRAM_SYNC", False):
             _post(*args)
@@ -87,6 +104,8 @@ def send_document(path, caption=""):
     """Отправляет файл владельцу (например, копию базы). Синхронно: вызывается из команды, не из кассы.
     Возвращает (успех, пояснение)."""
     cafe = CafeSettings.get()
+    if hub.connected(cafe):
+        return hub.send_document(cafe, path, caption)
     if not is_configured(cafe):
         return False, _("Укажите токен бота и номер чата.")
     boundary = uuid.uuid4().hex
@@ -126,6 +145,9 @@ def notify_server_error(path, error):
             if details:
                 lines.append(details)
             lines.append(_("Если повторяется, сообщите тому, кто обслуживает кассу."))
+        if hub.connected(cafe):
+            _dispatch(hub.send_event, cafe, "error", "\n".join(lines))
+            return True
         args = (cafe.telegram_bot_token.strip(), cafe.telegram_chat_id.strip(), "\n".join(lines))
         if getattr(settings, "TELEGRAM_SYNC", False):
             _post(*args)
@@ -153,6 +175,18 @@ def _person(user):
 
 # ---------- события ----------
 
+def _shift_profit(shift):
+    """Выручка смены минус себестоимость проданного по складу. None, если себестоимость не ведётся."""
+    from django.db.models import F, Sum
+    from inventory.models import StockMovement
+
+    rows = StockMovement.objects.filter(kind=StockMovement.Kind.SALE, order__shift=shift)
+    cost = rows.aggregate(total=Sum(-F("quantity") * F("product__cost_per_unit")))["total"]
+    if not cost:
+        return None
+    return shift.total_revenue - cost
+
+
 def notify_shift_closed(shift):
     try:
         cafe = CafeSettings.get()
@@ -168,6 +202,9 @@ def notify_shift_closed(shift):
                 _("В кассе должно быть: %(sum)s") % {"sum": money(shift.expected_cash)},
                 _("По факту: %(sum)s") % {"sum": money(shift.actual_cash or 0)},
             ]
+            profit = _shift_profit(shift)
+            if profit is not None:
+                lines.append("📈 " + _("Прибыль по себестоимости: %(sum)s") % {"sum": money(profit)})
             if difference:
                 sign = "+" if difference > 0 else "−"
                 lines.append("⚠️ " + _("Расхождение: %(sign)s%(sum)s") % {"sign": sign, "sum": money(abs(difference))})

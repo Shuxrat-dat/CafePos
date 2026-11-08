@@ -8,24 +8,98 @@
 </div>
 {% include "manage/_settings_tabs.html" %}
 
+{% if hub_enabled %}
+<section class="card p-5 mb-4 max-w-5xl space-y-4" id="hub-card">
+  <div class="flex items-center justify-between gap-3">
+    <h2 class="section-title">{% translate 'Быстрое подключение' %}</h2>
+    {% if hub_state.connected %}
+      <span class="badge bg-sage-100 text-sage">{% icon "check-circle" 14 %}{% translate 'Подключено' %}</span>
+    {% elif hub_key %}
+      <span class="badge bg-stone-100 text-stone-600">{% translate 'Ждём вас в Telegram' %}</span>
+    {% else %}
+      <span class="badge bg-stone-100 text-stone-600">{% translate 'Не подключено' %}</span>
+    {% endif %}
+  </div>
+
+  {% if not hub_key %}
+    <p class="text-sm text-stone-700">{% translate 'Подключение занимает полминуты: нажмите кнопку, откройте ссылку в Telegram и нажмите «Start». Токены и номера чатов не нужны.' %}</p>
+    <form method="post">{% csrf_token %}
+      <button name="action" value="hub_connect" class="btn btn-primary">{% icon "send" 18 %}{% translate 'Подключить Telegram' %}</button>
+    </form>
+
+  {% elif hub_unreachable %}
+    <div class="alert-error">{% icon "alert" 18 %}{% translate 'Центр уведомлений сейчас недоступен. Обновите страницу через минуту.' %}</div>
+
+  {% else %}
+    {% if hub_state.recipients %}
+      <ul class="divide-y divide-stone-100 text-sm">
+        {% for r in hub_state.recipients %}
+          <li class="flex items-center justify-between gap-3 py-2">
+            <span>{{ r.title|default:r.chat_id }}</span>
+            <form method="post" onsubmit="return confirm('{% translate 'Отключить этого получателя?' %}');">{% csrf_token %}
+              <input type="hidden" name="chat_id" value="{{ r.chat_id }}">
+              <button name="action" value="hub_remove" class="btn btn-secondary">{% translate 'Отключить' %}</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if not hub_add %}<a href="?add=1" class="btn btn-secondary">{% icon "plus" 18 %}{% translate 'Добавить получателя' %}</a>{% endif %}
+    {% endif %}
+
+    {% if hub_link %}
+      <div class="grid sm:grid-cols-[1fr_160px] gap-4 items-center">
+        <div class="space-y-3 text-sm text-stone-700">
+          <ol class="list-decimal pl-5 space-y-1">
+            <li>{% translate 'Нажмите кнопку на телефоне или наведите камеру на QR-код.' %}</li>
+            <li>{% translate 'В Telegram нажмите «Start».' %}</li>
+            <li>{% translate 'Эта страница обновится сама.' %}</li>
+          </ol>
+          <a href="{{ hub_link }}" target="_blank" rel="noopener" class="btn btn-primary">{% icon "send" 18 %}{% translate 'Открыть в Telegram' %}</a>
+          <p class="text-xs text-muted">{% translate 'Ссылка одноразовая и действует двое суток. Каждый, кто её откроет первым, станет получателем, поэтому не пересылайте её посторонним.' %}</p>
+        </div>
+        <div class="w-40 h-40 border border-stone-200 rounded-lg overflow-hidden bg-white">{{ hub_qr }}</div>
+      </div>
+      {% if not hub_state.connected %}
+      <script>
+        (function () {
+          var url = "{% url 'manage_telegram_status' %}";
+          setInterval(function () {
+            fetch(url, {credentials: "same-origin"}).then(function (r) { return r.json(); }).then(function (d) {
+              if (d.connected) { location.href = location.pathname; }
+            }).catch(function () {});
+          }, 3000);
+        })();
+      </script>
+      {% endif %}
+    {% endif %}
+
+    <form method="post" onsubmit="return confirm('{% translate 'Отключить Telegram у всех получателей?' %}');">{% csrf_token %}
+      <button name="action" value="hub_disconnect" class="btn btn-danger">{% translate 'Отключить Telegram' %}</button>
+    </form>
+  {% endif %}
+</section>
+{% endif %}
+
 <div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start max-w-5xl">
   <form method="post" class="space-y-4">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="alert-error">{% icon "alert" 18 %}{{ form.non_field_errors|join:" " }}</div>{% endif %}
 
-    <section class="card p-5 space-y-4">
+    {% if hub_enabled %}<details class="card p-5 space-y-4" {% if legacy_connected %}open{% endif %}>
+      <summary class="section-title cursor-pointer">{% translate 'Свой бот (для опытных)' %}</summary>
+    {% else %}<section class="card p-5 space-y-4">{% endif %}
       <div class="flex items-center justify-between gap-3">
         <h2 class="section-title">{% translate 'Подключение' %}</h2>
-        {% if connected %}
+        {% if legacy_connected %}
           <span class="badge bg-sage-100 text-sage">{% icon "check-circle" 14 %}{% translate 'Подключено' %}</span>
         {% else %}
           <span class="badge bg-stone-100 text-stone-600">{% translate 'Не подключено' %}</span>
         {% endif %}
       </div>
       {% include "components/field.html" with field=form.telegram_bot_token %}
-      {% if connected %}<p class="text-xs text-muted -mt-2">{% translate 'Токен сохранён и не показывается. Оставьте поле пустым, чтобы не менять его.' %}</p>{% endif %}
+      {% if legacy_connected %}<p class="text-xs text-muted -mt-2">{% translate 'Токен сохранён и не показывается. Оставьте поле пустым, чтобы не менять его.' %}</p>{% endif %}
       {% include "components/field.html" with field=form.telegram_chat_id %}
-    </section>
+    {% if hub_enabled %}</details>{% else %}</section>{% endif %}
 
     <section class="card p-5 space-y-3">
       <h2 class="section-title">{% translate 'Что присылать' %}</h2>
@@ -44,7 +118,7 @@
   </form>
 
   <aside class="space-y-4">
-    <section class="card p-5 space-y-3 text-sm">
+    {% if not hub_enabled %}<section class="card p-5 space-y-3 text-sm">
       <h2 class="section-title">{% translate 'Как подключить' %}</h2>
       <ol class="list-decimal pl-5 space-y-1.5 text-stone-700">
         <li>{% translate 'В Telegram откройте @BotFather и создайте бота командой /newbot.' %}</li>
@@ -54,8 +128,8 @@
         <li>{% translate 'Нажмите «Сохранить и отправить тест».' %}</li>
       </ol>
       <p class="text-xs text-muted">{% translate 'Для группы или канала добавьте бота участником и укажите номер группы (он начинается с минуса) или @имя канала.' %}</p>
-    </section>
-    {% if connected %}
+    </section>{% endif %}
+    {% if legacy_connected %}
       <form method="post" class="card p-5" onsubmit="return confirm('{% translate 'Отключить Telegram? Токен и номер чата будут удалены.' %}');">
         {% csrf_token %}
         <button name="action" value="disconnect" class="btn btn-danger w-full">{% translate 'Отключить Telegram' %}</button>

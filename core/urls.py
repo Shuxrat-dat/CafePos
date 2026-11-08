@@ -5,6 +5,7 @@ from . import setup_views, views
 urlpatterns = [
     path("settings/", views.manage_settings, name="manage_settings"),
     path("telegram/", views.manage_telegram, name="manage_telegram"),
+    path("telegram/status/", views.manage_telegram_status, name="manage_telegram_status"),
     path("audit/", views.manage_audit, name="manage_audit"),
     path("setup/", setup_views.setup_wizard, name="setup_wizard"),
     path("setup/menu-template.csv", setup_views.setup_menu_template, name="setup_menu_template"),

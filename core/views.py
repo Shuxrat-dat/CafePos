@@ -16,9 +16,10 @@ from django.views.decorators.http import require_POST
 
 from accounts import cancel_pin
 from accounts.permissions import MANAGE_ROLES, role_required
+from menu.public_views import _qr_svg
 from pos.models import Hall, Table
 
-from . import audit, telegram
+from . import audit, hub, telegram
 from .forms import CafeSettingsForm, HallForm, StaffForm, TableForm, TelegramSettingsForm
 from .models import AuditLog, CafeSettings
 
@@ -103,11 +104,24 @@ def manage_audit(request):
 
 @manager_only
 def manage_telegram(request):
-    """Подключение Telegram-бота: токен, чат, какие события присылать, тестовое сообщение."""
+    """Telegram: быстрое подключение через центрального бота, свой бот для опытных, что присылать, тест."""
     cafe = CafeSettings.get()
     form = TelegramSettingsForm(request.POST or None, instance=cafe)
     if request.method == "POST":
         action = request.POST.get("action", "save")
+        if action == "hub_connect":
+            ok, result = hub.connect(cafe) if hub.enabled() else (False, _("Быстрое подключение не настроено на сервере."))
+            if not ok:
+                messages.error(request, result)
+            return redirect("manage_telegram")
+        if action == "hub_remove":
+            hub.remove_recipient(cafe, request.POST.get("chat_id", ""))
+            messages.success(request, _("Получатель отключён."))
+            return redirect("manage_telegram")
+        if action == "hub_disconnect":
+            hub.disconnect(cafe)
+            messages.success(request, _("Telegram отключён."))
+            return redirect("manage_telegram")
         if action == "disconnect":
             cafe.telegram_bot_token = ""
             cafe.telegram_chat_id = ""
@@ -125,7 +139,32 @@ def manage_telegram(request):
                 messages.success(request, _("Настройки Telegram сохранены."))
             return redirect("manage_telegram")
         messages.error(request, _("Проверьте поля формы."))
-    return render(request, "manage/telegram.html", {"form": form, "connected": telegram.is_configured(cafe)})
+
+    context = {"form": form, "connected": telegram.is_configured(cafe), "hub_enabled": hub.enabled() or bool(cafe.hub_key),
+               "legacy_connected": bool(cafe.telegram_bot_token.strip() and cafe.telegram_chat_id.strip())}
+    if cafe.hub_key and settings.HUB_URL:
+        state = hub.status(cafe)
+        if state and state.get("lost"):
+            cafe.hub_key = ""
+            cafe.save(update_fields=["hub_key"])
+            messages.warning(request, _("Связь с центром уведомлений потеряна. Подключите Telegram заново."))
+            return redirect("manage_telegram")
+        add_more = request.GET.get("add") == "1"
+        if state is not None and (add_more or not state.get("connected")):
+            state = hub.status(cafe, want_link=True) or state
+        context.update({"hub_key": True, "hub_state": state, "hub_unreachable": state is None,
+                        "hub_add": add_more, "hub_link": (state or {}).get("link_url", "")})
+        if context["hub_link"]:
+            context["hub_qr"] = _qr_svg(context["hub_link"])
+    return render(request, "manage/telegram.html", context)
+
+
+@manager_only
+def manage_telegram_status(request):
+    """Страница подключения спрашивает это каждые несколько секунд и обновляется, когда владелец нажал Start."""
+    cafe = CafeSettings.get()
+    state = hub.status(cafe) if cafe.hub_key else None
+    return JsonResponse({"connected": bool(state and state.get("connected"))})
 
 
 @manager_only

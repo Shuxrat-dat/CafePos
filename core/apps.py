@@ -8,7 +8,9 @@ class CoreConfig(AppConfig):
     def ready(self):
         from django.contrib.auth.signals import user_login_failed
 
-        from . import audit
+        from . import audit, hub
+
+        hub.connect_signals()
 
         def on_failed_login(sender, credentials, request=None, **kwargs):
             """Записываем неудачные входы: это ранний признак подбора пароля."""

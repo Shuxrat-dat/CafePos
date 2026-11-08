@@ -1,0 +1,17 @@
+# Центральный Telegram-бот CafePOS (папка hub/). Один на все заведения.
+# Установка: см. hub/README.md. Токены лежат в /opt/cafepos/app/hub/.env.
+[Unit]
+Description=CafePOS: central Telegram bot
+After=network-online.target
+
+[Service]
+Type=simple
+User=cafepos
+Group=cafepos
+WorkingDirectory=/opt/cafepos/app
+ExecStart=/opt/cafepos/app/.venv/bin/python -m hub
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
