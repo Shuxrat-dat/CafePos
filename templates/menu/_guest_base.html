@@ -33,7 +33,7 @@
           <div class="text-sm text-slate-300 truncate">{% block subtitle %}{% translate 'Меню' %}{% endblock %}</div>
         </div>
       </div>
-      <div class="w-40 shrink-0">{% include "components/lang_switch.html" %}</div>
+      <div class="shrink-0">{% include "components/lang_switch.html" with short=True %}</div>
     </div>
   </header>
   {% block content %}{% endblock %}

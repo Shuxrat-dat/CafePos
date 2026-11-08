@@ -57,7 +57,7 @@ class CafeSettingsForm(StyledModelForm):
         fields = [
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
             "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_mixed", "kitchen_warn_minutes",
-            "loyalty_percent", "cashier_max_discount",
+            "loyalty_percent", "cashier_max_discount", "guest_auto_send",
         ]
 
     def clean(self):

@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Prefetch
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -15,9 +16,13 @@ from accounts.permissions import REPORT_ROLES
 from menu.models import Category, Dish
 from menu.public_views import _qr_svg
 
-from .models import GuestOrder, GuestOrderItem, OrderItem, Table
+from core.models import CafeSettings
+
+from . import services
+from .models import GuestOrder, GuestOrderItem, Order, OrderItem, Table
 from .views import _find_same, _get_order, _panel
 
+MAX_TRACKED_ITEMS = 60
 MAX_LINES = 20
 MAX_QTY = 20
 MAX_PENDING_PER_TABLE = 3
@@ -41,11 +46,45 @@ def _remember_ip_order(request):
         cache.set(f"guest-hour:{ip}", 1, 3600)
 
 
+def _item_state(item):
+    """Что видит гость про своё блюдо: принято, готовится, готово, подано."""
+    S = OrderItem.Status
+    if item.status == S.COOKING:
+        return "cooking", _("Готовится")
+    if item.status == S.READY:
+        return "ready", _("Готово")
+    if item.status == S.SERVED:
+        return "served", _("Подано")
+    return "accepted", _("Принято")
+
+
+def _my_items(request, table):
+    """Блюда, которые гость заказал с этого телефона и которые ещё не оплачены."""
+    ids = request.session.get("guest_items") or []
+    if not ids:
+        return []
+    items = list(
+        OrderItem.objects.filter(id__in=ids, order__table=table, order__status=Order.Status.OPEN)
+        .select_related("dish__category")
+        .order_by("id")
+    )
+    for item in items:
+        item.guest_state, item.guest_label = _item_state(item)
+    return items
+
+
 def table_menu(request, table_id):
-    """Меню стола для гостя: без входа, заказ уходит официанту на подтверждение.
+    """Меню стола для гостя: без входа. Заказ сразу уходит в работу и на кухню
+    (или официанту на подтверждение, если так включено в настройках).
     Заказать можно только по ссылке из QR-кода (с ключом стола), без ключа меню только для просмотра."""
     table = get_object_or_404(Table, id=table_id)
     can_order = constant_time_compare(request.GET.get("k", ""), table.menu_key)
+    auto = CafeSettings.get().guest_auto_send
+    if request.GET.get("status") == "1":
+        # Страница опрашивает этот адрес, чтобы показывать, как готовится заказ
+        if not can_order:
+            raise Http404
+        return render(request, "menu/_guest_status.html", {"my_items": _my_items(request, table)})
     categories = Category.objects.filter(is_active=True).prefetch_related(
         Prefetch("dishes", queryset=Dish.objects.filter(is_available=True, is_hidden=False), to_attr="available")
     )
@@ -75,14 +114,21 @@ def table_menu(request, table_id):
         elif pending >= MAX_PENDING_PER_TABLE:
             error = _("Заказ этого стола уже ожидает официанта. Подождите, пожалуйста.")
         else:
+            lines = [(dishes[i], q) for i, q in picked.items()]
             with transaction.atomic():
-                guest = GuestOrder.objects.create(table=table)
-                GuestOrderItem.objects.bulk_create(
-                    [GuestOrderItem(guest_order=guest, dish=dishes[i], quantity=q) for i, q in picked.items()]
+                placed = services.place_guest_order(table, lines) if auto else None
+                guest = GuestOrder.objects.create(
+                    table=table, status=GuestOrder.Status.ACCEPTED if placed else GuestOrder.Status.PENDING
                 )
+                GuestOrderItem.objects.bulk_create(
+                    [GuestOrderItem(guest_order=guest, dish=dish, quantity=q) for dish, q in lines]
+                )
+            if placed:
+                tracked = (request.session.get("guest_items") or []) + [item.id for item in placed[1]]
+                request.session["guest_items"] = tracked[-MAX_TRACKED_ITEMS:]
             request.session["guest_last_order"] = now
             _remember_ip_order(request)
-            return redirect(f"{table.menu_path()}&sent=1")
+            return redirect(f"{table.menu_path()}&sent={2 if placed else 1}")
 
     for category in categories:
         for dish in category.available:
@@ -92,7 +138,10 @@ def table_menu(request, table_id):
         "can_order": can_order,
         "categories": categories,
         "error": error,
-        "sent": request.GET.get("sent") == "1",
+        "auto": auto,
+        "sent": request.GET.get("sent") in ("1", "2"),
+        "sent_to_kitchen": request.GET.get("sent") == "2",
+        "my_items": _my_items(request, table) if can_order else [],
     }
     return render(request, "menu/table_menu.html", context)
 

@@ -2,6 +2,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -58,11 +59,15 @@ def set_order_type(order, order_type, table=None):
 
 # ---------- кухня ----------
 
-def send_to_kitchen(order):
-    """Неотправленные позиции уходят в очередь кухни и на кухонные принтеры. Возвращает число позиций."""
+def send_to_kitchen(order, item_ids=None):
+    """Неотправленные позиции уходят в очередь кухни и на кухонные принтеры. Возвращает число позиций.
+    item_ids ограничивает отправку выбранными позициями (заказ гостя не трогает черновик официанта)."""
     from printing import services as printing
 
-    ids = list(order.items.filter(status=OrderItem.Status.NEW).values_list("id", flat=True))
+    new_items = order.items.filter(status=OrderItem.Status.NEW)
+    if item_ids is not None:
+        new_items = new_items.filter(id__in=item_ids)
+    ids = list(new_items.values_list("id", flat=True))
     if not ids:
         return 0
     count = order.items.filter(id__in=ids, status=OrderItem.Status.NEW).update(
@@ -70,6 +75,59 @@ def send_to_kitchen(order):
     )
     printing.after_commit(printing.queue_kitchen, order, ids)
     return count
+
+
+def _guest_order_waiter():
+    """Кто ведёт заказ гостя, если за столом ещё нет заказа: самый свободный из активных официантов."""
+    from accounts.models import User
+
+    active = User.objects.filter(is_active=True)
+    waiter = (
+        active.filter(role=User.Role.WAITER)
+        .annotate(busy=Count("orders", filter=Q(orders__status=Order.Status.OPEN)))
+        .order_by("busy", "id")
+        .first()
+    )
+    # Нет официантов (например, кафе из одного человека): заказ берёт тот, кто может им управлять
+    return waiter or active.exclude(role=User.Role.COOK).order_by("id").first()
+
+
+@transaction.atomic
+def place_guest_order(table, lines):
+    """Заказ гостя со стола сразу попадает в заказ стола и на кухню.
+    lines — список (блюдо, количество). Возвращает (заказ, созданные позиции) или None, если принять нельзя."""
+    order = (
+        Order.objects.filter(table=table, status=Order.Status.OPEN, order_type=Order.OrderType.DINE_IN)
+        .annotate(n_items=Count("items"))
+        .order_by("-n_items", "id")
+        .first()
+    )
+    if order is None:
+        waiter = _guest_order_waiter()
+        if waiter is None:
+            return None
+        order = create_order(waiter, Order.OrderType.DINE_IN, table)
+        order.note = "QR"
+        order.save(update_fields=["note"])
+    created = []
+    for dish, quantity in lines:
+        if not dish.can_order:
+            continue
+        # Вес гость не знает: каждая порция отдельной позицией, вес укажет официант
+        parts = [1] * quantity if dish.sold_by_weight else [quantity]
+        for part in parts:
+            created.append(OrderItem.objects.create(order=order, dish=dish, quantity=part))
+    if not created:
+        return None
+    if table.is_reserved:
+        table.reserved_for, table.reserved_at = "", None
+        table.save(update_fields=["reserved_for", "reserved_at"])
+    if order.bill_requested_at:
+        # Состав изменился: прежний пречек больше не актуален
+        order.bill_requested_at = None
+        order.save(update_fields=["bill_requested_at"])
+    send_to_kitchen(order, [item.id for item in created])
+    return order, created
 
 
 def start_cooking(order):

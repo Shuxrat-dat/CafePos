@@ -1,0 +1,19 @@
+{% load i18n ui %}
+{# Что гость уже заказал со своего телефона и как это готовится. Страница обновляет блок сама. #}
+{% if my_items %}
+  <section class="rounded-2xl bg-white border border-line shadow-sm overflow-hidden">
+    <div class="px-4 py-3 bg-brand-50 flex items-center gap-2 font-bold">{% icon "clock" 18 %}{% translate 'Ваш заказ' %}</div>
+    <ul class="divide-y divide-line">
+      {% for item in my_items %}
+        <li class="px-4 py-2.5 flex items-center justify-between gap-3">
+          <span class="min-w-0 truncate"><span class="font-semibold">{{ item.dish|tr }}</span> <span class="text-muted">× {{ item.quantity }}</span></span>
+          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold
+            {% if item.guest_state == 'cooking' %}bg-amber-100 text-amber-800
+            {% elif item.guest_state == 'ready' %}bg-sage-100 text-sage
+            {% elif item.guest_state == 'served' %}bg-emerald-50 text-emerald-700
+            {% else %}bg-stone-100 text-stone-700{% endif %}">{{ item.guest_label }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}

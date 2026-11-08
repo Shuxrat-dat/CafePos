@@ -3774,3 +3774,42 @@ msgstr "Bildirishnomalar markazi hozir mavjud emas. Sahifani bir daqiqadan keyin
 
 msgid "Эта страница обновится сама."
 msgstr "Bu sahifa oʻzi yangilanadi."
+
+msgid "Ваш заказ"
+msgstr "Sizning buyurtmangiz"
+
+msgid "Вес уточнит официант"
+msgstr "Vaznini ofitsiant aniqlaydi"
+
+msgid "Выберите блюда и закажите прямо с телефона: мы принесём всё к вашему столу."
+msgstr "Taomlarni tanlang va telefondan buyurtma bering: hammasini stolingizga olib kelamiz."
+
+msgid "Добро пожаловать!"
+msgstr "Xush kelibsiz!"
+
+msgid "Заказ гостя со стола сразу попадает в работу и на кухню. Выключено — его сначала подтверждает официант."
+msgstr "Stoldagi mehmon buyurtmasi darhol ishga tushadi va oshxonaga boradi. Oʻchirilsa, uni avval ofitsiant tasdiqlaydi."
+
+msgid "Заказ принят и уже передан на кухню. Ниже видно, как он готовится."
+msgstr "Buyurtma qabul qilindi va oshxonaga uzatildi. Quyida uning qanday tayyorlanayotganini koʻrasiz."
+
+msgid "Заказ сразу уйдёт на кухню. Оплатить можно у официанта после еды."
+msgstr "Buyurtma darhol oshxonaga boradi. Ovqatdan keyin ofitsiantga toʻlashingiz mumkin."
+
+msgid "Заказать"
+msgstr "Buyurtma berish"
+
+msgid "Заказы по QR сразу на кухню"
+msgstr "QR buyurtmalari darhol oshxonaga"
+
+msgid "Отправляем…"
+msgstr "Yuborilmoqda…"
+
+msgid "Официант подойдёт и подтвердит заказ."
+msgstr "Ofitsiant kelib buyurtmani tasdiqlaydi."
+
+msgid "Поиск по меню"
+msgstr "Menyudan qidirish"
+
+msgid "Принято"
+msgstr "Qabul qilindi"

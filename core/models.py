@@ -115,6 +115,10 @@ class CafeSettings(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(30)],
         help_text=_("Гость с номером телефона в заказе копит баллы. 1 балл = 1 сум. 0 — не начислять."),
     )
+    guest_auto_send = models.BooleanField(
+        _("Заказы по QR сразу на кухню"), default=True,
+        help_text=_("Заказ гостя со стола сразу попадает в работу и на кухню. Выключено — его сначала подтверждает официант."),
+    )
     tg_discount_percent = models.PositiveSmallIntegerField(
         _("Скидка считается крупной от, %"), default=20,
         validators=[MinValueValidator(1), MaxValueValidator(100)],

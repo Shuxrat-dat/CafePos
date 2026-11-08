@@ -3,79 +3,385 @@
 {% block title %}{% translate 'Меню' %} · {{ table.number }}{% endblock %}
 {% block subtitle %}{{ table.hall|tr }} · {% blocktranslate trimmed with n=table.number %}стол {{ n }}{% endblocktranslate %}{% endblock %}
 {% block content %}
-<form method="post" class="max-w-xl mx-auto p-4 pb-32 space-y-6" data-currency="{% translate 'сум' %}" id="guest-form">
-  {% csrf_token %}
-  {% if sent %}
-    <p class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium">{% translate 'Заказ отправлен официанту. Он подойдёт и подтвердит его.' %}</p>
-  {% endif %}
-  {% if error %}
-    <p class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium">{{ error }}</p>
-  {% elif not can_order %}
-    <p class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-medium">{% translate 'Чтобы заказать, отсканируйте QR-код на столе или позовите официанта.' %}</p>
-  {% endif %}
+<style>
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .sheet-panel { transform: translateY(100%); transition: transform .28s cubic-bezier(.22, 1, .36, 1); }
+  .sheet-open .sheet-panel { transform: translateY(0); }
+  .sheet-back { opacity: 0; transition: opacity .2s ease; }
+  .sheet-open .sheet-back { opacity: 1; }
+  .dish-card { transition: transform .15s ease; }
+  .dish-card:active { transform: scale(.985); }
+  .safe-bottom { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-panel, .sheet-back, .dish-card { transition: none; }
+  }
+</style>
 
-  {% for category in categories %}
-    <section>
-      <h2 class="text-lg font-bold mb-2">{{ category|tr }}</h2>
-      <div class="bg-white rounded-xl border border-line divide-y divide-line overflow-hidden">
-        {% for dish in category.available %}
-          <div class="p-3 flex items-center gap-3">
-            <span class="w-16 h-16 rounded-xl overflow-hidden shrink-0">{% include "components/dish_image.html" with cls="w-16 h-16" size=24 %}</span>
-            <div class="min-w-0 flex-1">
-              <div class="font-semibold leading-snug">{{ dish|tr }}</div>
-              <div class="font-bold text-sm mt-0.5">{{ dish.price|money }}{{ dish|per_kg }}</div>
-              {% include "components/dish_meta.html" %}
-            </div>
-            {% if can_order %}<div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" data-delta="-1" class="qty-btn w-10 h-10 rounded-full bg-slate-100 text-xl font-bold" aria-label="{% translate 'Уменьшить' %}">−</button>
-              <input type="number" name="qty_{{ dish.id }}" value="{{ dish.picked }}" min="0" max="20"
-                     data-price="{{ dish.price|stringformat:'d' }}" inputmode="numeric"
-                     class="qty w-11 text-center border border-line rounded-lg py-2 font-semibold">
-              <button type="button" data-delta="1" class="qty-btn w-10 h-10 rounded-full bg-brand text-white text-xl font-bold" aria-label="{% translate 'Увеличить' %}">+</button>
-            </div>{% endif %}
-          </div>
+<form method="post" id="guest-form" autocomplete="off"
+      data-can-order="{% if can_order %}1{% else %}0{% endif %}" data-table="{{ table.id }}"
+      data-sent="{% if sent %}1{% else %}0{% endif %}" data-currency="{% translate 'сум' %}"
+      data-status-url="{{ table.menu_path }}&amp;status=1" data-has-items="{% if my_items %}1{% else %}0{% endif %}"
+      data-wait="{% translate 'Отправляем…' %}" data-more="{% translate 'Увеличить' %}" data-less="{% translate 'Уменьшить' %}">
+  {% csrf_token %}
+
+  <div class="max-w-xl mx-auto px-4 pt-4 space-y-3">
+    {% if sent %}
+      <p class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold flex gap-3">
+        {% icon "check-circle" 22 %}
+        <span>{% if sent_to_kitchen %}{% translate 'Заказ принят и уже передан на кухню. Ниже видно, как он готовится.' %}{% else %}{% translate 'Заказ отправлен официанту. Он подойдёт и подтвердит его.' %}{% endif %}</span>
+      </p>
+    {% endif %}
+    {% if error %}
+      <p class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 font-medium">{{ error }}</p>
+    {% elif not can_order %}
+      <p class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 font-medium">{% translate 'Чтобы заказать, отсканируйте QR-код на столе или позовите официанта.' %}</p>
+    {% elif not sent and not my_items %}
+      <div class="rounded-2xl bg-night text-white p-5">
+        <div class="text-xl font-bold">{% translate 'Добро пожаловать!' %}</div>
+        <p class="text-sm text-slate-300 mt-1">{% translate 'Выберите блюда и закажите прямо с телефона: мы принесём всё к вашему столу.' %}</p>
+      </div>
+    {% endif %}
+    <div id="guest-status">{% include "menu/_guest_status.html" %}</div>
+  </div>
+
+  {# Поиск и категории: остаются под рукой при прокрутке #}
+  <nav class="sticky top-0 z-30 bg-canvas/95 backdrop-blur border-b border-line mt-3">
+    <div class="max-w-xl mx-auto px-4 pt-3 space-y-2">
+      <label class="relative block">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted">{% icon "search" 18 %}</span>
+        <input id="menu-search" type="search" placeholder="{% translate 'Поиск по меню' %}" enterkeyhint="search"
+               class="w-full h-11 pl-10 pr-3 rounded-xl bg-white border border-line text-base outline-none focus:border-brand">
+      </label>
+      <div id="chips" class="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-4 px-4">
+        {% for category in categories %}
+          <button type="button" data-target="cat-{{ category.id }}"
+                  class="chip shrink-0 h-9 px-4 rounded-full border border-line bg-white text-sm font-semibold whitespace-nowrap">{{ category|tr }}</button>
         {% endfor %}
       </div>
-    </section>
-  {% empty %}
-    <p class="text-center text-muted py-10">{% translate 'Меню скоро появится.' %}</p>
-  {% endfor %}
+    </div>
+  </nav>
+
+  <main class="max-w-xl mx-auto px-4 pt-4 pb-32 space-y-7">
+    {% for category in categories %}
+      <section id="cat-{{ category.id }}" class="cat scroll-mt-32">
+        <h2 class="text-xl font-extrabold mb-3">{{ category|tr }}</h2>
+        <div class="space-y-3">
+          {% for dish in category.available %}
+            <article class="dish-card relative bg-white rounded-2xl border border-line shadow-sm p-3 flex gap-3 cursor-pointer"
+                     data-id="{{ dish.id }}" data-name="{{ dish|tr }}" data-price="{{ dish.price|stringformat:'d' }}"
+                     data-price-text="{{ dish.price|money }}{{ dish|per_kg }}" data-picked="{{ dish.picked }}"
+                     data-desc="{{ dish|tr:'description' }}" data-search="{{ dish|tr|lower }} {{ category|tr|lower }}">
+              <div class="min-w-0 flex-1 flex flex-col">
+                <h3 class="font-bold leading-snug">{{ dish|tr }}</h3>
+                {% with d=dish|tr:"description" %}{% if d %}<p class="text-sm text-muted mt-1 line-clamp-2">{{ d }}</p>{% endif %}{% endwith %}
+                <div class="dish-meta">
+                  {% include "components/dish_meta.html" %}
+                  {% if dish.sold_by_weight %}<div class="mt-1.5"><span class="inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-semibold bg-stone-100 text-stone-600">{% translate 'Вес уточнит официант' %}</span></div>{% endif %}
+                </div>
+                <div class="mt-auto pt-2 font-extrabold text-brand">{{ dish.price|money }}{{ dish|per_kg }}</div>
+              </div>
+              <div class="relative shrink-0 w-28 pb-3">
+                <div class="dish-img rounded-2xl overflow-hidden">{% include "components/dish_image.html" with cls="w-28 h-28" size=36 %}</div>
+                {% if can_order %}<div class="ctl absolute inset-x-0 bottom-0 flex justify-center"></div>{% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% empty %}
+      <p class="text-center text-muted py-10">{% translate 'Меню скоро появится.' %}</p>
+    {% endfor %}
+    <p id="no-results" class="hidden text-center text-muted py-10">{% translate 'Ничего не найдено' %}</p>
+    {% if cafe.address or cafe.phone %}<p class="text-center text-sm text-muted">{{ cafe.address }}{% if cafe.address and cafe.phone %} · {% endif %}{{ cafe.phone }}</p>{% endif %}
+  </main>
 
   {% if can_order %}
-  <div class="fixed bottom-0 inset-x-0 bg-white border-t border-line p-3">
-    <div class="max-w-xl mx-auto flex items-center gap-3">
-      <div class="flex-1">
-        <div class="text-xs text-muted">{% translate 'Итого' %}</div>
-        <div id="total" class="text-xl font-bold">0 {% translate 'сум' %}</div>
+    {# Корзина: появляется, когда выбрано хотя бы одно блюдо #}
+    <div id="cart-bar" class="hidden fixed bottom-0 inset-x-0 z-40 px-4 safe-bottom pt-2 bg-gradient-to-t from-canvas via-canvas/95 to-transparent">
+      <button type="button" id="open-cart" class="max-w-xl mx-auto w-full h-14 rounded-2xl bg-brand text-white font-bold shadow-lg flex items-center justify-between px-5">
+        <span class="flex items-center gap-2">{% icon "shopping-bag" 20 %}{% translate 'Корзина' %} · <span id="cart-count">0</span></span>
+        <span id="cart-total">0</span>
+      </button>
+    </div>
+
+    <div id="sheet-cart" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="{% translate 'Корзина' %}">
+      <div class="sheet-back absolute inset-0 bg-black/50" data-close></div>
+      <div class="sheet-panel absolute bottom-0 inset-x-0 max-h-[88vh] overflow-y-auto bg-canvas rounded-t-3xl">
+        <div class="max-w-xl mx-auto p-5 safe-bottom">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xl font-extrabold">{% translate 'Ваш заказ' %}</h2>
+            <button type="button" data-close class="w-10 h-10 grid place-items-center rounded-full bg-white border border-line" aria-label="{% translate 'Закрыть' %}">{% icon "x" 18 %}</button>
+          </div>
+          <ul id="cart-lines" class="bg-white rounded-2xl border border-line divide-y divide-line"></ul>
+          <div id="cart-inputs"></div>
+          <div class="flex items-center justify-between mt-4 text-lg">
+            <span class="text-muted font-semibold">{% translate 'Итого' %}</span>
+            <span id="cart-sum" class="font-extrabold">0</span>
+          </div>
+          <button id="submit-btn" class="mt-4 w-full h-14 rounded-2xl bg-brand text-white text-lg font-bold">
+            {% if auto %}{% translate 'Заказать' %}{% else %}{% translate 'Отправить официанту' %}{% endif %}
+          </button>
+          <p class="mt-3 text-center text-sm text-muted">
+            {% if auto %}{% translate 'Заказ сразу уйдёт на кухню. Оплатить можно у официанта после еды.' %}{% else %}{% translate 'Официант подойдёт и подтвердит заказ.' %}{% endif %}
+          </p>
+        </div>
       </div>
-      <button class="px-5 h-14 rounded-xl bg-brand text-white text-base font-bold">{% translate 'Отправить официанту' %}</button>
+    </div>
+  {% endif %}
+
+  {# Карточка блюда: большое фото, описание и количество #}
+  <div id="sheet-dish" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+    <div class="sheet-back absolute inset-0 bg-black/50" data-close></div>
+    <div class="sheet-panel absolute bottom-0 inset-x-0 max-h-[92vh] overflow-y-auto bg-canvas rounded-t-3xl">
+      <div class="max-w-xl mx-auto">
+        <div class="relative">
+          <div id="dish-photo" class="w-full aspect-[4/3] overflow-hidden"></div>
+          <button type="button" data-close class="absolute top-3 right-3 w-10 h-10 grid place-items-center rounded-full bg-white/90 shadow" aria-label="{% translate 'Закрыть' %}">{% icon "x" 18 %}</button>
+        </div>
+        <div class="p-5 safe-bottom">
+          <h2 id="dish-name" class="text-2xl font-extrabold leading-tight"></h2>
+          <div id="dish-price" class="mt-1 text-xl font-extrabold text-brand"></div>
+          <p id="dish-desc" class="mt-3 text-muted"></p>
+          <div id="dish-meta"></div>
+          {% if can_order %}
+            <div class="mt-5 flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <button type="button" id="dish-minus" class="w-12 h-12 rounded-full bg-white border border-line text-2xl font-bold" aria-label="{% translate 'Уменьшить' %}">−</button>
+                <span id="dish-qty" class="w-8 text-center text-xl font-bold">0</span>
+                <button type="button" id="dish-plus" class="w-12 h-12 rounded-full bg-brand text-white text-2xl font-bold" aria-label="{% translate 'Увеличить' %}">+</button>
+              </div>
+              <button type="button" data-close class="flex-1 h-12 rounded-2xl bg-night text-white font-bold">{% translate 'Готово' %}</button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
-  {% endif %}
 </form>
 {% endblock %}
 {% block scripts %}
 <script>
   (function () {
     var form = document.getElementById('guest-form');
-    var inputs = form.querySelectorAll('.qty');
-    var out = document.getElementById('total');
-    if (!out) return;
-    function recalc() {
-      var sum = 0;
-      inputs.forEach(function (i) { sum += (parseInt(i.value, 10) || 0) * (parseFloat(i.dataset.price) || 0); });
-      out.textContent = Math.round(sum).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ' + form.dataset.currency;
+    var canOrder = form.dataset.canOrder === '1';
+    var MAX = 20;
+    var currency = form.dataset.currency;
+    var storeKey = 'cafepos-cart-' + form.dataset.table;
+    var cards = Array.prototype.slice.call(form.querySelectorAll('.dish-card'));
+    var byId = {};
+    cards.forEach(function (c) { byId[c.dataset.id] = c; });
+    var cart = {};
+
+    function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ' + currency; }
+    function store(value) { try { if (value === null) localStorage.removeItem(storeKey); else localStorage.setItem(storeKey, JSON.stringify(value)); } catch (e) {} }
+    function restore() { try { return JSON.parse(localStorage.getItem(storeKey) || '{}') || {}; } catch (e) { return {}; } }
+
+    function init() {
+      if (!canOrder) return;
+      if (form.dataset.sent === '1') { store(null); }
+      cards.forEach(function (c) { var q = parseInt(c.dataset.picked, 10) || 0; if (q > 0) cart[c.dataset.id] = q; });
+      if (!Object.keys(cart).length) {
+        var saved = restore();
+        Object.keys(saved).forEach(function (id) {
+          var q = Math.min(MAX, parseInt(saved[id], 10) || 0);
+          if (byId[id] && q > 0) cart[id] = q;
+        });
+      }
     }
-    form.querySelectorAll('.qty-btn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var input = b.parentNode.querySelector('.qty');
-        var v = (parseInt(input.value, 10) || 0) + parseInt(b.dataset.delta, 10);
-        input.value = Math.max(0, Math.min(20, v));
-        recalc();
+
+    function setQty(id, q) {
+      q = Math.max(0, Math.min(MAX, q));
+      if (q) cart[id] = q; else delete cart[id];
+      store(cart);
+      render();
+    }
+
+    function el(tag, cls, text) {
+      var node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function button(label, cls, onClick, aria) {
+      var b = el('button', cls, label);
+      b.type = 'button';
+      if (aria) b.setAttribute('aria-label', aria);
+      b.addEventListener('click', function (e) { e.stopPropagation(); onClick(); });
+      return b;
+    }
+
+    function renderCard(card) {
+      var ctl = card.querySelector('.ctl');
+      if (!ctl) return;
+      var id = card.dataset.id, q = cart[id] || 0;
+      ctl.textContent = '';
+      if (!q) {
+        ctl.appendChild(button('+', 'w-11 h-11 rounded-full bg-brand text-white text-2xl font-bold shadow-lg', function () { setQty(id, 1); }, form.dataset.more));
+      } else {
+        var pill = el('div', 'flex items-center bg-white rounded-full shadow-lg border border-line');
+        pill.appendChild(button('−', 'w-11 h-11 text-2xl font-bold', function () { setQty(id, q - 1); }, form.dataset.less));
+        pill.appendChild(el('span', 'min-w-6 text-center font-bold', String(q)));
+        pill.appendChild(button('+', 'w-11 h-11 text-2xl font-bold text-brand', function () { setQty(id, q + 1); }, form.dataset.more));
+        ctl.appendChild(pill);
+      }
+    }
+
+    function renderCart() {
+      var lines = document.getElementById('cart-lines');
+      var inputs = document.getElementById('cart-inputs');
+      var bar = document.getElementById('cart-bar');
+      lines.textContent = '';
+      inputs.textContent = '';
+      var count = 0, sum = 0;
+      Object.keys(cart).forEach(function (id) {
+        var card = byId[id], q = cart[id];
+        if (!card) return;
+        var price = parseFloat(card.dataset.price) || 0;
+        count += q; sum += q * price;
+        var li = el('li', 'p-3 flex items-center gap-3');
+        var info = el('div', 'min-w-0 flex-1');
+        info.appendChild(el('div', 'font-semibold leading-snug', card.dataset.name));
+        info.appendChild(el('div', 'text-sm text-muted', fmt(q * price)));
+        li.appendChild(info);
+        var pill = el('div', 'flex items-center gap-1 shrink-0');
+        pill.appendChild(button('−', 'w-10 h-10 rounded-full bg-stone-100 text-xl font-bold', function () { setQty(id, q - 1); }, form.dataset.less));
+        pill.appendChild(el('span', 'w-7 text-center font-bold', String(q)));
+        pill.appendChild(button('+', 'w-10 h-10 rounded-full bg-brand text-white text-xl font-bold', function () { setQty(id, q + 1); }, form.dataset.more));
+        li.appendChild(pill);
+        lines.appendChild(li);
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden'; hidden.name = 'qty_' + id; hidden.value = q;
+        inputs.appendChild(hidden);
+      });
+      document.getElementById('cart-count').textContent = count;
+      document.getElementById('cart-total').textContent = fmt(sum);
+      document.getElementById('cart-sum').textContent = fmt(sum);
+      bar.classList.toggle('hidden', count === 0);
+      if (count === 0) closeSheet('sheet-cart');
+    }
+
+    function render() {
+      if (!canOrder) return;
+      cards.forEach(renderCard);
+      renderCart();
+      var dishSheet = document.getElementById('sheet-dish');
+      if (dishSheet.dataset.id) document.getElementById('dish-qty').textContent = cart[dishSheet.dataset.id] || 0;
+    }
+
+    // ----- нижние панели -----
+    function openSheet(id) {
+      var sheet = document.getElementById(id);
+      sheet.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { sheet.classList.add('sheet-open'); }); });
+    }
+    function closeSheet(id) {
+      var sheet = document.getElementById(id);
+      if (!sheet || sheet.classList.contains('hidden')) return;
+      sheet.classList.remove('sheet-open');
+      setTimeout(function () {
+        sheet.classList.add('hidden');
+        if (!form.querySelector('.sheet-open')) document.body.style.overflow = '';
+      }, 280);
+    }
+    form.querySelectorAll('[data-close]').forEach(function (node) {
+      node.addEventListener('click', function () {
+        var sheet = node.closest('[role=dialog]');
+        if (sheet) closeSheet(sheet.id);
       });
     });
-    inputs.forEach(function (i) { i.addEventListener('input', recalc); });
-    recalc();
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeSheet('sheet-dish'); closeSheet('sheet-cart'); }
+    });
+
+    function openDish(card) {
+      var sheet = document.getElementById('sheet-dish');
+      sheet.dataset.id = card.dataset.id;
+      var photo = document.getElementById('dish-photo');
+      photo.textContent = '';
+      var img = card.querySelector('.dish-img > span');
+      if (img) { var clone = img.cloneNode(true); clone.className = 'relative block overflow-hidden w-full h-full'; photo.appendChild(clone); }
+      document.getElementById('dish-name').textContent = card.dataset.name;
+      document.getElementById('dish-price').textContent = card.dataset.priceText;
+      var desc = document.getElementById('dish-desc');
+      desc.textContent = card.dataset.desc;
+      desc.classList.toggle('hidden', !card.dataset.desc);
+      var meta = document.getElementById('dish-meta');
+      meta.textContent = '';
+      var src = card.querySelector('.dish-meta');
+      if (src) meta.appendChild(src.cloneNode(true));
+      if (canOrder) document.getElementById('dish-qty').textContent = cart[card.dataset.id] || 0;
+      openSheet('sheet-dish');
+    }
+    cards.forEach(function (card) { card.addEventListener('click', function () { openDish(card); }); });
+
+    if (canOrder) {
+      document.getElementById('open-cart').addEventListener('click', function () { openSheet('sheet-cart'); });
+      document.getElementById('dish-plus').addEventListener('click', function () {
+        var id = document.getElementById('sheet-dish').dataset.id; setQty(id, (cart[id] || 0) + 1);
+      });
+      document.getElementById('dish-minus').addEventListener('click', function () {
+        var id = document.getElementById('sheet-dish').dataset.id; setQty(id, (cart[id] || 0) - 1);
+      });
+      form.addEventListener('submit', function () {
+        var btn = document.getElementById('submit-btn');
+        // Кнопку выключаем после отправки формы, иначе браузер не передаст данные
+        setTimeout(function () { btn.disabled = true; btn.textContent = form.dataset.wait; btn.classList.add('opacity-70'); }, 0);
+      });
+    }
+
+    // ----- поиск и категории -----
+    var search = document.getElementById('menu-search');
+    var sections = Array.prototype.slice.call(form.querySelectorAll('.cat'));
+    var chips = Array.prototype.slice.call(form.querySelectorAll('.chip'));
+    search.addEventListener('input', function () {
+      var q = search.value.trim().toLowerCase(), any = false;
+      cards.forEach(function (c) { c.classList.toggle('hidden', !!q && c.dataset.search.indexOf(q) === -1); });
+      sections.forEach(function (s) {
+        var visible = s.querySelector('.dish-card:not(.hidden)');
+        s.classList.toggle('hidden', !visible);
+        if (visible) any = true;
+      });
+      document.getElementById('no-results').classList.toggle('hidden', any);
+    });
+    search.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var target = document.getElementById(chip.dataset.target);
+        if (target) target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
+    var ticking = false;
+    function spy() {
+      ticking = false;
+      var current = null;
+      sections.forEach(function (s) { if (!s.classList.contains('hidden') && s.getBoundingClientRect().top <= 150) current = s; });
+      chips.forEach(function (chip) {
+        var on = !!current && chip.dataset.target === current.id;
+        chip.classList.toggle('bg-brand', on); chip.classList.toggle('text-white', on);
+        chip.classList.toggle('border-brand', on); chip.classList.toggle('bg-white', !on);
+        if (on) { var box = chip.parentNode; box.scrollLeft = chip.offsetLeft - box.clientWidth / 2 + chip.offsetWidth / 2; }
+      });
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(spy); } }, { passive: true });
+
+    // ----- статус заказа: обновляется сам -----
+    if (canOrder && form.dataset.hasItems === '1') {
+      var box = document.getElementById('guest-status');
+      setInterval(function () {
+        if (document.hidden) return;
+        fetch(form.dataset.statusUrl, { credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.text() : null; })
+          .then(function (html) { if (html !== null) box.innerHTML = html; })
+          .catch(function () {});
+      }, 15000);
+    }
+
+    init();
+    render();
+    spy();
   })();
 </script>
 {% endblock %}
