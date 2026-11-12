@@ -1,7 +1,35 @@
 {% extends "base.html" %}
 {% load i18n ui %}
 {% block title %}{% translate 'Столы' %}{% endblock %}
+{% block main_class %}{% if user.simple_floor %}px-2 py-2 sm:px-3 w-full{% else %}px-4 py-4 lg:px-6 lg:py-5 w-full mx-auto{% endif %}{% endblock %}
 {% block content %}
+{% if user.simple_floor %}
+{# Официант: узкий список залов слева, компактные карточки столов справа #}
+<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start">
+  <div id="hall-filter" class="flex sm:flex-col gap-1.5 w-full sm:w-[104px] shrink-0 overflow-x-auto sm:overflow-visible no-scrollbar sm:sticky sm:top-16">
+    <button type="button" data-hall="" class="hall-btn hall-btn-active"><span>{% translate 'Все' %}</span></button>
+    {% for hall in halls %}
+      <button type="button" data-hall="{{ hall.id }}" class="hall-btn"><span class="truncate">{{ hall|tr }}</span><span class="hall-count" data-hall-count="{{ hall.id }}"></span></button>
+    {% endfor %}
+  </div>
+  <div class="flex-1 min-w-0 w-full">
+    <div class="relative mb-2 md:hidden">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{% icon "search" 16 %}</span>
+      <input id="table-search" type="search" class="input pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
+    </div>
+    <div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
+      {% include "pos/_floor_grid.html" %}
+    </div>
+  </div>
+</div>
+<style>
+  .hall-btn { display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:44px; padding:0 10px; border-radius:12px; background:#EFE8DC; color:#57534e; font-size:13px; font-weight:600; white-space:nowrap; text-align:left; flex-shrink:0; }
+  .hall-btn-active { background:#7A3F1E; color:#fff; }
+  .hall-count { min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:#fff; color:#7A3F1E; font-size:11px; font-weight:700; display:none; align-items:center; justify-content:center; }
+  .hall-count.on { display:inline-flex; }
+  @media (min-width:640px) { .hall-btn { width:100%; } }
+</style>
+{% else %}
 <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
   <div>
     <h1 class="page-title">{% translate 'Столы' %}</h1>
@@ -39,6 +67,7 @@
 <div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
   {% include "pos/_floor_grid.html" %}
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -47,16 +76,18 @@
     var box = document.getElementById('tables-grid');
     var search = document.getElementById('table-search');
     var chips = document.getElementById('table-filter');
-    var state = 'all';
+    var halls = document.getElementById('hall-filter');
+    var state = 'all', hall = '';
     function match(s) {
       if (state === 'all') return true;
       if (state === 'busy') return s === 'busy' || s === 'bill' || s === 'locked';
       return s === state;
     }
     function apply() {
-      var term = search.value.trim().toLowerCase(), any = false;
+      var term = search ? search.value.trim().toLowerCase() : '', any = false;
       box.querySelectorAll('[data-hall-section]').forEach(function (section) {
         var visible = false;
+        if (hall && section.dataset.hallSection !== hall) { section.classList.add('hidden'); return; }
         section.querySelectorAll('[data-table]').forEach(function (t) {
           var ok = match(t.dataset.state) && (term === '' || t.dataset.table.toLowerCase().indexOf(term) !== -1);
           t.classList.toggle('hidden', !ok);
@@ -68,16 +99,34 @@
       var empty = document.getElementById('floor-empty');
       if (empty) empty.classList.toggle('hidden', any);
     }
-    search.addEventListener('input', apply);
-    chips.addEventListener('click', function (e) {
+    // Счётчик занятых столов рядом с названием зала
+    function counts() {
+      if (!halls) return;
+      box.querySelectorAll('[data-hall-section]').forEach(function (section) {
+        var n = 0;
+        section.querySelectorAll('[data-table]').forEach(function (t) { if (t.dataset.state !== 'free') n++; });
+        var badge = halls.querySelector('[data-hall-count="' + section.dataset.hallSection + '"]');
+        if (badge) { badge.textContent = n; badge.classList.toggle('on', n > 0); }
+      });
+    }
+    counts();
+    if (search) search.addEventListener('input', apply);
+    if (chips) chips.addEventListener('click', function (e) {
       var b = e.target.closest('[data-filter]');
       if (!b) return;
       state = b.dataset.filter;
       chips.querySelectorAll('[data-filter]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
       apply();
     });
+    if (halls) halls.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-hall]');
+      if (!b) return;
+      hall = b.dataset.hall;
+      halls.querySelectorAll('[data-hall]').forEach(function (c) { c.classList.toggle('hall-btn-active', c === b); });
+      apply();
+    });
     // После автообновления фильтр и поиск остаются
-    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target === box) apply(); });
+    document.body.addEventListener('htmx:afterSwap', function (e) { if (e.target === box) { apply(); counts(); } });
   })();
 </script>
 {% endblock %}

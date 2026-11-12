@@ -49,8 +49,10 @@ class TableMapTests(TestCase):
     def test_page_shows_halls_and_tables_with_states(self):
         self.client.force_login(self.waiter)
         page = self.client.get(reverse("table_map"))
-        self.assertContains(page, "Нажмите на стол, чтобы открыть заказ.")
         html = page.content.decode()
+        # Официанту компактный вид: узкий список залов вместо заголовка и сводки
+        self.assertIn('id="hall-filter"', html)
+        self.assertNotIn("Нажмите на стол, чтобы открыть заказ.", html)
         for number, state in (("1", "free"), ("2", "busy"), ("3", "locked"), ("4", "reserved")):
             self.assertIn(f'data-table="{number}" data-state="{state}"', html)
         self.assertEqual(page.context["counts"]["free"], 1)

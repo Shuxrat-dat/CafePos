@@ -1,32 +1,57 @@
 {% extends "base.html" %}
 {% load i18n ui %}
 {% block title %}{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
-{% block main_class %}px-3 py-3 lg:px-4 lg:py-4 w-full max-w-[1600px] mx-auto{% endblock %}
+{% block main_class %}{% if user.simple_floor %}px-2 py-2 sm:px-3 w-full{% else %}px-3 py-3 lg:px-4 lg:py-4 w-full max-w-[1600px] mx-auto{% endif %}{% endblock %}
 {% block content %}
-<div class="grid lg:grid-cols-[minmax(0,1fr)_420px] gap-4 items-start">
+{% if user.simple_floor %}
+<style>
+  /* Официант: плотная корзина и мелкие кнопки, как в кассовом терминале */
+  #cart #order-panel .icon-btn { width: 34px; height: 34px; border-radius: 10px; }
+  #cart #order-panel > div:first-child { padding: 10px 12px; }
+  #cart #order-panel ul { padding-left: 12px; padding-right: 12px; }
+  #cart #order-panel li { padding-top: 8px; padding-bottom: 8px; }
+  #cart #order-panel > div:last-child { padding: 10px 12px 12px; }
+  #cart #order-panel .btn-lg { min-height: 44px; }
+  .cat-side { display:flex; align-items:center; min-height:40px; padding:0 10px; border-radius:10px; background:#EFE8DC; color:#57534e; font-size:13px; font-weight:600; text-align:left; flex-shrink:0; }
+  .cat-side.chip-active { background:#7A3F1E; color:#fff; border-color:transparent; }
+  @media (max-width: 639px) { .cat-side { white-space:nowrap; } }
+</style>
+{% endif %}
+<div class="grid {% if user.simple_floor %}lg:grid-cols-[minmax(0,1fr)_340px] gap-3{% else %}lg:grid-cols-[minmax(0,1fr)_420px] gap-4{% endif %} items-start">
   {# ---------- Меню ---------- #}
-  <section class="min-w-0">
-    <div class="sticky top-14 md:top-0 z-20 bg-canvas pt-1 pb-3 -mx-1 px-1">
-      <div class="flex items-center gap-2 mb-3">
+  <section class="min-w-0 {% if user.simple_floor %}sm:grid sm:grid-cols-[116px_minmax(0,1fr)] sm:gap-x-3 sm:items-start{% endif %}">
+    <div class="sticky top-14 z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-0 pb-3{% endif %}">
+      <div class="flex items-center gap-2 {% if not user.simple_floor %}mb-3{% endif %}">
         <a href="{% url 'floor' %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
         <div class="relative flex-1">
           <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
           <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">
         </div>
       </div>
+      {% if not user.simple_floor %}
       <div id="cat-chips" class="flex flex-wrap gap-2">
         <button type="button" data-cat="" class="chip chip-active">{% translate 'Все' %}</button>
         {% for category in categories %}
           <button type="button" data-cat="{{ category.id }}" class="chip">{{ category|tr }}</button>
         {% endfor %}
       </div>
+      {% endif %}
     </div>
+    {% if user.simple_floor %}
+    {# Категории: узкая колонка слева (на телефоне — лента сверху) #}
+    <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-visible no-scrollbar mb-2 sm:mb-0 sm:sticky sm:top-[7.25rem]">
+      <button type="button" data-cat="" class="cat-side chip-active">{% translate 'Все' %}</button>
+      {% for category in categories %}
+        <button type="button" data-cat="{{ category.id }}" class="cat-side">{{ category|tr }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
 
-    <div id="dish-list" class="space-y-6">
+    <div id="dish-list" class="{% if user.simple_floor %}space-y-3 min-w-0{% else %}space-y-6{% endif %}">
       {% for category in categories %}
         <div data-cat-section="{{ category.id }}">
           <h2 class="section-title mb-2.5 text-slate-700">{{ category|tr }}</h2>
-          <div class="grid gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+          <div class="grid {% if user.simple_floor %}gap-2 grid-cols-[repeat(auto-fill,minmax(128px,1fr))]{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]{% endif %}">
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
                 <button type="button" data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
@@ -34,9 +59,9 @@
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
                   class="group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition">
-                  {% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}
-                  <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
-                    <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
+                  {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[52px]" size=24 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
+                  <span class="{% if user.simple_floor %}p-2{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-1.5">
+                    <span class="{% if user.simple_floor %}text-[13px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
                     <span class="flex items-center justify-between gap-2">
                       <span class="font-bold tabular-nums">{{ dish.price|money }}{% if dish.sold_by_weight %}<span class="text-xs font-medium text-muted"> / {% translate 'кг' %}</span>{% endif %}</span>
                       {% if dish.modifiers.all %}<span class="text-slate-400" title="{% translate 'Есть варианты' %}">{% icon "more" 18 %}</span>{% endif %}
@@ -66,7 +91,7 @@
   </section>
 
   {# ---------- Корзина ---------- #}
-  <aside id="cart" class="card lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden">
+  <aside id="cart" class="card lg:sticky {% if user.simple_floor %}lg:top-16 lg:max-h-[calc(100vh-4.5rem)]{% else %}lg:top-4 lg:max-h-[calc(100vh-2rem)]{% endif %} flex flex-col overflow-hidden">
     <div id="order-panel" class="flex flex-col min-h-0 h-full" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_order_panel.html" %}
     </div>

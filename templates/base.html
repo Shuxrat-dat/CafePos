@@ -69,6 +69,9 @@
       .seg-item-active { @apply bg-white text-ink shadow-card; }
       .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[54px] rounded-xl text-[12px] font-medium text-stone-600 hover:bg-[#FAF6EF] hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3.5 xl:text-[14px]; }
       .nav-link-active { @apply bg-brand text-white font-bold shadow-sm hover:bg-brand-600 hover:text-white; }
+      .wtab { @apply relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-[#EFE8DC] text-stone-700 text-sm font-semibold whitespace-nowrap hover:bg-[#E6DCCB] transition-colors; }
+      .wtab-active { @apply bg-brand text-white hover:bg-brand-600; }
+      .wtab-badge { @apply min-w-[18px] h-[18px] px-1 rounded-full bg-white text-brand text-[11px] font-bold inline-flex items-center justify-center; }
     }
     html { -webkit-tap-highlight-color: transparent; }
     body { font-feature-settings: "tnum" 1, "cv11" 1; }
@@ -86,7 +89,60 @@
 </head>
 <body class="bg-canvas min-h-screen text-ink antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-indicator="#progress">
 <div id="progress" class="no-print fixed top-0 inset-x-0 h-0.5 bg-brand z-[70] pointer-events-none"></div>
-{% if user.is_authenticated %}
+{% if user.is_authenticated and user.simple_floor %}
+  {# Официант: компактная верхняя панель вместо боковой, как в кассовых терминалах #}
+  <header class="no-print sticky top-0 z-40 bg-white border-b border-line h-14 px-2 sm:px-3 flex items-center gap-2">
+    <a href="{% url 'table_map' %}" class="grid place-items-center w-10 h-10 rounded-xl bg-[#F8ECDA] text-brand shrink-0" title="{{ cafe.name }}">{% icon "coffee" 22 %}</a>
+    <nav class="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
+      {% for item in nav_items %}{% if item.name != 'orders' %}
+        {% if item.post %}
+          <form method="post" action="{{ item.url }}" class="m-0 shrink-0">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
+            <button class="wtab" title="{{ item.label }}">{% icon item.icon 18 %}<span class="hidden sm:inline">{{ item.label }}</span></button>
+          </form>
+        {% else %}
+          <a href="{{ item.url }}" class="wtab shrink-0 {% if item.active %}wtab-active{% endif %}" {% if item.active %}aria-current="page"{% endif %}>
+            {% icon item.icon 18 %}<span class="{% if not item.active %}hidden sm:inline{% endif %}">{{ item.label }}</span>
+            {% if item.badge %}<span class="wtab-badge">{{ item.badge }}</span>{% endif %}
+          </a>
+        {% endif %}
+      {% endif %}{% endfor %}
+    </nav>
+    <div class="flex-1"></div>
+    <div class="relative hidden md:block w-52">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">{% icon "search" 16 %}</span>
+      <input id="global-pos-search" name="q" type="search" autocomplete="off" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
+             hx-get="{% url 'global_search' %}" hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-swap="innerHTML" hx-indicator="#progress"
+             class="w-full bg-white border border-line rounded-xl pl-9 pr-3 min-h-[40px] text-[13px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+      <div id="search-results" class="absolute right-0 w-[22rem] top-full mt-2 z-50"></div>
+    </div>
+    <div id="conn-pill" data-state="online" class="flex items-center gap-1.5 px-2.5 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shrink-0"
+         title="{% translate 'Касса работает по локальной сети, интернет ей не нужен. Здесь видно только связь вашего устройства с кассой.' %}"
+         data-online="{% translate 'Касса на связи' %}" data-offline="{% translate 'Нет связи с кассой' %}">
+      <span id="conn-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span id="conn-label" class="hidden lg:inline">{% translate 'Касса на связи' %}</span>
+    </div>
+    <details class="relative shrink-0">
+      <summary class="list-none cursor-pointer grid place-items-center w-10 h-10 rounded-full bg-[#F6E6D2] text-brand font-bold uppercase" aria-label="{% translate 'Профиль' %}">{{ user.first_name|default:user.username|slice:":1" }}</summary>
+      <div class="absolute right-0 mt-2 w-64 rounded-2xl bg-white shadow-pop p-3 border border-line">
+        <div class="flex flex-col items-center text-center pb-3 border-b border-line">
+          <span class="grid place-items-center w-14 h-14 rounded-full bg-[#F6E6D2] text-brand text-xl font-bold uppercase">{{ user.first_name|default:user.username|slice:":1" }}</span>
+          <span class="mt-2 font-bold text-ink">{{ user.first_name|default:user.username }}</span>
+          <span class="badge bg-blue-100 text-blue-700 mt-1">{{ user.get_role_display }}</span>
+        </div>
+        <div class="pt-2 space-y-1">
+          {% for item in nav_items %}{% if item.name == 'orders' %}
+            <a href="{{ item.url }}" class="flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50">{% icon item.icon 18 %}{{ item.label }}</a>
+          {% endif %}{% endfor %}
+          <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50 text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
+          <div class="px-1">{% include "components/lang_switch.html" %}</div>
+          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+            <button class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50 text-red-700">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
+          </form>
+        </div>
+      </div>
+    </details>
+  </header>
+{% elif user.is_authenticated %}
   {# Боковая навигация #}
   <aside class="no-print hidden md:flex fixed inset-y-0 left-0 z-40 w-[84px] xl:w-60 flex-col bg-white border-r border-line">
     <a href="{% url 'floor' %}" class="flex items-center justify-center xl:justify-start gap-3 h-16 px-3 xl:px-5 border-b border-line shrink-0" title="{{ cafe.name }}">
@@ -197,13 +253,13 @@
   </header>
 {% endif %}
 
-<div class="{% if user.is_authenticated %}md:pl-[84px] xl:pl-60{% endif %} min-h-screen flex flex-col bg-canvas">
+<div class="{% if user.is_authenticated and not user.simple_floor %}md:pl-[84px] xl:pl-60{% endif %} min-h-screen flex flex-col bg-canvas">
   {% if DEMO_MODE and not user.is_authenticated %}
     <div class="no-print bg-orange-50 text-orange-900 text-[13px] px-4 py-1.5 text-center border-b border-orange-100">
       <b>{% translate 'Демо-режим' %}</b> · {% translate 'учебные данные, рабочая база не используется' %}
     </div>
   {% endif %}
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and not user.simple_floor %}
     <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
       <div class="flex-1 max-w-xl relative">
         {% if user.is_superuser or user.role != 'cook' %}

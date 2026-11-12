@@ -3813,3 +3813,6 @@ msgstr "Menyudan qidirish"
 
 msgid "Принято"
 msgstr "Qabul qilindi"
+
+msgid "Профиль"
+msgstr "Profil"
