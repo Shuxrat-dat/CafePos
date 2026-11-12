@@ -1,5 +1,6 @@
 {% load i18n ui %}
-<div class="grid lg:grid-cols-3 gap-4 items-start">
+{# Цех передаётся со всех кнопок (hx-vals наследуется): действие касается только блюд этого цеха #}
+<div class="grid lg:grid-cols-3 gap-4 items-start"{% if station %} hx-vals='{"station": "{{ station }}"}'{% endif %}>
   {% for key, orders in columns.items %}
     <section class="rounded-xl bg-slate-200/60 p-2.5 min-h-[200px]">
       <h2 class="flex items-center justify-between px-2 pt-1 pb-2.5">

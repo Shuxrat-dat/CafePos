@@ -3816,3 +3816,108 @@ msgstr "Qabul qilindi"
 
 msgid "Профиль"
 msgstr "Profil"
+
+msgid "Цех"
+msgstr "Sex"
+
+msgid "Все цеха"
+msgstr "Barcha sexlar"
+
+msgid "Чистая прибыль"
+msgstr "Sof foyda"
+
+msgid "расходы"
+msgstr "xarajatlar"
+
+msgid "Расходы"
+msgstr "Xarajatlar"
+
+msgid "Аренда, коммуналка, зарплата и прочее. Вычитаются из прибыли в отчётах."
+msgstr "Ijara, kommunal toʻlovlar, ish haqi va boshqalar. Hisobotlarda foydadan ayiriladi."
+
+msgid "Всего за период"
+msgstr "Davr uchun jami"
+
+msgid "Статья"
+msgstr "Modda"
+
+msgid "Удалить этот расход?"
+msgstr "Bu xarajat oʻchirilsinmi?"
+
+msgid "Расходов за период нет"
+msgstr "Bu davrda xarajatlar yoʻq"
+
+msgid "Добавьте аренду, коммуналку или зарплату справа."
+msgstr "Oʻng tomonda ijara, kommunal yoki ish haqini qoʻshing."
+
+msgid "Новый расход"
+msgstr "Yangi xarajat"
+
+msgid "Горячий цех"
+msgstr "Issiq sex"
+
+msgid "Холодный цех"
+msgstr "Sovuq sex"
+
+msgid "Мангал"
+msgstr "Mangal"
+
+msgid "Бар"
+msgstr "Bar"
+
+msgid "Кондитерская"
+msgstr "Qandolatchilik"
+
+msgid "На экране кухни можно оставить только блюда своего цеха."
+msgstr "Oshxona ekranida faqat oʻz sexingiz taomlarini qoldirish mumkin."
+
+msgid "Сумма должна быть больше нуля."
+msgstr "Summa noldan katta boʻlishi kerak."
+
+msgid "Аренда"
+msgstr "Ijara"
+
+msgid "Коммунальные услуги"
+msgstr "Kommunal xizmatlar"
+
+msgid "Зарплата"
+msgstr "Ish haqi"
+
+msgid "Хозтовары и расходники"
+msgstr "Xoʻjalik mollari va sarf materiallari"
+
+msgid "Реклама"
+msgstr "Reklama"
+
+msgid "Ремонт и обслуживание"
+msgstr "Taʼmirlash va xizmat koʻrsatish"
+
+msgid "Налоги и сборы"
+msgstr "Soliqlar va yigʻimlar"
+
+msgid "Прочее"
+msgstr "Boshqa"
+
+msgid "Сумма (сум)"
+msgstr "Summa (soʻm)"
+
+msgid "Кто внёс"
+msgstr "Kim kiritdi"
+
+msgid "Внесено"
+msgstr "Kiritildi"
+
+msgid "Расход"
+msgstr "Xarajat"
+
+msgid "Расход добавлен."
+msgstr "Xarajat qoʻshildi."
+
+msgid "Этот месяц"
+msgstr "Shu oy"
+
+msgid "Прошлый месяц"
+msgstr "Oʻtgan oy"
+
+msgid "Расход удалён."
+msgstr "Xarajat oʻchirildi."

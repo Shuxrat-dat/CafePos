@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Расходы' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <a href="{% url 'reports' %}" class="text-sm text-muted hover:text-brand inline-flex items-center gap-1">{% icon "arrow-left" 14 %}{% translate 'Отчёты' %}</a>
+    <h1 class="page-title">{% translate 'Расходы' %}</h1>
+    <p class="page-sub">{% translate 'Аренда, коммуналка, зарплата и прочее. Вычитаются из прибыли в отчётах.' %}</p>
+  </div>
+  <form method="get" class="flex flex-wrap items-end gap-2">
+    <div class="flex flex-wrap gap-2 mr-1">
+      {% for r in ranges %}
+        <a href="?from={{ r.start }}&to={{ r.end }}" class="chip {% if r.start == date_from and r.end == date_to %}chip-active{% endif %}">{{ r.label }}</a>
+      {% endfor %}
+    </div>
+    <input type="date" name="from" value="{{ date_from }}" class="input w-auto" aria-label="{% translate 'С' %}">
+    <input type="date" name="to" value="{{ date_to }}" class="input w-auto" aria-label="{% translate 'По' %}">
+    <button class="btn btn-dark">{% translate 'Показать' %}</button>
+  </form>
+</div>
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <div class="space-y-4 min-w-0">
+    <div class="card p-4 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="text-sm text-muted">{% translate 'Всего за период' %}</div>
+        <div class="text-2xl font-extrabold tracking-tight tabular-nums mt-1">{{ total|money }}</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for c in categories %}
+          <span class="badge bg-stone-100 text-stone-700">{{ c.label }} · {{ c.sum|money }} · {{ c.pct }}%</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b border-line">
+          <tr>
+            <th class="table-head px-4 py-3">{% translate 'Дата' %}</th>
+            <th class="table-head px-4 py-3">{% translate 'Статья' %}</th>
+            <th class="table-head px-4 py-3 hidden sm:table-cell">{% translate 'Комментарий' %}</th>
+            <th class="table-head px-4 py-3 text-right">{% translate 'Сумма' %}</th>
+            <th class="px-2 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {% for e in rows %}
+            <tr>
+              <td class="px-4 py-2.5 whitespace-nowrap tabular-nums">{{ e.date|date:"d.m.Y" }}</td>
+              <td class="px-4 py-2.5 font-semibold">{{ e.get_category_display }}</td>
+              <td class="px-4 py-2.5 text-muted hidden sm:table-cell">{{ e.comment|default:"—" }}{% if e.created_by %} · {{ e.created_by.first_name|default:e.created_by.username }}{% endif %}</td>
+              <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap">{{ e.amount|money }}</td>
+              <td class="px-2 py-2.5 text-right">
+                <form method="post" action="{% url 'expense_delete' e.id %}" onsubmit="return confirm('{% translate "Удалить этот расход?" as t %}{{ t|escapejs }}')">{% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button class="icon-btn w-9 h-9 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 16 %}</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">{% translate 'Расходов за период нет' as t1 %}{% translate 'Добавьте аренду, коммуналку или зарплату справа.' as t2 %}{% include "components/empty.html" with icon="wallet" title=t1 text=t2 %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form method="post" class="card p-5 space-y-4 lg:sticky lg:top-20">
+    {% csrf_token %}
+    <h2 class="section-title">{% translate 'Новый расход' %}</h2>
+    {% for field in form %}{% include "components/field.html" %}{% endfor %}
+    <button class="btn btn-primary w-full">{% icon "plus" 17 %}{% translate 'Добавить' %}</button>
+  </form>
+</div>
+{% endblock %}

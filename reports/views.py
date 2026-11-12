@@ -3,8 +3,10 @@ from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.db.models import F
-from django.shortcuts import render
+from django.contrib import messages
+from django.db.models import F, Sum
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
@@ -16,6 +18,8 @@ from pos.models import CashShift, Order, Review
 from core.forms import localized_name
 
 from . import insights
+from .forms import ExpenseForm
+from .models import Expense
 
 reports_only = role_required(REPORT_ROLES)
 
@@ -133,6 +137,9 @@ def dashboard(request):
         Decimal(0),
     )
     margin = revenue - cost
+    # Чистая прибыль: из валовой (или из выручки, если техкарт нет) вычитаем расходы заведения за период
+    expenses_total = _expenses_sum(date_from, date_to)
+    net_profit = (margin if cost > 0 else revenue) - expenses_total
 
     # Динамика: по часам за один день или по дням за период
     if single_day:
@@ -224,6 +231,9 @@ def dashboard(request):
         "margin": margin,
         "margin_pct": round(margin / revenue * 100) if revenue else 0,
         "has_cost": cost > 0,
+        "expenses_total": expenses_total,
+        "net_profit": net_profit,
+        "net_pct": round(net_profit / revenue * 100) if revenue else 0,
         "cash_total": cash_total,
         "card_total": card_total,
         "methods": _share(
@@ -253,3 +263,57 @@ def dashboard(request):
         "shifts": CashShift.objects.filter(opened_at__gte=start, opened_at__lt=end).select_related("cashier").order_by("-opened_at")[:10],
     }
     return render(request, "reports/dashboard.html", context)
+
+
+def _expenses_sum(date_from, date_to):
+    return Expense.objects.filter(date__gte=date_from, date__lte=date_to).aggregate(s=Sum("amount"))["s"] or Decimal(0)
+
+
+@reports_only
+def expenses(request):
+    """Расходы заведения: список за период, итоги по статьям и форма добавления."""
+    today = timezone.localdate()
+    date_from = _parse(request.GET.get("from"), today.replace(day=1))
+    date_to = _parse(request.GET.get("to"), today)
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    form = ExpenseForm(request.POST or None, initial={"date": today})
+    if request.method == "POST" and form.is_valid():
+        expense = form.save(commit=False)
+        expense.created_by = request.user
+        expense.save()
+        messages.success(request, _("Расход добавлен."))
+        return redirect(f"{request.path}?from={date_from.isoformat()}&to={date_to.isoformat()}")
+    rows = list(Expense.objects.filter(date__gte=date_from, date__lte=date_to).select_related("created_by"))
+    total = sum((e.amount for e in rows), Decimal(0))
+    labels = dict(Expense.Category.choices)
+    by_cat = defaultdict(Decimal)
+    for e in rows:
+        by_cat[e.category] += e.amount
+    categories = _share(
+        [{"label": labels[k], "sum": v} for k, v in sorted(by_cat.items(), key=lambda kv: -kv[1])], total
+    )
+    month_start = today.replace(day=1)
+    prev_month_end = month_start - timedelta(days=1)
+    return render(request, "reports/expenses.html", {
+        "form": form,
+        "rows": rows,
+        "total": total,
+        "categories": categories,
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "ranges": [
+            {"label": _("Этот месяц"), "start": month_start.isoformat(), "end": today.isoformat()},
+            {"label": _("Прошлый месяц"), "start": prev_month_end.replace(day=1).isoformat(), "end": prev_month_end.isoformat()},
+            {"label": _("30 дней"), "start": (today - timedelta(days=29)).isoformat(), "end": today.isoformat()},
+        ],
+    })
+
+
+@reports_only
+@require_POST
+def expense_delete(request, expense_id):
+    get_object_or_404(Expense, id=expense_id).delete()
+    messages.success(request, _("Расход удалён."))
+    back = request.POST.get("next", "")
+    return redirect(back if back.startswith("/reports/expenses/") else "expenses")

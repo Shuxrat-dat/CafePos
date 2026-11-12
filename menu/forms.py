@@ -68,7 +68,7 @@ class DishForm(StyledModelForm):
 class CategoryForm(StyledModelForm):
     class Meta:
         model = Category
-        fields = ["name", "name_uz", "icon", "sort_order", "is_active"]
+        fields = ["name", "name_uz", "icon", "station", "sort_order", "is_active"]
 
 
 class ModifierForm(StyledModelForm):

@@ -23,12 +23,39 @@
     <div class="text-3xl font-bold tabular-nums text-slate-700" id="kds-clock">{% now "H:i" %}</div>
   </div>
 </div>
-<div id="tickets" hx-get="{% url 'kitchen_tickets' %}" hx-trigger="every 5s" hx-swap="innerHTML">
+{% if stations|length > 1 %}
+{# Цеха: повар бара видит только напитки, горячий цех — только своё. Выбор запоминается на этом устройстве #}
+<div id="station-tabs" class="flex flex-wrap gap-2 mb-4" role="tablist" aria-label="{% translate 'Цех' %}">
+  <a href="?" data-station="" class="chip {% if not station %}chip-active{% endif %}">{% translate 'Все цеха' %}</a>
+  {% for value, label in stations %}
+    <a href="?station={{ value }}" data-station="{{ value }}" class="chip {% if station == value %}chip-active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+<div id="tickets" hx-get="{% url 'kitchen_tickets' %}{% if station %}?station={{ station }}{% endif %}" hx-trigger="every 5s" hx-swap="innerHTML">
   {% include "kitchen/_tickets.html" %}
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
+  (function () {
+    // Цех запоминается на устройстве: планшет бара после перезагрузки снова показывает бар
+    var tabs = document.getElementById('station-tabs');
+    if (tabs) {
+      var current = new URLSearchParams(location.search).get('station') || '';
+      var saved = null;
+      try { saved = localStorage.getItem('kds_station'); } catch (e) {}
+      if (!location.search && saved && tabs.querySelector('[data-station="' + saved + '"]')) {
+        location.replace('?station=' + encodeURIComponent(saved));
+        return;
+      }
+      tabs.addEventListener('click', function (e) {
+        var a = e.target.closest('[data-station]');
+        if (a) { try { localStorage.setItem('kds_station', a.dataset.station); } catch (err) {} }
+      });
+      if (current) { try { localStorage.setItem('kds_station', current); } catch (e) {} }
+    }
+  })();
   (function () {
     // Таймеры на карточках идут каждую секунду, данные обновляются раз в 5 секунд
     function tick() {

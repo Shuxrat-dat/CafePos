@@ -32,7 +32,19 @@ class Category(models.Model):
 
     name = models.CharField(_("Название"), max_length=100)
     name_uz = models.CharField(_("Название (узб.)"), max_length=100, blank=True)
+    class Station(models.TextChoices):
+        KITCHEN = "kitchen", _("Кухня")
+        HOT = "hot", _("Горячий цех")
+        COLD = "cold", _("Холодный цех")
+        GRILL = "grill", _("Мангал")
+        BAR = "bar", _("Бар")
+        PASTRY = "pastry", _("Кондитерская")
+
     icon = models.CharField(_("Иллюстрация"), max_length=20, choices=Icon.choices, default=Icon.PLATE)
+    station = models.CharField(
+        _("Цех"), max_length=20, choices=Station.choices, default=Station.KITCHEN,
+        help_text=_("На экране кухни можно оставить только блюда своего цеха."),
+    )
     sort_order = models.PositiveIntegerField(_("Порядок"), default=0)
     is_active = models.BooleanField(_("Активна"), default=True)
 

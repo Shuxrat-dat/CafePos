@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.permissions import KITCHEN_ROLES, role_required
 from core.models import CafeSettings
+from menu.models import Category
 from pos import services
 from pos.models import Order, OrderItem
 
@@ -14,13 +15,35 @@ ACTIVE = [OrderItem.Status.QUEUED, OrderItem.Status.COOKING, OrderItem.Status.RE
 READY_WARN_MINUTES = 3  # готовое блюдо дольше этого ждёт официанта — остывает
 
 
-def _tickets_context():
-    """Карточки кухни: те же заказы, что на кассе. Колонка определяется самой ранней стадией позиций."""
+def _station(request):
+    """Цех из адреса (?station=bar) или из кнопки на карточке. Пусто — все цеха."""
+    value = request.POST.get("station") or request.GET.get("station") or ""
+    return value if value in Category.Station.values else ""
+
+
+def _station_items(order, station):
+    items = order.items.all()
+    return items.filter(dish__category__station=station) if station else items
+
+
+def _stations_in_use():
+    """Цеха, к которым привязаны активные категории. Переключатель нужен, только если их больше одного."""
+    used = set(Category.objects.filter(is_active=True).values_list("station", flat=True))
+    return [(value, label) for value, label in Category.Station.choices if value in used]
+
+
+def _tickets_context(station=""):
+    """Карточки кухни: те же заказы, что на кассе. Колонка определяется самой ранней стадией позиций.
+    С выбранным цехом на карточке остаются только его блюда."""
     active_items = OrderItem.objects.filter(status__in=ACTIVE).select_related("dish").prefetch_related("modifiers")
+    orders = Order.objects.exclude(status=Order.Status.CANCELLED)
+    if station:
+        active_items = active_items.filter(dish__category__station=station)
+        orders = orders.filter(items__status__in=ACTIVE, items__dish__category__station=station)
+    else:
+        orders = orders.filter(items__status__in=ACTIVE)
     orders = (
-        Order.objects.exclude(status=Order.Status.CANCELLED)
-        .filter(items__status__in=ACTIVE)
-        .select_related("table__hall", "waiter")
+        orders.select_related("table__hall", "waiter")
         .prefetch_related(Prefetch("items", queryset=active_items, to_attr="kitchen_items"))
         .distinct()
     )
@@ -28,6 +51,8 @@ def _tickets_context():
     now = timezone.now()
     columns = {"new": [], "cooking": [], "ready": []}
     for order in orders:
+        if not order.kitchen_items:
+            continue
         statuses = {i.status for i in order.kitchen_items}
         sent = [i.sent_at for i in order.kitchen_items if i.sent_at]
         order.since = min(sent) if sent else order.created_at
@@ -51,7 +76,13 @@ def _tickets_context():
         columns[column].append(order)
     for column in columns.values():
         column.sort(key=lambda o: o.since)
-    return {"columns": columns, "warn_minutes": warn, "ready_warn_minutes": READY_WARN_MINUTES}
+    return {
+        "columns": columns,
+        "warn_minutes": warn,
+        "ready_warn_minutes": READY_WARN_MINUTES,
+        "station": station,
+        "stations": _stations_in_use(),
+    }
 
 
 def _order_level(order, column, now, warn):
@@ -75,12 +106,12 @@ def _order_level(order, column, now, warn):
 
 
 def _tickets(request):
-    return render(request, "kitchen/_tickets.html", _tickets_context())
+    return render(request, "kitchen/_tickets.html", _tickets_context(_station(request)))
 
 
 @kitchen_only
 def board(request):
-    return render(request, "kitchen/board.html", _tickets_context())
+    return render(request, "kitchen/board.html", _tickets_context(_station(request)))
 
 
 @kitchen_only
@@ -100,7 +131,11 @@ def mark_ready(request, item_id):
 @require_POST
 def ticket_start(request, order_id):
     order = get_object_or_404(Order.objects.exclude(status=Order.Status.CANCELLED), id=order_id)
-    services.start_cooking(order)
+    station = _station(request)
+    if station:
+        _station_items(order, station).filter(status=OrderItem.Status.QUEUED).update(status=OrderItem.Status.COOKING)
+    else:
+        services.start_cooking(order)
     return _tickets(request)
 
 
@@ -108,7 +143,7 @@ def ticket_start(request, order_id):
 @require_POST
 def ticket_ready(request, order_id):
     order = get_object_or_404(Order.objects.exclude(status=Order.Status.CANCELLED), id=order_id)
-    services.mark_items_ready(order.items.all())
+    services.mark_items_ready(_station_items(order, _station(request)))
     return _tickets(request)
 
 
@@ -116,5 +151,9 @@ def ticket_ready(request, order_id):
 @require_POST
 def ticket_served(request, order_id):
     order = get_object_or_404(Order.objects.exclude(status=Order.Status.CANCELLED), id=order_id)
-    services.serve_ready(order)
+    station = _station(request)
+    if station:
+        _station_items(order, station).filter(status=OrderItem.Status.READY).update(status=OrderItem.Status.SERVED)
+    else:
+        services.serve_ready(order)
     return _tickets(request)
