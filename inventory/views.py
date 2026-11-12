@@ -19,7 +19,7 @@ from urllib.parse import quote
 from django.utils import timezone
 
 from .forecast import build_forecast, shopping_list
-from .models import Product, RecipeItem, StockMovement
+from .models import Product, RecipeItem, StockMovement, Supplier, SupplierPayment
 
 MAX_VALUE = Decimal(10_000_000)
 
@@ -65,18 +65,29 @@ def stock(request):
     if request.method == "POST":
         form = request.POST
         error, product, quantity, cost, comment = _movement_form(request, StockMovement.Kind.INCOME)
+        sid = request.POST.get("supplier", "")
+        supplier = Supplier.objects.filter(id=sid).first() if sid.isdigit() else None
+        paid_now = request.POST.get("paid_now") == "1"
         if not error:
             with transaction.atomic():
                 if cost is not None:
                     product.cost_per_unit = cost.quantize(Decimal("0.01"))
                     product.save(update_fields=["cost_per_unit"])
-                StockMovement.objects.create(
+                movement = StockMovement.objects.create(
                     product=product,
                     kind=StockMovement.Kind.INCOME,
                     quantity=quantity.quantize(Decimal("0.001")),
+                    supplier=supplier,
                     comment=comment,
                     created_by=request.user,
                 )
+                # Оплачено сразу: долг перед поставщиком не растёт
+                amount = (movement.quantity * (movement.unit_cost or 0)).quantize(Decimal("1"))
+                if supplier and paid_now and amount > 0:
+                    SupplierPayment.objects.create(
+                        supplier=supplier, amount=amount, created_by=request.user,
+                        comment=_("Оплата при приходе: %(p)s") % {"p": localized_name(product)},
+                    )
             return redirect(f"{reverse('stock')}?ok=1")
 
     search = request.GET.get("q", "").strip()[:50]
@@ -93,6 +104,7 @@ def stock(request):
     context = {
         "products": products,
         "all_products": Product.objects.all(),
+        "suppliers": Supplier.objects.filter(is_active=True),
         "low_products": Product.objects.filter(stock__lte=F("min_stock")).order_by("stock"),
         "movements": StockMovement.objects.select_related("product", "created_by")[:8],
         "stock_value": sum(p.stock * p.cost_per_unit for p in Product.objects.all() if p.stock > 0),
@@ -252,3 +264,59 @@ def stock_count(request):
         "done": done if done.isdigit() else "",
     }
     return render(request, "inventory/stock_count.html", context)
+
+
+class SupplierForm(StyledModelForm):
+    class Meta:
+        model = Supplier
+        fields = ["name", "phone", "comment", "is_active"]
+
+
+@stock_only
+def suppliers(request):
+    """Поставщики: сколько им должны и форма нового поставщика."""
+    form = SupplierForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        supplier = form.save()
+        messages.success(request, _("Поставщик добавлен."))
+        return redirect("supplier_detail", supplier_id=supplier.id)
+    rows = list(Supplier.objects.all())
+    total_debt = sum((s.debt for s in rows if s.debt > 0), Decimal(0))
+    return render(request, "inventory/suppliers.html", {"rows": rows, "form": form, "total_debt": total_debt})
+
+
+@stock_only
+def supplier_detail(request, supplier_id):
+    """Карточка поставщика: приходы, оплаты, долг, оплата долга и правка данных."""
+    supplier = get_object_or_404(Supplier, id=supplier_id)
+    error = ""
+    edit_form = SupplierForm(instance=supplier)
+    if request.method == "POST" and request.POST.get("action") == "edit":
+        edit_form = SupplierForm(request.POST, instance=supplier)
+        if edit_form.is_valid():
+            edit_form.save()
+            messages.success(request, _("Данные поставщика сохранены."))
+            return redirect("supplier_detail", supplier_id=supplier.id)
+    elif request.method == "POST":
+        amount = _decimal(request.POST.get("amount", ""))
+        comment = request.POST.get("comment", "").strip()[:200]
+        if amount is None or amount <= 0 or amount > MAX_VALUE * 100:
+            error = _("Введите сумму оплаты числом больше нуля.")
+        else:
+            SupplierPayment.objects.create(
+                supplier=supplier, amount=amount.quantize(Decimal("1")), comment=comment, created_by=request.user,
+            )
+            messages.success(request, _("Оплата поставщику сохранена."))
+            return redirect("supplier_detail", supplier_id=supplier.id)
+    movements = list(
+        supplier.movements.filter(kind=StockMovement.Kind.INCOME).select_related("product", "created_by")[:100]
+    )
+    for m in movements:
+        m.sum = (m.quantity * (m.unit_cost or 0)).quantize(Decimal("1"))
+    return render(request, "inventory/supplier_detail.html", {
+        "supplier": supplier,
+        "movements": movements,
+        "payments": supplier.payments.select_related("created_by")[:100],
+        "error": error,
+        "edit_form": edit_form,
+    })

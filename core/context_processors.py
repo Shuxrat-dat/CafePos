@@ -3,7 +3,21 @@ from django.db.models import F
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from accounts.permissions import KITCHEN_ROLES, MANAGE_ROLES, REPORT_ROLES, SERVICE_ROLES, STOCK_ROLES, has_role
+from accounts.permissions import KITCHEN_ROLES, MANAGE_ROLES, PAYMENT_ROLES, REPORT_ROLES, SERVICE_ROLES, STOCK_ROLES, has_role
+
+
+def _debts_enabled(request):
+    """Пункт «Долги» нужен, если запись в долг включена или ещё остались непогашенные долги."""
+    cafe_settings = getattr(request, "cafe", None)
+    if cafe_settings is None:
+        from .models import CafeSettings
+
+        cafe_settings = CafeSettings.get()
+    if cafe_settings.accept_debt:
+        return True
+    from pos.models import DebtEntry
+
+    return DebtEntry.objects.exists()
 
 
 def _nav(request):
@@ -35,6 +49,7 @@ def _nav(request):
         ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
         # Кнопка создаёт заказ навынос, так и называем
         ("new_order", _("Навынос"), "shopping-bag", SERVICE_ROLES, set()),
+        ("debts", _("Долги"), "wallet", PAYMENT_ROLES, {"debts", "debt_detail"}),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
         ("manage_printers", _("Принтеры"), "printer", MANAGE_ROLES, {"manage_printers", "printer_create", "printer_edit"}, printer_problems),
@@ -49,6 +64,8 @@ def _nav(request):
         pages = entry[4]
         badge = entry[5] if len(entry) > 5 else None
         if name == "table_map" and has_role(user, MANAGE_ROLES):
+            continue
+        if name == "debts" and not _debts_enabled(request):
             continue
         if has_role(user, roles):
             res.append({

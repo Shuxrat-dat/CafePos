@@ -91,6 +91,10 @@ class CafeSettings(models.Model):
     accept_cash = models.BooleanField(_("Наличные"), default=True)
     accept_card = models.BooleanField(_("Банковская карта"), default=True)
     accept_mixed = models.BooleanField(_("Смешанная оплата"), default=True)
+    accept_debt = models.BooleanField(
+        _("В долг"), default=False,
+        help_text=_("Кассир может записать заказ в долг на гостя с именем и телефоном. Долги видны в разделе «Долги»."),
+    )
     kitchen_warn_minutes = models.PositiveSmallIntegerField(
         _("Предупреждать кухню через, мин"), default=15,
         validators=[MinValueValidator(1), MaxValueValidator(180)],
@@ -147,4 +151,6 @@ class CafeSettings(models.Model):
             methods.append("card")
         if self.accept_mixed:
             methods.append("mixed")
+        if self.accept_debt:
+            methods.append("debt")
         return methods or ["cash"]

@@ -1,6 +1,9 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models, transaction
 from django.db.models import F
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from menu.models import Dish
@@ -35,6 +38,60 @@ class Product(models.Model):
         return self.stock <= self.min_stock
 
 
+class Supplier(models.Model):
+    """Поставщик продуктов. Долг перед ним = сумма приходов от него минус оплаты."""
+
+    name = models.CharField(_("Название"), max_length=150, unique=True)
+    phone = models.CharField(_("Телефон"), max_length=40, blank=True)
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    is_active = models.BooleanField(_("Работаем"), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Поставщик")
+        verbose_name_plural = _("Поставщики")
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def purchased(self):
+        """Сколько получено товара на сумму (количество × цена закупки на момент прихода)."""
+        total = Decimal(0)
+        for m in self.movements.filter(kind=StockMovement.Kind.INCOME):
+            total += m.quantity * (m.unit_cost or 0)
+        return total.quantize(Decimal("1"))
+
+    @property
+    def paid(self):
+        return self.payments.aggregate(s=models.Sum("amount"))["s"] or Decimal(0)
+
+    @property
+    def debt(self):
+        return self.purchased - self.paid
+
+
+class SupplierPayment(models.Model):
+    supplier = models.ForeignKey(Supplier, verbose_name=_("Поставщик"), on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(_("Сумма (сум)"), max_digits=14, decimal_places=0)
+    date = models.DateField(_("Дата"), default=timezone.localdate)
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name=_("Кто"), null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Оплата поставщику")
+        verbose_name_plural = _("Оплаты поставщикам")
+        ordering = ["-date", "-id"]
+
+    def __str__(self):
+        return f"{self.supplier}: {self.amount}"
+
+
 class RecipeItem(models.Model):
     dish = models.ForeignKey(Dish, verbose_name=_("Блюдо"), on_delete=models.CASCADE, related_name="recipe")
     product = models.ForeignKey(Product, verbose_name=_("Продукт"), on_delete=models.PROTECT)
@@ -63,6 +120,10 @@ class StockMovement(models.Model):
         help_text=_("Для прихода и списания вводите положительное число. Для корректировки: плюс добавляет, минус убавляет"),
     )
     order = models.ForeignKey("pos.Order", verbose_name=_("Заказ"), null=True, blank=True, on_delete=models.SET_NULL)
+    supplier = models.ForeignKey(
+        "Supplier", verbose_name=_("Поставщик"), null=True, blank=True,
+        on_delete=models.PROTECT, related_name="movements",
+    )
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
     created_at = models.DateTimeField(_("Дата"), auto_now_add=True)
     unit_cost = models.DecimalField(

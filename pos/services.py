@@ -11,7 +11,7 @@ from core.models import CafeSettings
 from inventory.services import write_off_order
 
 from . import loyalty
-from .models import CashMovement, CashShift, Order, OrderItem, Payment
+from .models import CashMovement, CashShift, Customer, DebtEntry, Order, OrderItem, Payment
 
 MAX_SUM = Decimal(1_000_000_000)
 
@@ -181,7 +181,7 @@ def check_payment(due, method, received_raw, card_raw, allowed):
     if method not in allowed:
         raise PaymentError(_("Выберите способ оплаты."))
     received = parse_money(received_raw)
-    if method == Order.PaymentMethod.CARD:
+    if method in (Order.PaymentMethod.CARD, Order.PaymentMethod.DEBT):
         return None, None
     if method == Order.PaymentMethod.CASH:
         received = due if received is None else received
@@ -341,6 +341,16 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             # Смену открывают явно, с пересчитанным остатком в кассе, иначе наличные не с чем сверять
             raise PaymentError(no_shift_message())
 
+        debt_phone = ""
+        if method == Order.PaymentMethod.DEBT:
+            # В долг записываем только весь заказ и только на гостя с именем и телефоном
+            from .loyalty import normalize_phone
+            debt_phone = normalize_phone(locked.customer_phone)
+            if selected:
+                raise PaymentError(_("В долг можно записать только весь заказ, без деления счёта."))
+            if not debt_phone or not (locked.customer_name or "").strip():
+                raise PaymentError(_("Для записи в долг укажите имя и телефон гостя."))
+
         send_to_kitchen(locked)
         if selected:
             items = [i for i in locked.items.select_related("dish").prefetch_related("modifiers")]
@@ -366,6 +376,9 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             cash_amount = Decimal(0)
             card_amount = total
             change = Decimal(0)
+        elif method == Order.PaymentMethod.DEBT:
+            # Денег в кассу не поступило: сумма уходит в долг гостя
+            cash_amount = card_amount = change = Decimal(0)
         else:  # MIXED
             card_amount = card or Decimal(0)
             cash_amount = total - card_amount
@@ -384,6 +397,15 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             idempotency_key=idempotency_key or None,
             is_refund=False,
         )
+
+        if debt_phone:
+            customer, _created = Customer.objects.select_for_update().get_or_create(
+                phone=debt_phone, defaults={"name": target.customer_name.strip()[:100]}
+            )
+            DebtEntry.objects.create(
+                customer=customer, order=target, amount=total, shift=shift, cashier=cashier,
+                comment=_("Заказ №%(id)s в долг") % {"id": target.id},
+            )
 
         write_off_order(target)
         loyalty.earn(target)
@@ -440,6 +462,13 @@ def refund_order(order, user, reason, return_to_stock=True):
         locked.cancel_reason = _("Возврат: %(r)s") % {"r": refund_reason}
         locked.save(update_fields=["status", "cancelled_by", "cancel_reason"])
 
+        # Заказ был в долг: деньги не возвращаем, а снимаем долг с гостя
+        for entry in DebtEntry.objects.filter(order=locked, amount__gt=0):
+            DebtEntry.objects.create(
+                customer=entry.customer, order=locked, amount=-entry.amount, shift=shift, cashier=user,
+                comment=_("Возврат по заказу №%(id)s: %(r)s") % {"id": locked.id, "r": refund_reason},
+            )
+
         if return_to_stock:
             from inventory.models import RecipeItem, StockMovement
             for item in locked.items.select_related("dish").prefetch_related("modifiers"):
@@ -459,3 +488,26 @@ def refund_order(order, user, reason, return_to_stock=True):
     loyalty.reverse(locked)
     audit.record(user, audit.A.REFUND, order=locked, amount=locked.total, detail=refund_reason)
     return locked
+
+
+# ---------- долги гостей ----------
+
+def repay_debt(customer, amount, method, cashier, comment=""):
+    """Гость гасит долг наличными или картой. Деньги идут в текущую смену, поэтому без смены нельзя.
+    Больше остатка долга принять нельзя: переплата запутала бы кассу."""
+    if method not in DebtEntry.Method.values:
+        raise PaymentError(_("Выберите способ оплаты."))
+    with transaction.atomic():
+        locked = Customer.objects.select_for_update().get(pk=customer.pk)
+        shift = get_current_shift()
+        if not shift:
+            raise PaymentError(no_shift_message())
+        if amount is None or amount <= 0:
+            raise PaymentError(_("Введите сумму числом больше нуля."))
+        debt = locked.debt
+        if amount > debt:
+            raise PaymentError(_("Сумма больше долга гостя (%(d)s сум).") % {"d": f"{debt:,.0f}".replace(",", " ")})
+        return DebtEntry.objects.create(
+            customer=locked, amount=-amount, method=method, shift=shift, cashier=cashier,
+            comment=(comment or "").strip()[:200] or _("Погашение долга"),
+        )

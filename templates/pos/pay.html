@@ -94,7 +94,7 @@
       {% for m in methods %}
         <label class="seg-item cursor-pointer min-h-[48px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
           <input type="radio" name="method" value="{{ m }}" class="sr-only" {% if m == method %}checked{% endif %}>
-          {% if m == 'cash' %}{% icon "banknote" 18 %}{% translate 'Наличные' %}{% elif m == 'card' %}{% icon "credit-card" 18 %}{% translate 'Карта' %}{% else %}{% icon "wallet" 18 %}{% translate 'Смешанная' %}{% endif %}
+          {% if m == 'cash' %}{% icon "banknote" 18 %}{% translate 'Наличные' %}{% elif m == 'card' %}{% icon "credit-card" 18 %}{% translate 'Карта' %}{% elif m == 'debt' %}{% icon "user" 18 %}{% translate 'В долг' %}{% else %}{% icon "wallet" 18 %}{% translate 'Смешанная' %}{% endif %}
         </label>
       {% endfor %}
     </div>
@@ -115,6 +115,17 @@
       <div data-show="card" class="rounded-xl bg-slate-50 border border-line p-4 text-sm text-slate-600 flex gap-2">
         {% icon "credit-card" 18 %}{% translate 'Проведите оплату на терминале, затем подтвердите.' %}
       </div>
+      {% if 'debt' in methods %}
+      <div data-show="debt" class="space-y-3">
+        <div class="rounded-xl bg-orange-50 border border-orange-200 p-3 text-sm text-orange-900 flex gap-2">
+          {% icon "alert" 18 %}{% translate 'Деньги в кассу не поступают. Сумма запишется в долг гостя, погасить его можно в разделе «Долги».' %}
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label" for="debt_name">{% translate 'Имя гостя' %}</label><input id="debt_name" name="debt_name" value="{{ order.customer_name }}" maxlength="100" class="input" autocomplete="off"></div>
+          <div><label class="label" for="debt_phone">{% translate 'Телефон' %}</label><input id="debt_phone" name="debt_phone" value="{{ order.customer_phone }}" maxlength="20" inputmode="tel" class="input" placeholder="+998 90 123 45 67" autocomplete="off"></div>
+        </div>
+      </div>
+      {% endif %}
 
 
       <div data-show="cash mixed" class="flex justify-between items-baseline rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
@@ -147,7 +158,9 @@
       short: '{% translate "Наличных меньше, чем нужно." as t %}{{ t|escapejs }}',
       cardTooBig: '{% translate "Сумма по карте должна быть меньше итога." as t %}{{ t|escapejs }}',
       cardEmpty: '{% translate "Укажите сумму по карте." as t %}{{ t|escapejs }}',
-      nothing: '{% translate "Выберите хотя бы одну позицию." as t %}{{ t|escapejs }}'
+      nothing: '{% translate "Выберите хотя бы одну позицию." as t %}{{ t|escapejs }}',
+      debtWho: '{% translate "Для записи в долг укажите имя и телефон гостя." as t %}{{ t|escapejs }}',
+      debtSplit: '{% translate "В долг можно записать только весь заказ, без деления счёта." as t %}{{ t|escapejs }}'
     };
     var activeInput = document.getElementById('received');
 
@@ -173,7 +186,8 @@
       var d = due();
       document.getElementById('due').textContent = fmt(d);
       var card = m === 'mixed' ? parse(document.getElementById('card').value) : 0;
-      var cashDue = m === 'card' ? 0 : d - card;
+      var noCash = m === 'card' || m === 'debt';
+      var cashDue = noCash ? 0 : d - card;
       var receivedRaw = document.getElementById('received').value;
       var received = receivedRaw.trim() === '' ? cashDue : parse(receivedRaw);
       var change = Math.max(0, received - cashDue);
@@ -182,7 +196,9 @@
       if (split && d <= 0) hint = TXT.nothing;
       else if (m === 'mixed' && card <= 0) hint = TXT.cardEmpty;
       else if (m === 'mixed' && card >= d) hint = TXT.cardTooBig;
-      else if (m !== 'card' && received < cashDue) hint = TXT.short;
+      else if (!noCash && received < cashDue) hint = TXT.short;
+      else if (m === 'debt' && split) hint = TXT.debtSplit;
+      else if (m === 'debt' && (!document.getElementById('debt_name').value.trim() || document.getElementById('debt_phone').value.replace(/\D/g, '').length < 9)) hint = TXT.debtWho;
       var h = document.getElementById('pay-hint');
       h.textContent = hint;
       h.classList.toggle('hidden', !hint);

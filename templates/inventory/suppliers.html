@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Поставщики' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Склад' %}</h1>
+    <p class="page-sub">{% blocktranslate trimmed with s=total_debt|money %}Долг поставщикам: {{ s }}{% endblocktranslate %}</p>
+  </div>
+</div>
+{% include "inventory/_tabs.html" %}
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr>
+          <th class="table-head px-4 py-3">{% translate 'Поставщик' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Получено товара' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Оплачено' %}</th>
+          <th class="table-head px-4 py-3 text-right">{% translate 'Долг' %}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for s in rows %}
+          <tr class="hover:bg-slate-50 cursor-pointer {% if not s.is_active %}text-slate-400{% endif %}" onclick="location.href='{% url 'supplier_detail' s.id %}'">
+            <td class="px-4 py-2.5">
+              <a href="{% url 'supplier_detail' s.id %}" class="font-semibold hover:text-brand">{{ s.name }}</a>
+              <div class="text-xs text-muted">{{ s.phone|default:"—" }}{% if not s.is_active %} · {% translate 'не работаем' %}{% endif %}</div>
+            </td>
+            <td class="px-4 py-2.5 text-right tabular-nums hidden sm:table-cell">{{ s.purchased|money }}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums hidden sm:table-cell">{{ s.paid|money }}</td>
+            <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap {% if s.debt > 0 %}text-red-700{% elif s.debt < 0 %}text-emerald-700{% endif %}">{{ s.debt|money }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">{% translate 'Поставщиков пока нет' as t1 %}{% translate 'Добавьте поставщика справа, потом выбирайте его при приходе товара.' as t2 %}{% include "components/empty.html" with icon="package" title=t1 text=t2 %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" class="card p-5 space-y-4 lg:sticky lg:top-20">
+    {% csrf_token %}
+    <h2 class="section-title">{% translate 'Новый поставщик' %}</h2>
+    {% for field in form %}{% include "components/field.html" %}{% endfor %}
+    <button class="btn btn-primary w-full">{% icon "plus" 17 %}{% translate 'Добавить' %}</button>
+  </form>
+</div>
+{% endblock %}

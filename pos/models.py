@@ -137,11 +137,25 @@ class CashShift(models.Model):
         return val or Decimal(0)
 
     @property
+    def debt_cash_repaid(self):
+        """Наличные, которые гости принесли в эту смену в счёт долга."""
+        from django.db.models import Sum
+        val = self.debt_entries.filter(amount__lt=0, method=DebtEntry.Method.CASH).aggregate(total=Sum("amount"))["total"]
+        return -(val or Decimal(0))
+
+    @property
+    def debt_card_repaid(self):
+        from django.db.models import Sum
+        val = self.debt_entries.filter(amount__lt=0, method=DebtEntry.Method.CARD).aggregate(total=Sum("amount"))["total"]
+        return -(val or Decimal(0))
+
+    @property
     def expected_cash(self):
         """Ожидаемые наличные в кассе по формуле инварианта:
-        Начальный остаток + Наличная выручка - Возвраты наличными + Внесения - Изъятия
+        Начальный остаток + Наличная выручка - Возвраты наличными + Внесения - Изъятия + Погашение долгов наличными
         """
-        return self.initial_cash + self.cash_sales - self.cash_refunds + self.cash_deposits - self.cash_withdrawals
+        return (self.initial_cash + self.cash_sales - self.cash_refunds + self.cash_deposits - self.cash_withdrawals
+                + self.debt_cash_repaid)
 
     @property
     def difference(self):
@@ -165,6 +179,7 @@ class Order(models.Model):
         CASH = "cash", _("Наличные")
         CARD = "card", _("Карта")
         MIXED = "mixed", _("Смешанная")
+        DEBT = "debt", _("В долг")
 
     class DiscountKind(models.TextChoices):
         PERCENT = "percent", _("Процент")
@@ -519,6 +534,37 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.name or 'Гость'} {self.phone}"
+
+    @property
+    def debt(self):
+        from django.db.models import Sum
+        return self.debt_entries.aggregate(s=Sum("amount"))["s"] or Decimal(0)
+
+
+class DebtEntry(models.Model):
+    """Долг гостя. Плюс — заказ записан в долг, минус — гость погасил (наличными или картой в смене).
+    Остаток долга = сумма записей; по ним всегда видно, откуда он взялся."""
+
+    class Method(models.TextChoices):
+        CASH = "cash", _("Наличные")
+        CARD = "card", _("Карта")
+
+    customer = models.ForeignKey(Customer, verbose_name=_("Гость"), on_delete=models.PROTECT, related_name="debt_entries")
+    order = models.ForeignKey(Order, verbose_name=_("Заказ"), on_delete=models.SET_NULL, null=True, blank=True, related_name="debt_entries")
+    amount = models.DecimalField(_("Сумма"), max_digits=14, decimal_places=0)
+    method = models.CharField(_("Способ погашения"), max_length=10, choices=Method.choices, blank=True)
+    shift = models.ForeignKey(CashShift, verbose_name=_("Смена"), on_delete=models.PROTECT, null=True, blank=True, related_name="debt_entries")
+    cashier = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Кассир"), on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    created_at = models.DateTimeField(_("Время"), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Долг гостя")
+        verbose_name_plural = _("Долги гостей")
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.customer}: {self.amount}"
 
 
 class LoyaltyEntry(models.Model):

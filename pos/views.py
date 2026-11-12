@@ -986,6 +986,14 @@ def pay(request, order_id):
         else:
             due = split_totals(order, sum(i.unit_total * selected[i.id] for i in items if i.id in selected))["total"]
 
+        if not error and method == Order.PaymentMethod.DEBT and method in allowed:
+            # Гость, на которого пишем долг: имя и телефон сохраняем в заказе (они же попадут в чек)
+            debt_name = request.POST.get("debt_name", "").strip()[:100]
+            debt_phone = request.POST.get("debt_phone", "").strip()[:20]
+            if debt_name and debt_phone:
+                order.customer_name, order.customer_phone = debt_name, debt_phone
+                order.save(update_fields=["customer_name", "customer_phone"])
+
         if not error:
             try:
                 received, card = services.check_payment(due, method, received_raw, card_raw, allowed)
@@ -1170,3 +1178,53 @@ def shift_movement(request):
         messages.error(request, str(exc))
     return redirect(_next_or_floor(request))
 
+
+
+# ---------- долги гостей ----------
+
+@login_required
+def debts(request):
+    """Кто сколько должен. Видят те, кто принимает оплату."""
+    if not request.user.can_take_payment:
+        raise PermissionDenied
+    from django.db.models import Sum
+
+    from .models import Customer
+
+    rows = list(
+        Customer.objects.annotate(balance=Sum("debt_entries__amount"))
+        .filter(balance__gt=0)
+        .order_by("-balance")
+    )
+    total = sum((c.balance for c in rows), Decimal(0))
+    return render(request, "pos/debts.html", {"rows": rows, "total": total})
+
+
+@login_required
+def debt_detail(request, customer_id):
+    """История долга гостя и приём погашения в текущую смену."""
+    if not request.user.can_take_payment:
+        raise PermissionDenied
+    from .models import Customer, DebtEntry
+
+    customer = get_object_or_404(Customer, id=customer_id)
+    error = ""
+    if request.method == "POST":
+        try:
+            amount = services.parse_money(request.POST.get("amount", ""))
+            services.repay_debt(customer, amount, request.POST.get("method", ""), request.user,
+                                request.POST.get("comment", ""))
+        except services.PaymentError as exc:
+            error = str(exc)
+        else:
+            messages.success(request, _("Погашение принято."))
+            return redirect("debt_detail", customer_id=customer.id)
+    entries = DebtEntry.objects.filter(customer=customer).select_related("order", "cashier")[:200]
+    return render(request, "pos/debt_detail.html", {
+        "customer": customer,
+        "debt": customer.debt,
+        "entries": entries,
+        "error": error,
+        "shift_open": services.get_current_shift() is not None,
+        "methods": DebtEntry.Method.choices,
+    })

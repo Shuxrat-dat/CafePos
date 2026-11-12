@@ -3921,3 +3921,168 @@ msgstr "Oʻtgan oy"
 
 msgid "Расход удалён."
 msgstr "Xarajat oʻchirildi."
+
+msgid "Работаем"
+msgstr "Ishlaymiz"
+
+msgid "Поставщик"
+msgstr "Yetkazib beruvchi"
+
+msgid "Поставщики"
+msgstr "Yetkazib beruvchilar"
+
+msgid "Оплата поставщику"
+msgstr "Yetkazib beruvchiga toʻlov"
+
+msgid "Оплаты поставщикам"
+msgstr "Yetkazib beruvchilarga toʻlovlar"
+
+msgid "Оплата при приходе: %(p)s"
+msgstr "Kirimda toʻlandi: %(p)s"
+
+msgid "Поставщик добавлен."
+msgstr "Yetkazib beruvchi qoʻshildi."
+
+msgid "Данные поставщика сохранены."
+msgstr "Yetkazib beruvchi maʼlumotlari saqlandi."
+
+msgid "Введите сумму оплаты числом больше нуля."
+msgstr "Toʻlov summasini noldan katta son bilan kiriting."
+
+msgid "Оплата поставщику сохранена."
+msgstr "Yetkazib beruvchiga toʻlov saqlandi."
+
+msgid "Без поставщика"
+msgstr "Yetkazib beruvchisiz"
+
+msgid "Оплачено сразу (без долга)"
+msgstr "Darhol toʻlandi (qarzsiz)"
+
+msgid "Номер накладной"
+msgstr "Yuk xati raqami"
+
+msgid "Долг поставщикам: %(s)s"
+msgstr "Yetkazib beruvchilarga qarz: %(s)s"
+
+msgid "Получено товара"
+msgstr "Qabul qilingan mahsulot"
+
+msgid "Оплачено"
+msgstr "Toʻlangan"
+
+msgid "Долг"
+msgstr "Qarz"
+
+msgid "не работаем"
+msgstr "ishlamaymiz"
+
+msgid "Поставщиков пока нет"
+msgstr "Hozircha yetkazib beruvchilar yoʻq"
+
+msgid "Добавьте поставщика справа, потом выбирайте его при приходе товара."
+msgstr "Oʻng tomonda yetkazib beruvchini qoʻshing, keyin uni mahsulot kirimida tanlang."
+
+msgid "Новый поставщик"
+msgstr "Yangi yetkazib beruvchi"
+
+msgid "Приходы товара"
+msgstr "Mahsulot kirimlari"
+
+msgid "Приходов от этого поставщика ещё не было"
+msgstr "Bu yetkazib beruvchidan hali kirim boʻlmagan"
+
+msgid "Оплаты"
+msgstr "Toʻlovlar"
+
+msgid "Оплат ещё не было"
+msgstr "Hali toʻlovlar boʻlmagan"
+
+msgid "Оплатить поставщику"
+msgstr "Yetkazib beruvchiga toʻlash"
+
+msgid "Наличными, перевод, номер накладной"
+msgstr "Naqd, oʻtkazma, yuk xati raqami"
+
+msgid "Сохранить оплату"
+msgstr "Toʻlovni saqlash"
+
+msgid "Данные поставщика"
+msgstr "Yetkazib beruvchi maʼlumotlari"
+
+msgid "В долг"
+msgstr "Qarzga"
+
+msgid "Гость"
+msgstr "Mehmon"
+
+msgid "Способ погашения"
+msgstr "Toʻlash usuli"
+
+msgid "Долг гостя"
+msgstr "Mehmon qarzi"
+
+msgid "Долги гостей"
+msgstr "Mehmonlar qarzlari"
+
+msgid "В долг можно записать только весь заказ, без деления счёта."
+msgstr "Qarzga faqat butun buyurtmani yozish mumkin, hisobni boʻlmasdan."
+
+msgid "Для записи в долг укажите имя и телефон гостя."
+msgstr "Qarzga yozish uchun mehmonning ismi va telefonini kiriting."
+
+msgid "Заказ №%(id)s в долг"
+msgstr "№%(id)s buyurtma qarzga"
+
+msgid "Возврат по заказу №%(id)s: %(r)s"
+msgstr "№%(id)s buyurtma boʻyicha qaytarish: %(r)s"
+
+msgid "Введите сумму числом больше нуля."
+msgstr "Summani noldan katta son bilan kiriting."
+
+msgid "Сумма больше долга гостя (%(d)s сум)."
+msgstr "Summa mehmon qarzidan katta (%(d)s soʻm)."
+
+msgid "Погашение долга"
+msgstr "Qarzni toʻlash"
+
+msgid "Кассир может записать заказ в долг на гостя с именем и телефоном. Долги видны в разделе «Долги»."
+msgstr "Kassir buyurtmani ismi va telefoni koʻrsatilgan mehmonga qarzga yozishi mumkin. Qarzlar «Qarzlar» boʻlimida koʻrinadi."
+
+msgid "Долги"
+msgstr "Qarzlar"
+
+msgid "Погашение принято."
+msgstr "Toʻlov qabul qilindi."
+
+msgid "Деньги в кассу не поступают. Сумма запишется в долг гостя, погасить его можно в разделе «Долги»."
+msgstr "Kassaga pul tushmaydi. Summa mehmon qarziga yoziladi, uni «Qarzlar» boʻlimida toʻlash mumkin."
+
+msgid "Имя гостя"
+msgstr "Mehmon ismi"
+
+msgid "Погашение долгов (наличные):"
+msgstr "Qarzlarni toʻlash (naqd):"
+
+msgid "Всего должны: %(s)s · гостей: %(n)s"
+msgstr "Jami qarz: %(s)s · mehmonlar: %(n)s"
+
+msgid "Погасить"
+msgstr "Toʻlash"
+
+msgid "Долгов нет"
+msgstr "Qarzlar yoʻq"
+
+msgid "Чтобы записать заказ в долг, выберите способ оплаты «В долг»."
+msgstr "Buyurtmani qarzga yozish uchun «Qarzga» toʻlov usulini tanlang."
+
+msgid "История"
+msgstr "Tarix"
+
+msgid "Долг сейчас"
+msgstr "Hozirgi qarz"
+
+msgid "Принять погашение"
+msgstr "Toʻlovni qabul qilish"
+
+msgid "Кассовая смена не открыта. Откройте смену, чтобы принять деньги."
+msgstr "Kassa smenasi ochilmagan. Pul qabul qilish uchun smenani oching."

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{{ supplier.name }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'suppliers' %}" class="text-sm text-muted hover:text-brand inline-flex items-center gap-1">{% icon "arrow-left" 14 %}{% translate 'Поставщики' %}</a>
+  <h1 class="page-title">{{ supplier.name }}</h1>
+  <p class="page-sub">{{ supplier.phone|default:"" }}{% if supplier.comment %} · {{ supplier.comment }}{% endif %}</p>
+</div>
+
+<div class="grid grid-cols-3 gap-3 mb-4">
+  <div class="card p-4"><div class="text-xs text-muted font-semibold">{% translate 'Получено товара' %}</div><div class="text-xl font-extrabold tabular-nums mt-1">{{ supplier.purchased|money }}</div></div>
+  <div class="card p-4"><div class="text-xs text-muted font-semibold">{% translate 'Оплачено' %}</div><div class="text-xl font-extrabold tabular-nums mt-1">{{ supplier.paid|money }}</div></div>
+  <div class="card p-4"><div class="text-xs text-muted font-semibold">{% translate 'Долг' %}</div><div class="text-xl font-extrabold tabular-nums mt-1 {% if supplier.debt > 0 %}text-red-700{% endif %}">{{ supplier.debt|money }}</div></div>
+</div>
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <div class="space-y-4 min-w-0">
+    <section class="card overflow-hidden">
+      <h2 class="section-title px-4 pt-4 pb-2">{% translate 'Приходы товара' %}</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 border-y border-line">
+            <tr><th class="table-head px-4 py-2.5">{% translate 'Дата' %}</th><th class="table-head px-4 py-2.5">{% translate 'Продукт' %}</th><th class="table-head px-4 py-2.5 text-right">{% translate 'Количество' %}</th><th class="table-head px-4 py-2.5 text-right">{% translate 'Цена за ед.' %}</th><th class="table-head px-4 py-2.5 text-right">{% translate 'Сумма' %}</th></tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            {% for m in movements %}
+              <tr>
+                <td class="px-4 py-2 whitespace-nowrap tabular-nums">{{ m.created_at|date:"d.m.Y" }}</td>
+                <td class="px-4 py-2">{{ m.product|tr }}{% if m.comment %}<div class="text-xs text-muted">{{ m.comment }}</div>{% endif %}</td>
+                <td class="px-4 py-2 text-right tabular-nums whitespace-nowrap">{{ m.quantity|qty }} {{ m.product.get_unit_display }}</td>
+                <td class="px-4 py-2 text-right tabular-nums whitespace-nowrap">{{ m.unit_cost|qty }}</td>
+                <td class="px-4 py-2 text-right font-semibold tabular-nums whitespace-nowrap">{{ m.sum|money }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="px-4 py-6 text-center text-muted">{% translate 'Приходов от этого поставщика ещё не было' %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="card overflow-hidden">
+      <h2 class="section-title px-4 pt-4 pb-2">{% translate 'Оплаты' %}</h2>
+      <ul class="divide-y divide-line text-sm">
+        {% for p in payments %}
+          <li class="px-4 py-2.5 flex justify-between gap-3">
+            <span class="min-w-0"><span class="tabular-nums">{{ p.date|date:"d.m.Y" }}</span>{% if p.comment %} · <span class="text-muted">{{ p.comment }}</span>{% endif %}</span>
+            <span class="font-semibold tabular-nums whitespace-nowrap text-emerald-700">{{ p.amount|money }}</span>
+          </li>
+        {% empty %}
+          <li class="px-4 py-6 text-center text-muted">{% translate 'Оплат ещё не было' %}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <div class="space-y-4 lg:sticky lg:top-20">
+    <form method="post" class="card p-5 space-y-3">
+      {% csrf_token %}
+      <h2 class="section-title">{% translate 'Оплатить поставщику' %}</h2>
+      {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+      <div><label class="label" for="pay-amount">{% translate 'Сумма' %}</label><input id="pay-amount" name="amount" inputmode="numeric" class="input text-lg font-semibold tabular-nums" {% if supplier.debt > 0 %}value="{{ supplier.debt|floatformat:0 }}"{% endif %} required></div>
+      <div><label class="label" for="pay-comment">{% translate 'Комментарий' %}</label><input id="pay-comment" name="comment" maxlength="200" class="input" placeholder="{% translate 'Наличными, перевод, номер накладной' %}"></div>
+      <button class="btn btn-primary w-full">{% icon "check" 17 %}{% translate 'Сохранить оплату' %}</button>
+    </form>
+    <details class="card p-5">
+      <summary class="section-title cursor-pointer list-none flex items-center justify-between">{% translate 'Данные поставщика' %}{% icon "pencil" 16 %}</summary>
+      <form method="post" class="space-y-3 mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        {% for field in edit_form %}{% with form=edit_form %}{% include "components/field.html" %}{% endwith %}{% endfor %}
+        <button class="btn btn-secondary w-full">{% translate 'Сохранить' %}</button>
+      </form>
+    </details>
+  </div>
+</div>
+{% endblock %}

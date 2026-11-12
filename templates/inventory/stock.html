@@ -86,7 +86,15 @@
           <div><label class="label" for="in-qty">{% translate 'Количество' %}</label><input id="in-qty" name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="input"></div>
           <div><label class="label" for="in-cost">{% translate 'Цена за ед.' %}</label><input id="in-cost" name="cost" value="{{ form.cost }}" inputmode="decimal" class="input" placeholder="{% translate 'не менять' %}"></div>
         </div>
-        <div><label class="label" for="in-comment">{% translate 'Комментарий' %}</label><input id="in-comment" name="comment" value="{{ form.comment }}" maxlength="200" class="input" placeholder="{% translate 'Поставщик, накладная' %}"></div>
+        <div>
+          <label class="label" for="in-supplier">{% translate 'Поставщик' %} <span class="text-muted font-normal">· <a href="{% url 'suppliers' %}" class="text-brand hover:underline">{% translate 'добавить' %}</a></span></label>
+          <select id="in-supplier" name="supplier" class="input">
+            <option value="">{% translate 'Без поставщика' %}</option>
+            {% for s in suppliers %}<option value="{{ s.id }}" {% if form.supplier == s.id|stringformat:"d" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+          </select>
+          <label class="mt-2 flex items-center gap-2 text-sm text-stone-700"><input type="checkbox" name="paid_now" value="1" class="w-4 h-4 accent-[#7A3F1E]" {% if form.paid_now == '1' %}checked{% endif %}>{% translate 'Оплачено сразу (без долга)' %}</label>
+        </div>
+        <div><label class="label" for="in-comment">{% translate 'Комментарий' %}</label><input id="in-comment" name="comment" value="{{ form.comment }}" maxlength="200" class="input" placeholder="{% translate 'Номер накладной' %}"></div>
         <button class="btn btn-primary w-full">{% icon "arrow-down" 18 %}{% translate 'Принять приход' %}</button>
       </form>
     </section>

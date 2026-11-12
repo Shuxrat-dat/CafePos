@@ -5,6 +5,7 @@
   <a href="{% url 'stock_shopping' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_shopping' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Закупка' %}</a>
   <a href="{% url 'stock_writeoff' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_writeoff' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Списание' %}</a>
   <a href="{% url 'stock_count' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_count' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Инвентаризация' %}</a>
+  <a href="{% url 'suppliers' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'suppliers' or page == 'supplier_detail' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Поставщики' %}</a>
   <a href="{% url 'stock_movements' %}" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if page == 'stock_movements' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Движение' %}</a>
 </div>
 {% endwith %}

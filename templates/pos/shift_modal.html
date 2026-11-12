@@ -54,6 +54,12 @@
             <span class="font-bold text-emerald-600">+{{ shift.cash_deposits|money }}</span>
           </div>
         {% endif %}
+        {% if shift.debt_cash_repaid %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Погашение долгов (наличные):' %}</span>
+            <span class="font-bold text-emerald-600">+{{ shift.debt_cash_repaid|money }}</span>
+          </div>
+        {% endif %}
         {% if shift.cash_withdrawals %}
           <div class="flex justify-between text-stone-500">
             <span>{% translate 'Инкассация / изъятия:' %}</span>

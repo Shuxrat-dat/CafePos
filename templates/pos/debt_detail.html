@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Долг гостя' %}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'debts' %}" class="text-sm text-muted hover:text-brand inline-flex items-center gap-1">{% icon "arrow-left" 14 %}{% translate 'Долги' %}</a>
+  <h1 class="page-title">{{ customer.name|default:"—" }}</h1>
+  <p class="page-sub tabular-nums">+998 {{ customer.phone }}</p>
+</div>
+
+<div class="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+  <section class="card overflow-hidden">
+    <h2 class="section-title px-4 pt-4 pb-2">{% translate 'История' %}</h2>
+    <ul class="divide-y divide-line text-sm">
+      {% for e in entries %}
+        <li class="px-4 py-2.5 flex justify-between gap-3">
+          <span class="min-w-0">
+            <span class="block">{{ e.comment }}{% if e.order_id and e.amount > 0 %} · <a href="{% url 'order_view' e.order_id %}" class="text-brand hover:underline">№{{ e.order_id }}</a>{% endif %}</span>
+            <span class="text-xs text-muted">{{ e.created_at|date:"d.m.Y H:i" }}{% if e.method %} · {{ e.get_method_display }}{% endif %}{% if e.cashier %} · {{ e.cashier.first_name|default:e.cashier.username }}{% endif %}</span>
+          </span>
+          <span class="font-semibold tabular-nums whitespace-nowrap {% if e.amount > 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{% if e.amount > 0 %}+{% endif %}{{ e.amount|money }}</span>
+        </li>
+      {% empty %}
+        <li class="px-4 py-6 text-center text-muted">{% translate 'Записей нет' %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="space-y-4 lg:sticky lg:top-20">
+    <div class="card p-4">
+      <div class="text-sm text-muted">{% translate 'Долг сейчас' %}</div>
+      <div class="text-3xl font-extrabold tracking-tight tabular-nums mt-1 {% if debt > 0 %}text-red-700{% endif %}">{{ debt|money }}</div>
+    </div>
+    {% if debt > 0 %}
+    <form method="post" class="card p-5 space-y-3">
+      {% csrf_token %}
+      <h2 class="section-title">{% translate 'Принять погашение' %}</h2>
+      {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+      {% if not shift_open %}<div class="alert-warn">{% icon "alert" 18 %}{% translate 'Кассовая смена не открыта. Откройте смену, чтобы принять деньги.' %}</div>{% endif %}
+      <div><label class="label" for="repay-amount">{% translate 'Сумма' %}</label><input id="repay-amount" name="amount" inputmode="numeric" value="{{ debt|floatformat:0 }}" class="input text-lg font-semibold tabular-nums" required></div>
+      <div class="seg" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
+        {% for value, label in methods %}
+          <label class="seg-item cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+            <input type="radio" name="method" value="{{ value }}" class="sr-only" {% if forloop.first %}checked{% endif %}>{{ label }}
+          </label>
+        {% endfor %}
+      </div>
+      <div><label class="label" for="repay-comment">{% translate 'Комментарий' %}</label><input id="repay-comment" name="comment" maxlength="200" class="input"></div>
+      <button class="btn btn-primary w-full" {% if not shift_open %}disabled{% endif %}>{% icon "check" 17 %}{% translate 'Принять' %}</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
