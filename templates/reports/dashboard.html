@@ -78,7 +78,10 @@
       − {% translate 'расходы' %} {{ expenses_total|money }}{% if revenue %} · {{ net_pct }}%{% endif %}
     </div>
   </div>
-  <a href="{% url 'expenses' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary">{% icon "plus" 16 %}{% translate 'Расходы' %}</a>
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'payroll' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary">{% icon "clock" 16 %}{% translate 'Зарплата' %}</a>
+    <a href="{% url 'expenses' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary">{% icon "plus" 16 %}{% translate 'Расходы' %}</a>
+  </div>
 </div>
 <p class="text-xs text-muted -mt-2 mb-4">{% blocktranslate trimmed with a=prev_from|date:"d.m" b=prev_to|date:"d.m" %}Сравнение с предыдущим периодом такой же длины: {{ a }} — {{ b }}.{% endblocktranslate %}</p>
 

@@ -112,6 +112,10 @@ def cafe(request):
         # Подсказка нужна только пустой установке: где уже есть залы и меню, мастер не навязываем
         context["setup_needed"] = not (Hall.objects.exists() and Dish.objects.exists())
     if user.is_authenticated:
+        from accounts.models import WorkShift
+
+        # Открытая смена по табелю: кнопка показывает «Закончить смену» и с какого времени человек работает
+        context["work_shift"] = WorkShift.objects.filter(user=user, ended_at=None).first()
         context["can_new_order"] = has_role(user, SERVICE_ROLES)
         from pos.services import get_current_shift
         context["current_shift"] = get_current_shift()

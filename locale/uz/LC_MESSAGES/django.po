@@ -4086,3 +4086,102 @@ msgstr "Toʻlovni qabul qilish"
 
 msgid "Кассовая смена не открыта. Откройте смену, чтобы принять деньги."
 msgstr "Kassa smenasi ochilmagan. Pul qabul qilish uchun smenani oching."
+
+msgid "Ставка в час (сум)"
+msgstr "Soatlik stavka (soʻm)"
+
+msgid "Процент от продаж"
+msgstr "Savdodan foiz"
+
+msgid "Например, 5 — официант получает 5% от суммы своих оплаченных заказов."
+msgstr "Masalan, 5 — ofitsiant oʻzining toʻlangan buyurtmalari summasidan 5% oladi."
+
+msgid "Начало"
+msgstr "Boshlanishi"
+
+msgid "Конец"
+msgstr "Tugashi"
+
+msgid "Кто закрыл"
+msgstr "Kim yopdi"
+
+msgid "Рабочая смена"
+msgstr "Ish smenasi"
+
+msgid "Табель"
+msgstr "Tabel"
+
+msgid "Смена закончена: %(h)s ч."
+msgstr "Smena tugadi: %(h)s soat."
+
+msgid "Смена начата. Хорошей работы!"
+msgstr "Smena boshlandi. Ishingizga omad!"
+
+msgid "Закончить смену"
+msgstr "Smenani tugatish"
+
+msgid "Начать смену"
+msgstr "Smenani boshlash"
+
+msgid "Часы берутся из табеля: сотрудник нажимает «Начать смену» и «Закончить смену». Расчёт в «Отчёты → Зарплата»."
+msgstr "Soatlar tabeldan olinadi: xodim «Smenani boshlash» va «Smenani tugatish»ni bosadi. Hisob-kitob «Hisobotlar → Ish haqi» boʻlimida."
+
+msgid "Ставка не может быть меньше нуля."
+msgstr "Stavka noldan kichik boʻlishi mumkin emas."
+
+msgid "Процент должен быть от 0 до 100."
+msgstr "Foiz 0 dan 100 gacha boʻlishi kerak."
+
+msgid "Зарплата: %(name)s, %(a)s — %(b)s"
+msgstr "Ish haqi: %(name)s, %(a)s — %(b)s"
+
+msgid "Смена сотрудника закрыта."
+msgstr "Xodimning smenasi yopildi."
+
+msgid "Начислять нечего."
+msgstr "Hisoblanadigan narsa yoʻq."
+
+msgid "Эта зарплата уже записана в расходы."
+msgstr "Bu ish haqi allaqachon xarajatlarga yozilgan."
+
+msgid "Зарплата записана в расходы."
+msgstr "Ish haqi xarajatlarga yozildi."
+
+msgid "Часы по табелю × ставка в час + процент от оплаченных заказов сотрудника. Ставки задаются в карточке сотрудника."
+msgstr "Tabel boʻyicha soatlar × soatlik stavka + xodimning toʻlangan buyurtmalaridan foiz. Stavkalar xodim kartochkasida belgilanadi."
+
+msgid "Сейчас на смене"
+msgstr "Hozir smenada"
+
+msgid "на смене с %(t)s"
+msgstr "%(t)s dan smenada"
+
+msgid "Закрыть смену сотрудника сейчас?"
+msgstr "Xodimning smenasi hozir yopilsinmi?"
+
+msgid "Часы"
+msgstr "Soatlar"
+
+msgid "За часы"
+msgstr "Soatlar uchun"
+
+msgid "Продажи"
+msgstr "Savdo"
+
+msgid "К выплате"
+msgstr "Toʻlanadi"
+
+msgid "на смене"
+msgstr "smenada"
+
+msgid "В расходах"
+msgstr "Xarajatlarda"
+
+msgid "В расходы"
+msgstr "Xarajatlarga"
+
+msgid "Начислять пока нечего"
+msgstr "Hozircha hisoblanadigan narsa yoʻq"
+
+msgid "Задайте ставки в карточках сотрудников, а сотрудники пусть отмечают начало и конец смены."
+msgstr "Xodimlar kartochkalarida stavkalarni belgilang, xodimlar esa smena boshlanishi va tugashini belgilasin."

@@ -152,7 +152,7 @@ class StaffForm(StyledModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "first_name", "last_name", "role", "is_active"]
+        fields = ["username", "first_name", "last_name", "role", "is_active", "hourly_rate", "sales_percent"]
         labels = {
             "username": _("Логин"),
             "first_name": _("Имя"),
@@ -177,6 +177,21 @@ class StaffForm(StyledModelForm):
             own = self.instance.pk is not None and self.instance.pk == editor.pk
             roles = [r for r in roles if r[0] != User.Role.OWNER and (r[0] != User.Role.ADMIN or own)]
         self.fields["role"].choices = roles
+        # Ставки необязательны: пусто — значит 0 (сотрудник без оплаты по часам или процента)
+        self.fields["hourly_rate"].required = False
+        self.fields["sales_percent"].required = False
+
+    def clean_hourly_rate(self):
+        value = self.cleaned_data.get("hourly_rate") or 0
+        if value < 0:
+            raise forms.ValidationError(_("Ставка не может быть меньше нуля."))
+        return value
+
+    def clean_sales_percent(self):
+        value = self.cleaned_data.get("sales_percent") or 0
+        if value < 0 or value > 100:
+            raise forms.ValidationError(_("Процент должен быть от 0 до 100."))
+        return value
 
     def clean_password(self):
         password = self.cleaned_data.get("password", "")

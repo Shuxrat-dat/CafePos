@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Зарплата' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <a href="{% url 'reports' %}" class="text-sm text-muted hover:text-brand inline-flex items-center gap-1">{% icon "arrow-left" 14 %}{% translate 'Отчёты' %}</a>
+    <h1 class="page-title">{% translate 'Зарплата' %}</h1>
+    <p class="page-sub">{% translate 'Часы по табелю × ставка в час + процент от оплаченных заказов сотрудника. Ставки задаются в карточке сотрудника.' %}</p>
+  </div>
+  <form method="get" class="flex flex-wrap items-end gap-2">
+    <div class="flex flex-wrap gap-2 mr-1">
+      {% for r in ranges %}
+        <a href="?from={{ r.start }}&to={{ r.end }}" class="chip {% if r.start == date_from and r.end == date_to %}chip-active{% endif %}">{{ r.label }}</a>
+      {% endfor %}
+    </div>
+    <input type="date" name="from" value="{{ date_from }}" class="input w-auto" aria-label="{% translate 'С' %}">
+    <input type="date" name="to" value="{{ date_to }}" class="input w-auto" aria-label="{% translate 'По' %}">
+    <button class="btn btn-dark">{% translate 'Показать' %}</button>
+  </form>
+</div>
+
+{% if open_shifts %}
+  <div class="card p-4 mb-4">
+    <h2 class="section-title mb-2">{% translate 'Сейчас на смене' %}</h2>
+    <ul class="divide-y divide-line text-sm">
+      {% for s in open_shifts %}
+        <li class="py-2 flex items-center justify-between gap-3">
+          <span><b>{{ s.user.get_full_name|default:s.user.username }}</b> · {% blocktranslate trimmed with t=s.started_at|date:"d.m H:i" %}на смене с {{ t }}{% endblocktranslate %}</span>
+          <form method="post" onsubmit="return confirm('{% translate "Закрыть смену сотрудника сейчас?" as t %}{{ t|escapejs }}')">{% csrf_token %}
+            <input type="hidden" name="action" value="close_shift"><input type="hidden" name="shift_id" value="{{ s.id }}">
+            <input type="hidden" name="from" value="{{ date_from }}"><input type="hidden" name="to" value="{{ date_to }}">
+            <button class="btn btn-sm btn-secondary">{% translate 'Закрыть смену' %}</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b border-line">
+        <tr>
+          <th class="table-head px-4 py-3">{% translate 'Сотрудник' %}</th>
+          <th class="table-head px-4 py-3 text-right">{% translate 'Часы' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'За часы' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Продажи' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Процент' %}</th>
+          <th class="table-head px-4 py-3 text-right">{% translate 'К выплате' %}</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {% for r in rows %}
+          <tr>
+            <td class="px-4 py-2.5">
+              <a href="{% url 'staff_edit' r.user.id %}" class="font-semibold hover:text-brand">{{ r.user.get_full_name|default:r.user.username }}</a>
+              <div class="text-xs text-muted">{{ r.user.get_role_display }}{% if r.user.hourly_rate %} · {{ r.user.hourly_rate|money }}/{% translate 'ч' %}{% endif %}{% if r.user.sales_percent %} · {{ r.user.sales_percent|num }}%{% endif %}{% if r.open %} · <span class="text-emerald-700 font-semibold">{% translate 'на смене' %}</span>{% endif %}</div>
+            </td>
+            <td class="px-4 py-2.5 text-right tabular-nums">{{ r.hours|floatformat:1 }}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums hidden md:table-cell">{{ r.by_hours|money }}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums hidden md:table-cell">{{ r.sales|money }}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums hidden md:table-cell">{{ r.by_sales|money }}</td>
+            <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap">{{ r.total|money }}</td>
+            <td class="px-4 py-2.5 text-right whitespace-nowrap">
+              {% if r.recorded %}
+                <span class="badge bg-emerald-50 text-emerald-700">{% translate 'В расходах' %}</span>
+              {% elif r.total > 0 %}
+                <form method="post">{% csrf_token %}
+                  <input type="hidden" name="action" value="to_expense"><input type="hidden" name="user_id" value="{{ r.user.id }}">
+                  <input type="hidden" name="from" value="{{ date_from }}"><input type="hidden" name="to" value="{{ date_to }}">
+                  <button class="btn btn-sm btn-secondary">{% translate 'В расходы' %}</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">{% translate 'Начислять пока нечего' as t1 %}{% translate 'Задайте ставки в карточках сотрудников, а сотрудники пусть отмечают начало и конец смены.' as t2 %}{% include "components/empty.html" with icon="clock" title=t1 text=t2 %}</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if rows %}
+        <tfoot class="border-t border-line bg-slate-50">
+          <tr><td class="px-4 py-3 font-semibold">{% translate 'Итого' %}</td><td class="px-4 py-3"></td><td class="hidden md:table-cell" colspan="3"></td><td class="px-4 py-3 text-right font-extrabold tabular-nums">{{ total|money }}</td><td></td></tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

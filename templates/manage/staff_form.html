@@ -17,6 +17,14 @@
   {% include "components/field.html" with field=form.role %}
   {% include "components/field.html" with field=form.password %}
   {% include "components/field.html" with field=form.is_active %}
+  <div class="rounded-xl bg-[#FAF6EF] border border-line p-3.5 space-y-3">
+    <div class="text-sm font-semibold flex items-center gap-2">{% icon "wallet" 16 %}{% translate 'Зарплата' %}</div>
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% include "components/field.html" with field=form.hourly_rate %}
+      {% include "components/field.html" with field=form.sales_percent %}
+    </div>
+    <p class="text-xs text-muted">{% translate 'Часы берутся из табеля: сотрудник нажимает «Начать смену» и «Закончить смену». Расчёт в «Отчёты → Зарплата».' %}</p>
+  </div>
   {% if target and target.needs_cancel_pin %}
     <div class="rounded-xl bg-[#FAF6EF] border border-line p-3.5 space-y-1">
       <div class="text-sm font-semibold flex items-center gap-2">{% icon "lock" 16 %}{% translate 'Пароль отмены' %}

@@ -317,3 +317,107 @@ def expense_delete(request, expense_id):
     messages.success(request, _("Расход удалён."))
     back = request.POST.get("next", "")
     return redirect(back if back.startswith("/reports/expenses/") else "expenses")
+
+
+def payroll_rows(date_from, date_to, now=None):
+    """Зарплата за период по каждому сотруднику: часы по табелю × ставка + процент от его оплаченных заказов."""
+    from accounts.models import User, WorkShift
+
+    now = now or timezone.now()
+    start, end = _bounds(date_from, date_to)
+    shifts = WorkShift.objects.filter(started_at__lt=end).filter(
+        models_q_open_or_ended_after(start)
+    ).select_related("user")
+    hours = defaultdict(float)
+    open_now = defaultdict(bool)
+    for s in shifts:
+        hours[s.user_id] += s.hours_within(start, end, now)
+        if s.ended_at is None:
+            open_now[s.user_id] = True
+    sales = defaultdict(Decimal)
+    for order in _paid_orders(start, end):
+        sales[order.waiter_id] += order.total
+    rows = []
+    for user in User.objects.filter(is_active=True).order_by("first_name", "username"):
+        h = round(hours.get(user.id, 0.0), 2)
+        sold = sales.get(user.id, Decimal(0))
+        if not (h or sold or user.hourly_rate or user.sales_percent):
+            continue
+        by_hours = (Decimal(str(h)) * user.hourly_rate).quantize(Decimal("1"))
+        by_sales = (sold * user.sales_percent / 100).quantize(Decimal("1"))
+        rows.append({
+            "user": user, "hours": h, "by_hours": by_hours, "sales": sold, "by_sales": by_sales,
+            "total": by_hours + by_sales, "open": open_now.get(user.id, False),
+        })
+    return rows
+
+
+def models_q_open_or_ended_after(start):
+    from django.db.models import Q
+
+    return Q(ended_at__isnull=True) | Q(ended_at__gt=start)
+
+
+def _payroll_comment(user, date_from, date_to):
+    name = user.get_full_name() or user.username
+    return _("Зарплата: %(name)s, %(a)s — %(b)s") % {
+        "name": name, "a": date_from.strftime("%d.%m.%Y"), "b": date_to.strftime("%d.%m.%Y"),
+    }
+
+
+@reports_only
+def payroll(request):
+    """Зарплата за период. Начисленное можно одной кнопкой записать в расходы (статья «Зарплата»)."""
+    from accounts.models import User, WorkShift
+
+    today = timezone.localdate()
+    date_from = _parse(request.GET.get("from") or request.POST.get("from"), today.replace(day=1))
+    date_to = _parse(request.GET.get("to") or request.POST.get("to"), today)
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    back = f"{request.path}?from={date_from.isoformat()}&to={date_to.isoformat()}"
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "close_shift":
+            shift = get_object_or_404(WorkShift, id=request.POST.get("shift_id") or 0, ended_at=None)
+            shift.ended_at = timezone.now()
+            shift.closed_by = request.user
+            shift.save(update_fields=["ended_at", "closed_by"])
+            messages.success(request, _("Смена сотрудника закрыта."))
+        elif action == "to_expense":
+            user = get_object_or_404(User, id=request.POST.get("user_id") or 0)
+            row = next((r for r in payroll_rows(date_from, date_to) if r["user"].id == user.id), None)
+            comment = _payroll_comment(user, date_from, date_to)
+            if row is None or row["total"] <= 0:
+                messages.error(request, _("Начислять нечего."))
+            elif Expense.objects.filter(category=Expense.Category.SALARY, comment=comment).exists():
+                messages.error(request, _("Эта зарплата уже записана в расходы."))
+            else:
+                Expense.objects.create(
+                    date=date_to, category=Expense.Category.SALARY, amount=row["total"],
+                    comment=comment, created_by=request.user,
+                )
+                messages.success(request, _("Зарплата записана в расходы."))
+        return redirect(back)
+
+    rows = payroll_rows(date_from, date_to)
+    recorded = set(
+        Expense.objects.filter(category=Expense.Category.SALARY).values_list("comment", flat=True)
+    )
+    for row in rows:
+        row["recorded"] = _payroll_comment(row["user"], date_from, date_to) in recorded
+    month_start = today.replace(day=1)
+    prev_month_end = month_start - timedelta(days=1)
+    return render(request, "reports/payroll.html", {
+        "rows": rows,
+        "total": sum((r["total"] for r in rows), Decimal(0)),
+        "open_shifts": WorkShift.objects.filter(ended_at=None).select_related("user"),
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "ranges": [
+            {"label": _("Этот месяц"), "start": month_start.isoformat(), "end": today.isoformat()},
+            {"label": _("Прошлый месяц"), "start": prev_month_end.replace(day=1).isoformat(), "end": prev_month_end.isoformat()},
+            {"label": _("7 дней"), "start": (today - timedelta(days=6)).isoformat(), "end": today.isoformat()},
+        ],
+    })
