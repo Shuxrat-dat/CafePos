@@ -306,12 +306,59 @@ class Hub:
     # ---------- утренние сводки ----------
 
     def morning_tick(self):
-        """Раз в минуту: в 09:00 по местному времени заведения шлёт вчерашний итог и список закупки."""
-        for venue in self.store.all_venues():
+        """Раз в минуту: в 09:00 по местному времени заведения шлёт вчерашний итог и список закупки.
+        Чатам с несколькими заведениями вместо отдельных итогов приходит один общий отчёт по сети."""
+        venues = self.store.all_venues()
+        for venue in venues:
             try:
                 self._morning_for(venue)
             except Exception:
                 log.exception("Утренняя сводка не отправлена (заведение %s)", venue["id"])
+        seen = set()
+        for venue in venues:
+            for chat in self.store.chats_of_venue(venue["id"]):
+                if chat["chat_id"] in seen:
+                    continue
+                seen.add(chat["chat_id"])
+                try:
+                    self._network_morning(chat)
+                except Exception:
+                    log.exception("Утренний отчёт сети не отправлен (чат %s)", chat["chat_id"])
+
+    def _network_morning(self, chat):
+        """Один общий итог вчерашнего дня по всем точкам чата. Ждёт данных всех точек, но не дольше 11:00."""
+        if "morning" in chat["off"]:
+            return
+        venues = self.store.venues_of_chat(chat["chat_id"])
+        if len(venues) < 2:
+            return
+        loaded = []
+        for venue in venues:
+            snapshot, at = self.store.snapshot(venue)
+            fresh = bool(snapshot and at and self.clock() - at <= SNAPSHOT_MAX_AGE)
+            loaded.append((venue, snapshot if fresh else None))
+        anchor = next((s for _v, s in loaded if s), None)  # часовой пояс берём у первой точки с данными
+        if anchor is None:
+            return
+        local = datetime.fromtimestamp(self.clock(), _zone(anchor.get("tz")))
+        if not MORNING_HOUR <= local.hour < MORNING_UNTIL:
+            return
+        key = "net_morning:" + chat["chat_id"]
+        day_key = local.date().isoformat()
+        if self.store.get_meta(key) == day_key:
+            return
+        rows = []
+        for venue, snapshot in loaded:
+            yesterday = self._local_days(snapshot)[1] if snapshot else None
+            rows.append({"name": venue["name"], "day": yesterday, "ready": yesterday is not None})
+        if not all(r["ready"] for r in rows) and local.hour < MORNING_UNTIL - 1:
+            return  # какая-то касса ещё не прислала сводку: подождём
+        self.store.set_meta(key, day_key)
+        if not any(r["day"] and r["day"].get("orders") for r in rows):
+            return
+        lang = chat["lang"]
+        body = texts.network_report(lang, "yesterday", [{"name": r["name"], "day": r["day"]} for r in rows])
+        self._send(chat, T(lang, "morning") + "\n\n" + body, texts.main_keyboard(lang, network=True))
 
     def _morning_for(self, venue):
         snapshot, at = self.store.snapshot(venue)
@@ -329,6 +376,8 @@ class Hub:
                 for chat in self.store.chats_of_venue(venue["id"]):
                     if "morning" in chat["off"]:
                         continue
+                    if len(self.store.venues_of_chat(chat["chat_id"])) > 1:
+                        continue  # у владельца сети одно общее утреннее сообщение, см. _network_morning
                     lang = chat["lang"]
                     body = texts.day_report(lang, venue["name"], "yesterday", yesterday)
                     self._send(chat, T(lang, "morning") + "\n\n" + body, texts.main_keyboard(lang))

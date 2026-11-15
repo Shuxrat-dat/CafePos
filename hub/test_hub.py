@@ -440,3 +440,82 @@ class NetworkTests(HubTestCase):
         sent = [p["commands"] for m, p in self.api.calls if m == "setMyCommands"]
         self.assertTrue(sent)
         self.assertTrue(all(any(c["command"] == "tarmoq" for c in commands) for commands in sent))
+
+
+class NetworkMorningTests(HubTestCase):
+    """Общий утренний отчёт: чату с несколькими точками приходит одно сообщение вместо отдельных итогов."""
+
+    def setUp(self):
+        super().setUp()
+        self.a, reply_a = self.register("Kafe A")
+        self.say(111, f"/start {reply_a['code']}")
+        self.b, reply_b = self.register("Kafe B")
+        self.say(111, f"/start {reply_b['code']}")
+        self.hub.set_snapshot(self.a, snapshot(venue="Kafe A"))
+        self.hub.set_snapshot(self.b, snapshot(venue="Kafe B", yesterday=day(1000000, 10, date="2026-11-07")))
+        self.api.sent.clear()
+
+    def morning_texts(self):
+        return [t for t in self.api.texts_to(111) if "Xayrli tong" in t]
+
+    def test_one_combined_message_instead_of_two(self):
+        self.hub.morning_tick()
+        morning = self.morning_texts()
+        self.assertEqual(len(morning), 1)
+        self.assertIn("🌐 Tarmoq · Kecha", morning[0])
+        self.assertIn("3 000 000 soʻm", morning[0])  # 2 000 000 + 1 000 000
+        self.assertLess(morning[0].index("1. Kafe A"), morning[0].index("2. Kafe B"))
+
+    def test_shopping_stays_per_venue(self):
+        self.hub.morning_tick()
+        shopping = [t for t in self.api.texts_to(111) if "Mol goʻshti" in t]
+        self.assertEqual(len(shopping), 2)
+
+    def test_sent_once_per_day(self):
+        self.hub.morning_tick()
+        self.hub.morning_tick()
+        self.assertEqual(len(self.morning_texts()), 1)
+
+    def test_waits_for_a_late_till_then_sends_what_it_has(self):
+        self.hub.set_snapshot(self.b, snapshot(venue="Kafe B", today=day(500000, 5, date="2026-11-08"),
+                                               yesterday=None))
+        self.api.sent.clear()
+        self.hub.morning_tick()  # 09:30: касса B ещё не прислала вчерашний день
+        self.assertEqual(self.morning_texts(), [])
+        self.now = datetime(2026, 11, 8, 5, 30, tzinfo=timezone.utc).timestamp()  # 10:30 — ещё ждём
+        self.hub.morning_tick()
+        self.assertEqual(self.morning_texts(), [])
+        self.now = datetime(2026, 11, 8, 6, 30, tzinfo=timezone.utc).timestamp()  # 11:30 — последний час окна
+        self.hub.morning_tick()
+        morning = self.morning_texts()
+        self.assertEqual(len(morning), 1)
+        self.assertIn("2 000 000 soʻm", morning[0])
+        self.assertIn("• Kafe B", morning[0])
+
+    def test_nothing_after_the_window(self):
+        self.now = datetime(2026, 11, 8, 7, 30, tzinfo=timezone.utc).timestamp()  # 12:30 по Ташкенту
+        self.hub.morning_tick()
+        self.assertEqual(self.morning_texts(), [])
+
+    def test_respects_chat_settings(self):
+        self.store.set_off(111, {"morning"})
+        self.hub.morning_tick()
+        self.assertEqual(self.morning_texts(), [])
+
+    def test_no_orders_anywhere_sends_nothing(self):
+        self.hub.set_snapshot(self.a, snapshot(venue="Kafe A", yesterday=day(0, 0, date="2026-11-07")))
+        self.hub.set_snapshot(self.b, snapshot(venue="Kafe B", yesterday=day(0, 0, date="2026-11-07")))
+        self.api.sent.clear()
+        self.hub.morning_tick()
+        self.assertEqual(self.morning_texts(), [])
+
+    def test_single_venue_chat_keeps_its_own_morning(self):
+        other = HubTestCase()
+        other.setUp()
+        venue = other.connect(444)
+        other.hub.set_snapshot(venue, snapshot())
+        other.api.sent.clear()
+        other.hub.morning_tick()
+        first = other.api.texts_to(444)[0]
+        self.assertIn("Xayrli tong", first)
+        self.assertNotIn("Tarmoq", first)
