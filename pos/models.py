@@ -33,6 +33,11 @@ class Table(models.Model):
     seats = models.PositiveSmallIntegerField(_("Мест"), default=4)
     reserved_for = models.CharField(_("Бронь на имя"), max_length=100, blank=True)
     reserved_at = models.DateTimeField(_("Время брони"), null=True, blank=True)
+    # Кабины и VIP: аренда по времени. 0 — обычный стол без почасовой оплаты
+    hourly_price = models.DecimalField(_("Аренда за час (сум)"), max_digits=12, decimal_places=0, default=0,
+                                       help_text=_("0 — обычный стол. Время считается от открытия заказа и добавляется к счёту."))
+    billing_step_minutes = models.PositiveSmallIntegerField(_("Шаг расчёта, мин"), default=30,
+                                                            help_text=_("Начатый шаг оплачивается полностью: при шаге 30 минут 40 минут считаются как 60."))
 
     class Meta:
         verbose_name = "Стол"
@@ -226,6 +231,9 @@ class Order(models.Model):
     )
 
     bill_requested_at = models.DateTimeField(_("Пречек выдан"), null=True, blank=True)
+    # Аренда кабины фиксируется в момент оплаты; до этого считается по часам заново
+    room_charge = models.DecimalField(_("Аренда кабины"), max_digits=12, decimal_places=0, null=True, blank=True)
+    room_minutes = models.PositiveIntegerField(_("Минут аренды"), null=True, blank=True)
     cancel_reason = models.CharField(_("Причина отмены"), max_length=200, blank=True)
     cancelled_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name=_("Кто отменил"), on_delete=models.SET_NULL,
@@ -245,9 +253,28 @@ class Order(models.Model):
 
     # ---------- суммы ----------
 
+    def room_live(self, now=None):
+        """(оплачиваемые минуты, сумма) аренды кабины на сейчас. Начатый шаг оплачивается целиком."""
+        if not self.table_id or not self.is_dine_in or self.status != self.Status.OPEN:
+            return 0, Decimal(0)
+        table = self.table
+        if not table.hourly_price:
+            return 0, Decimal(0)
+        step = max(1, table.billing_step_minutes)
+        elapsed = ((now or timezone.now()) - self.created_at).total_seconds() / 60
+        steps = max(1, -int(-elapsed // step))  # округление вверх, минимум один шаг
+        minutes = steps * step
+        return minutes, round_sum(table.hourly_price * minutes / 60)
+
+    @property
+    def room_amount(self):
+        if self.room_charge is not None:
+            return self.room_charge
+        return self.room_live()[1]
+
     @property
     def subtotal(self):
-        return sum((item.line_total for item in self.items.all()), Decimal(0))
+        return sum((item.line_total for item in self.items.all()), Decimal(0)) + self.room_amount
 
     def discount_for(self, subtotal):
         if self.discount_kind == self.DiscountKind.PERCENT:

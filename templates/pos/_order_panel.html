@@ -146,6 +146,7 @@
 <div id="cart-totals" data-count="{{ order_items|length }}" data-total="{{ totals.total|money }}" class="border-t border-line px-4 pt-3 pb-4 bg-white">
   <dl class="space-y-1 text-sm">
     <div class="flex justify-between"><dt class="text-muted">{% translate 'Подытог' %}</dt><dd class="tabular-nums">{{ totals.subtotal|money }}</dd></div>
+    {% if order.room_amount %}<div class="flex justify-between text-xs text-muted"><dt>{% blocktranslate trimmed with m=order.room_live.0 %}в т.ч. аренда кабины, {{ m }} мин{% endblocktranslate %}</dt><dd class="tabular-nums">{{ order.room_amount|money }}</dd></div>{% endif %}
     <div class="flex justify-between items-center">
       <dt class="text-muted flex items-center gap-1.5">
         {% translate 'Скидка' %}{% if order.discount_kind == 'percent' %} {{ order.discount_value|num }}%{% endif %}

@@ -76,6 +76,9 @@ def receipt(order, printer, precheck=False):
 
         totals = order.totals
         t.pair(_("Подытог"), num(totals["subtotal"]))
+        if order.room_amount:
+            minutes = order.room_minutes or order.room_live()[0]
+            t.pair(_("в т.ч. аренда кабины, %(m)s мин") % {"m": minutes}, num(order.room_amount))
         if totals["discount"]:
             label = _("Скидка")
             if order.discount_kind == "percent":

@@ -421,3 +421,69 @@ def payroll(request):
             {"label": _("7 дней"), "start": (today - timedelta(days=6)).isoformat(), "end": today.isoformat()},
         ],
     })
+
+
+@reports_only
+def export_xlsx(request):
+    """Выгрузка за период в Excel: сводка, заказы, проданные блюда и расходы."""
+    from django.http import HttpResponse
+
+    from . import xlsx
+
+    today = timezone.localdate()
+    date_from = _parse(request.GET.get("from"), today)
+    date_to = _parse(request.GET.get("to"), today)
+    if date_to < date_from:
+        date_from, date_to = date_to, date_from
+    if (date_to - date_from).days >= MAX_DAYS:
+        date_from = date_to - timedelta(days=MAX_DAYS - 1)
+    start, end = _bounds(date_from, date_to)
+    orders = _paid_orders(start, end)
+    type_labels = dict(Order.OrderType.choices)
+    method_labels = dict(Order.PaymentMethod.choices)
+
+    order_rows = [[_("№"), _("Закрыт"), _("Тип"), _("Стол"), _("Официант"), _("Кассир"), _("Оплата"),
+                   _("Подытог"), _("Скидка"), _("Обслуживание"), _("Итого")]]
+    dishes = defaultdict(lambda: {"qty": 0, "sum": Decimal(0)})
+    revenue = discounts = service = Decimal(0)
+    for order in orders:
+        totals = order.totals
+        revenue += totals["total"]
+        discounts += totals["discount"]
+        service += totals["service"]
+        order_rows.append([
+            order.id, timezone.localtime(order.closed_at), type_labels.get(order.order_type, order.order_type),
+            order.table.number if order.table_id else "",
+            order.waiter.get_full_name() or order.waiter.username,
+            (order.cashier.get_full_name() or order.cashier.username) if order.cashier_id else "",
+            method_labels.get(order.payment_method, order.payment_method),
+            totals["subtotal"], totals["discount"], totals["service"], totals["total"],
+        ])
+        for item in order.items.all():
+            row = dishes[(localized_name(item.dish), localized_name(item.dish.category))]
+            row["qty"] += item.quantity
+            row["sum"] += item.line_total
+    dish_rows = [[_("Блюдо"), _("Категория"), _("Продано, шт."), _("Сумма")]]
+    for (name, category), data in sorted(dishes.items(), key=lambda kv: -kv[1]["sum"]):
+        dish_rows.append([name, category, data["qty"], data["sum"]])
+    expenses = list(Expense.objects.filter(date__gte=date_from, date__lte=date_to).order_by("date", "id"))
+    expense_rows = [[_("Дата"), _("Статья"), _("Сумма"), _("Комментарий")]]
+    expense_rows += [[e.date, e.get_category_display(), e.amount, e.comment] for e in expenses]
+    expenses_total = sum((e.amount for e in expenses), Decimal(0))
+    summary = [
+        [_("Показатель"), _("Значение")],
+        [_("Период"), f"{date_from:%d.%m.%Y} — {date_to:%d.%m.%Y}"],
+        [_("Выручка"), revenue],
+        [_("Заказов"), len(orders)],
+        [_("Средний чек"), round(revenue / len(orders)) if orders else 0],
+        [_("Скидки"), discounts],
+        [_("Обслуживание"), service],
+        [_("Расходы"), expenses_total],
+        [_("Выручка минус расходы"), revenue - expenses_total],
+    ]
+    data = xlsx.build_workbook([
+        (_("Сводка"), summary), (_("Заказы"), order_rows), (_("Блюда"), dish_rows), (_("Расходы"), expense_rows),
+    ])
+    response = HttpResponse(data, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = f'attachment; filename="cafepos_{date_from.isoformat()}_{date_to.isoformat()}.xlsx"'
+    return response

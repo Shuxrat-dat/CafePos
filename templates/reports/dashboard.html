@@ -80,6 +80,7 @@
   </div>
   <div class="flex flex-wrap gap-2">
     <a href="{% url 'payroll' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary">{% icon "clock" 16 %}{% translate 'Зарплата' %}</a>
+    <a href="{% url 'export_xlsx' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary" download>{% icon "arrow-down" 16 %}{% translate 'Excel' %}</a>
     <a href="{% url 'expenses' %}?from={{ date_from }}&to={{ date_to }}" class="btn btn-secondary">{% icon "plus" 16 %}{% translate 'Расходы' %}</a>
   </div>
 </div>

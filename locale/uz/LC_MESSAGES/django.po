@@ -4452,3 +4452,54 @@ msgstr "Meniki"
 
 msgid "Ожидают оплаты"
 msgstr "Toʻlov kutmoqda"
+
+msgid "0 — обычный стол. Время считается от открытия заказа и добавляется к счёту."
+msgstr "0 — oddiy stol. Vaqt buyurtma ochilganidan hisoblanadi va hisobga qoʻshiladi."
+
+msgid "Excel"
+msgstr "Excel"
+
+msgid "Аренда за час (сум)"
+msgstr "Soatlik ijara (soʻm)"
+
+msgid "Аренда кабины"
+msgstr "Kabina ijarasi"
+
+msgid "Выручка минус расходы"
+msgstr "Tushum minus xarajatlar"
+
+msgid "Значение"
+msgstr "Qiymat"
+
+msgid "Минут аренды"
+msgstr "Ijara daqiqalari"
+
+msgid "Начатый шаг оплачивается полностью: при шаге 30 минут 40 минут считаются как 60."
+msgstr "Boshlangan qadam toʻliq toʻlanadi: 30 daqiqalik qadamda 40 daqiqa 60 deb hisoblanadi."
+
+msgid "Показатель"
+msgstr "Koʻrsatkich"
+
+msgid "Продано, шт."
+msgstr "Sotildi, dona"
+
+msgid "Сводка"
+msgstr "Xulosa"
+
+msgid "Скидки"
+msgstr "Chegirmalar"
+
+msgid "Цена не может быть меньше нуля."
+msgstr "Narx noldan kichik boʻlishi mumkin emas."
+
+msgid "Шаг расчёта, мин"
+msgstr "Hisoblash qadami, daq."
+
+msgid "Шаг расчёта: от 5 до 240 минут."
+msgstr "Hisoblash qadami: 5 dan 240 daqiqagacha."
+
+msgid "в т.ч. аренда кабины, %(m)s мин"
+msgstr "shu jumladan kabina ijarasi, %(m)s daq."
+
+msgid "№"
+msgstr "№"

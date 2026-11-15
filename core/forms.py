@@ -124,11 +124,23 @@ class HallForm(StyledModelForm):
 class TableForm(StyledModelForm):
     class Meta:
         model = Table
-        fields = ["hall", "number", "seats"]
+        fields = ["hall", "number", "seats", "hourly_price", "billing_step_minutes"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["hall"].label_from_instance = localized_name
+
+    def clean_hourly_price(self):
+        value = self.cleaned_data.get("hourly_price") or 0
+        if value < 0:
+            raise forms.ValidationError(_("Цена не может быть меньше нуля."))
+        return value
+
+    def clean_billing_step_minutes(self):
+        value = self.cleaned_data.get("billing_step_minutes") or 30
+        if not 5 <= value <= 240:
+            raise forms.ValidationError(_("Шаг расчёта: от 5 до 240 минут."))
+        return value
 
     def clean_seats(self):
         seats = self.cleaned_data["seats"]

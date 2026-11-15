@@ -357,6 +357,10 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             target = _split_off(locked, items, selected, method, received, card, cashier, shift=shift)
         else:
             target = locked
+            # Аренда кабины фиксируется на момент оплаты
+            target.room_minutes, target.room_charge = locked.room_live()
+            if not target.room_minutes:
+                target.room_minutes = target.room_charge = None
             target.payment_method = method
             target.cash_received = received
             target.card_amount = card
