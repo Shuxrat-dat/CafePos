@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "inventory",
     "reports",
     "printing",
+    "juma",
 ]
 
 MIDDLEWARE = [
@@ -214,6 +215,11 @@ X_FRAME_OPTIONS = "DENY"
 # владелец нажимает ссылку и получает уведомления без токенов и номеров чатов.
 HUB_URL = os.environ.get("HUB_URL", "").strip()
 HUB_REGISTRATION_TOKEN = os.environ.get("HUB_REGISTRATION_TOKEN", "").strip()
+
+# Доставка через Juma (приложение juma/): адрес облака и ключ заведения, который выдаёт администратор Juma.
+# Пусто — доставка выключена, касса работает как раньше. Фоновый процесс: manage.py juma_sync.
+JUMA_URL = os.environ.get("JUMA_URL", "").strip()
+JUMA_MERCHANT_KEY = os.environ.get("JUMA_MERCHANT_KEY", "").strip()
 
 # Ошибки сервера (500) уходят владельцу в Telegram, если бот подключён в настройках. Вывод в консоль как прежде.
 LOGGING = {

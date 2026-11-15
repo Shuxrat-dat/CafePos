@@ -40,6 +40,18 @@ def _nav(request):
 
         printer_problems = problem_count() or None
 
+    # Пункт «Juma» виден, только если доставка подключена (в .env заданы JUMA_URL и ключ); бейдж — новые заказы
+    juma_badge = None
+    juma_on = False
+    if has_role(user, PAYMENT_ROLES):
+        from juma import client as juma_client
+
+        juma_on = juma_client.enabled()
+        if juma_on:
+            from juma.models import JumaOrder
+
+            juma_badge = JumaOrder.objects.filter(status__in=["PLACED", "SENT"]).count() or None
+
     items = [
         ("orders", _("Обзор"), "home", SERVICE_ROLES, {"orders", "order_view"}),
         ("floor", _("Заказы"), "receipt", SERVICE_ROLES, {"floor"} | order_pages, open_count),
@@ -49,6 +61,7 @@ def _nav(request):
         ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
         # Кнопка создаёт заказ навынос, так и называем
         ("new_order", _("Навынос"), "shopping-bag", SERVICE_ROLES, set()),
+        ("juma_board", "Juma", "bike", PAYMENT_ROLES, {"juma_board"}, juma_badge),
         ("debts", _("Долги"), "wallet", PAYMENT_ROLES, {"debts", "debt_detail"}),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
@@ -66,6 +79,8 @@ def _nav(request):
         if name == "table_map" and has_role(user, MANAGE_ROLES):
             continue
         if name == "debts" and not _debts_enabled(request):
+            continue
+        if name == "juma_board" and not juma_on:
             continue
         if has_role(user, roles):
             res.append({

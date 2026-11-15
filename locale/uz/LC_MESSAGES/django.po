@@ -4185,3 +4185,99 @@ msgstr "Hozircha hisoblanadigan narsa yoʻq"
 
 msgid "Задайте ставки в карточках сотрудников, а сотрудники пусть отмечают начало и конец смены."
 msgstr "Xodimlar kartochkalarida stavkalarni belgilang, xodimlar esa smena boshlanishi va tugashini belgilasin."
+
+msgid "Juma вернула ошибку %(code)s."
+msgstr "Juma %(code)s xatosini qaytardi."
+
+msgid "Juma не приняла ключ заведения. Проверьте JUMA_MERCHANT_KEY в файле .env."
+msgstr "Juma muassasa kalitini qabul qilmadi. .env faylidagi JUMA_MERCHANT_KEY ni tekshiring."
+
+msgid "Активные заказы"
+msgstr "Faol buyurtmalar"
+
+msgid "Блюдо недоступно"
+msgstr "Taom mavjud emas"
+
+msgid "Возврат выполнен"
+msgstr "Pul qaytarildi"
+
+msgid "Время готовности, мин"
+msgstr "Tayyor boʻlish vaqti, daq"
+
+msgid "Доставка не подключена"
+msgstr "Yetkazib berish ulanmagan"
+
+msgid "Другая причина"
+msgstr "Boshqa sabab"
+
+msgid "За товар"
+msgstr "Mahsulot uchun"
+
+msgid "Заведение закрыто"
+msgstr "Muassasa yopiq"
+
+msgid "Заведение приостановлено в Juma."
+msgstr "Muassasa Juma’da toʻxtatilgan."
+
+msgid "Заказ не оплачен."
+msgstr "Buyurtma toʻlanmagan."
+
+msgid "Заказ передан, но оплату на кассе проведите вручную: %(why)s"
+msgstr "Buyurtma topshirildi, ammo toʻlovni kassada qoʻlda kiriting: %(why)s"
+
+msgid "Заказ уже передан водителю."
+msgstr "Buyurtma allaqachon haydovchiga topshirilgan."
+
+msgid "Заказ уже принят или отменён."
+msgstr "Buyurtma allaqachon qabul qilingan yoki bekor qilingan."
+
+msgid "Заказы доставки. Страница обновляется сама."
+msgstr "Yetkazib berish buyurtmalari. Sahifa oʻzi yangilanadi."
+
+msgid "Изменилась цена"
+msgstr "Narx oʻzgardi"
+
+msgid "Код"
+msgstr "Kod"
+
+msgid "Код выдачи"
+msgstr "Topshirish kodi"
+
+msgid "Неверный код выдачи."
+msgstr "Topshirish kodi notoʻgʻri."
+
+msgid "Недавние"
+msgstr "Yaqinda"
+
+msgid "Нет связи с Juma"
+msgstr "Juma bilan aloqa yoʻq"
+
+msgid "Нет связи с Juma. Проверьте интернет."
+msgstr "Juma bilan aloqa yoʻq. Internetni tekshiring."
+
+msgid "Нужен возврат денег покупателю"
+msgstr "Xaridorga pulni qaytarish kerak"
+
+msgid "Отменить"
+msgstr "Bekor qilish"
+
+msgid "Отменить заказ?"
+msgstr "Buyurtma bekor qilinsinmi?"
+
+msgid "Передан водителю"
+msgstr "Haydovchiga topshirildi"
+
+msgid "Поставить на паузу"
+msgstr "Pauzaga qoʻyish"
+
+msgid "Принимаем заказы: включить"
+msgstr "Buyurtma qabul qilishni yoqish"
+
+msgid "Связь с Juma есть"
+msgstr "Juma bilan aloqa bor"
+
+msgid "Сейчас заказов нет."
+msgstr "Hozircha buyurtmalar yoʻq."
+
+msgid "Состояние заказа изменилось, обновите страницу."
+msgstr "Buyurtma holati oʻzgardi, sahifani yangilang."

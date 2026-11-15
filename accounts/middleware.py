@@ -32,6 +32,8 @@ class RoleAccessMiddleware:
     def _allowed_roles(path):
         if path.startswith("/kitchen/"):
             return KITCHEN_ROLES
+        if path.startswith("/juma/"):
+            return PAYMENT_ROLES
         if path.startswith("/reports/"):
             return REPORT_ROLES
         if path.startswith("/stock/"):

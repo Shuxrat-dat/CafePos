@@ -22,6 +22,7 @@ urlpatterns = [
     path("demo/login/", core_views.demo_login, name="demo_login"),
     path("account/", include("accounts.urls")),
     path("kitchen/", include("kitchen.urls")),
+    path("juma/", include("juma.urls")),
     path("reports/", include("reports.urls")),
     path("stock/", include("inventory.urls")),
     path("menu/", include("menu.urls")),

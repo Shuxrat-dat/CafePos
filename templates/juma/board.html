@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}Juma{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">Juma</h1>
+    <p class="page-sub">{% translate 'Заказы доставки. Страница обновляется сама.' %}</p>
+  </div>
+</div>
+<div id="juma-panel" hx-get="{% url 'juma_panel' %}" hx-trigger="every 5s [!document.activeElement || document.activeElement.tagName !== 'INPUT']" hx-swap="innerHTML">
+  {% include "juma/_panel.html" %}
+</div>
+{% endblock %}
