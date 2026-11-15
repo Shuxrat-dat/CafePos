@@ -5,19 +5,32 @@
 {% block content %}
 {% if user.simple_floor %}
 <style>
-  /* Официант: плотная корзина и мелкие кнопки, как в кассовом терминале */
-  #cart #order-panel .icon-btn { width: 34px; height: 34px; border-radius: 10px; }
-  #cart #order-panel > div:first-child { padding: 10px 12px; }
-  #cart #order-panel ul { padding-left: 12px; padding-right: 12px; }
-  #cart #order-panel li { padding-top: 8px; padding-bottom: 8px; }
-  #cart #order-panel > div:last-child { padding: 10px 12px 12px; }
-  #cart #order-panel .btn-lg { min-height: 44px; }
-  .cat-side { display:flex; align-items:center; min-height:40px; padding:0 10px; border-radius:10px; background:#EFE8DC; color:#57534e; font-size:13px; font-weight:600; text-align:left; flex-shrink:0; }
+  /* Официант: корзина-шторка на телефоне, плотная колонка на широком экране, крупные цели для пальца */
+  #cart #order-panel .icon-btn { width: 38px; height: 38px; border-radius: 12px; }
+  #cart #order-panel > div:first-child { padding: 12px 14px; }
+  #cart #order-panel ul { padding-left: 14px; padding-right: 14px; }
+  #cart #order-panel li { padding-top: 10px; padding-bottom: 10px; }
+  #cart #order-panel > div:last-child { padding: 12px 14px 14px; }
+  #cart #order-panel .btn-lg { min-height: 50px; font-size: 16px; }
+  .cat-side { display:flex; align-items:center; min-height:44px; padding:0 12px; border-radius:12px; background:#EFE8DC; color:#57534e; font-size:13.5px; font-weight:700; text-align:left; flex-shrink:0; transition:background .15s; }
+  .cat-side:hover { background:#E6DCCB; }
   .cat-side.chip-active { background:#7A3F1E; color:#fff; border-color:transparent; }
   @media (max-width: 639px) { .cat-side { white-space:nowrap; } }
+
+  .wdgrid { display:grid; gap:clamp(8px,1vw,14px); grid-template-columns:repeat(auto-fill,minmax(clamp(132px,14vw,190px),1fr)); }
+  .wdish { display:flex; flex-direction:column; text-align:left; overflow:hidden; background:#fff; border:1px solid #E8DFD2; border-radius:16px; box-shadow:0 1px 2px rgba(60,36,18,.05), 0 6px 16px -12px rgba(60,36,18,.25); transition:transform .12s, box-shadow .12s, border-color .12s; }
+  .wdish:hover { border-color:#C98B45; box-shadow:0 10px 24px -12px rgba(60,36,18,.35); }
+  .wdish:active { transform:scale(.97); }
+  .wdish-price { display:inline-block; padding:3px 9px; border-radius:999px; background:#F8ECDA; color:#7A3F1E; font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wdish-flash { animation:wflash .45s ease-out; }
+  @keyframes wflash { 0% { box-shadow:0 0 0 0 rgba(201,139,69,.7); } 100% { box-shadow:0 0 0 14px rgba(201,139,69,0); } }
+  .cart-bar-pulse { animation:wbar .4s ease-out; }
+  @keyframes wbar { 0% { transform:scale(1); } 40% { transform:scale(1.04); } 100% { transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .wdish-flash, .cart-bar-pulse { animation:none; } .wdish { transition:none; } }
+  #cart.cart-open { transform:translateY(0); }
 </style>
 {% endif %}
-<div class="grid {% if user.simple_floor %}lg:grid-cols-[minmax(0,1fr)_340px] gap-3{% else %}lg:grid-cols-[minmax(0,1fr)_420px] gap-4{% endif %} items-start">
+<div class="grid {% if user.simple_floor %}lg:grid-cols-[minmax(0,1fr)_clamp(320px,28vw,420px)] gap-3 lg:gap-4 pb-24 lg:pb-0{% else %}lg:grid-cols-[minmax(0,1fr)_420px] gap-4{% endif %} items-start">
   {# ---------- Меню ---------- #}
   <section class="min-w-0 {% if user.simple_floor %}sm:grid sm:grid-cols-[116px_minmax(0,1fr)] sm:gap-x-3 sm:items-start{% endif %}">
     <div class="sticky top-14 z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-0 pb-3{% endif %}">
@@ -51,19 +64,19 @@
       {% for category in categories %}
         <div data-cat-section="{{ category.id }}">
           <h2 class="section-title mb-2.5 text-slate-700">{{ category|tr }}</h2>
-          <div class="grid {% if user.simple_floor %}gap-2 grid-cols-[repeat(auto-fill,minmax(128px,1fr))]{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]{% endif %}">
+          <div class="grid {% if user.simple_floor %}wdgrid{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]{% endif %}">
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
                 <button type="button" data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
                   {% if dish.modifiers.all or dish.sold_by_weight %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
-                  class="group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition">
-                  {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[52px]" size=24 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
-                  <span class="{% if user.simple_floor %}p-2{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-1.5">
-                    <span class="{% if user.simple_floor %}text-[13px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
+                  class="{% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
+                  {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[clamp(64px,7vw,104px)]" size=28 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
+                  <span class="{% if user.simple_floor %}p-2.5{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-2">
+                    <span class="{% if user.simple_floor %}text-[14px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
                     <span class="flex items-center justify-between gap-2">
-                      <span class="font-bold tabular-nums">{{ dish.price|money }}{% if dish.sold_by_weight %}<span class="text-xs font-medium text-muted"> / {% translate 'кг' %}</span>{% endif %}</span>
+                      <span class="{% if user.simple_floor %}wdish-price{% else %}font-bold tabular-nums{% endif %}">{{ dish.price|money }}{% if dish.sold_by_weight %}<span class="text-xs font-medium text-muted"> / {% translate 'кг' %}</span>{% endif %}</span>
                       {% if dish.modifiers.all %}<span class="text-slate-400" title="{% translate 'Есть варианты' %}">{% icon "more" 18 %}</span>{% endif %}
                     </span>
                   </span>
@@ -91,7 +104,8 @@
   </section>
 
   {# ---------- Корзина ---------- #}
-  <aside id="cart" class="card lg:sticky {% if user.simple_floor %}lg:top-16 lg:max-h-[calc(100vh-4.5rem)]{% else %}lg:top-4 lg:max-h-[calc(100vh-2rem)]{% endif %} flex flex-col overflow-hidden">
+  <aside id="cart" class="card {% if user.simple_floor %}fixed inset-x-0 bottom-0 z-40 max-h-[88vh] translate-y-full transition-transform duration-200 rounded-b-none lg:rounded-2xl lg:sticky lg:top-16 lg:translate-y-0 lg:max-h-[calc(100vh-4.5rem)]{% else %}lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]{% endif %} flex flex-col overflow-hidden">
+    {% if user.simple_floor %}<button type="button" class="lg:hidden grid place-items-center h-7 shrink-0" onclick="toggleCart(false)" aria-label="{% translate 'Закрыть' %}"><span class="w-10 h-1.5 rounded-full bg-stone-300"></span></button>{% endif %}
     <div id="order-panel" class="flex flex-col min-h-0 h-full" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_order_panel.html" %}
     </div>
@@ -99,7 +113,15 @@
 </div>
 
 {# Быстрый переход к корзине на телефоне #}
+{% if user.simple_floor %}
+<div id="cart-backdrop" class="hidden lg:hidden fixed inset-0 z-30 bg-night/50" onclick="toggleCart(false)"></div>
+<button id="cart-bar" type="button" onclick="toggleCart(true)" class="lg:hidden fixed inset-x-3 bottom-3 z-30 flex items-center justify-between gap-3 rounded-2xl bg-brand text-white px-4 min-h-[56px] shadow-pop active:bg-brand-600">
+  <span class="flex items-center gap-2 font-bold">{% icon "receipt" 20 %}{% translate 'Корзина' %}<span id="cart-bar-count" class="min-w-[24px] h-6 px-1.5 rounded-full bg-white text-brand text-sm font-extrabold inline-flex items-center justify-center">0</span></span>
+  <span id="cart-bar-total" class="text-lg font-extrabold tabular-nums"></span>
+</button>
+{% else %}
 <a href="#cart" class="lg:hidden fixed bottom-4 right-4 z-30 btn btn-primary btn-lg shadow-pop">{% icon "receipt" 18 %}{% translate 'Корзина' %}</a>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -133,6 +155,30 @@
       chips.querySelectorAll('[data-cat]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
       apply();
     });
+    {% if user.simple_floor %}
+    // Корзина-шторка на телефоне: нижняя панель показывает число позиций и сумму, обновляется после каждого действия
+    var cart = document.getElementById('cart'), bar = document.getElementById('cart-bar'), backdrop = document.getElementById('cart-backdrop');
+    window.toggleCart = function (open) {
+      cart.classList.toggle('cart-open', open);
+      backdrop.classList.toggle('hidden', !open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    };
+    function updateBar(pulse) {
+      var s = document.getElementById('cart-totals');
+      if (!s) return;
+      document.getElementById('cart-bar-count').textContent = s.dataset.count;
+      document.getElementById('cart-bar-total').textContent = s.dataset.count === '0' ? '' : s.dataset.total;
+      if (pulse) { bar.classList.remove('cart-bar-pulse'); void bar.offsetWidth; bar.classList.add('cart-bar-pulse'); }
+    }
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+      if (e.target.id === 'order-panel') updateBar(!!(e.detail.requestConfig && e.detail.requestConfig.verb === 'post'));
+    });
+    document.getElementById('dish-list').addEventListener('click', function (e) {
+      var d = e.target.closest('.wdish'); if (!d) return;
+      d.classList.remove('wdish-flash'); void d.offsetWidth; d.classList.add('wdish-flash');
+    });
+    updateBar(false);
+    {% endif %}
     document.body.addEventListener('openCustomer', function () {
       htmx.ajax('GET', '{% url "customer_form" order.id %}', { target: '#modal' });
     });
