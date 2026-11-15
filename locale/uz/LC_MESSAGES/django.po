@@ -4281,3 +4281,168 @@ msgstr "Hozircha buyurtmalar yoʻq."
 
 msgid "Состояние заказа изменилось, обновите страницу."
 msgstr "Buyurtma holati oʻzgardi, sahifani yangilang."
+
+msgid "Акции"
+msgstr "Aksiyalar"
+
+msgid "Акций пока нет"
+msgstr "Hozircha aksiyalar yoʻq"
+
+msgid "Акция"
+msgstr "Aksiya"
+
+msgid "Акция удалена."
+msgstr "Aksiya oʻchirildi."
+
+msgid "Блюдо в наборе"
+msgstr "Toʻplamdagi taom"
+
+msgid "Включена"
+msgstr "Yoqilgan"
+
+msgid "Вс"
+msgstr "Yak"
+
+msgid "Всё"
+msgstr "Hammasi"
+
+msgid "Всё меню"
+msgstr "Butun menyu"
+
+msgid "Вт"
+msgstr "Sesh"
+
+msgid "Выберите другой заказ."
+msgstr "Boshqa buyurtmani tanlang."
+
+msgid "Выберите, куда перенести."
+msgstr "Qayerga koʻchirishni tanlang."
+
+msgid "Дата окончания раньше даты начала."
+msgstr "Tugash sanasi boshlanish sanasidan oldin."
+
+msgid "Действует по"
+msgstr "Amal qilish tugashi"
+
+msgid "Действует с"
+msgstr "Amal qilish boshlanishi"
+
+msgid "Дни недели"
+msgstr "Hafta kunlari"
+
+msgid "До"
+msgstr "Gacha"
+
+msgid "Из: %(p)s · №%(n)s"
+msgstr "Qayerdan: %(p)s · №%(n)s"
+
+msgid "Изменить акцию"
+msgstr "Aksiyani oʻzgartirish"
+
+msgid "К открытому заказу (объединить)"
+msgstr "Ochiq buyurtmaga (birlashtirish)"
+
+msgid "Каждый день"
+msgstr "Har kuni"
+
+msgid "Куда"
+msgstr "Qayerga"
+
+msgid "На свободный стол (новый заказ)"
+msgstr "Boʻsh stolga (yangi buyurtma)"
+
+msgid "На что скидка"
+msgstr "Nimaga chegirma"
+
+msgid "Набор"
+msgstr "Toʻplam"
+
+msgid "Например: «Счастливые часы» −20%% на напитки с 15:00 до 17:00 по будням."
+msgstr "Masalan: «Baxtli soatlar» ish kunlari 15:00 dan 17:00 gacha ichimliklarga −20%%."
+
+msgid "Не выбрано ни категорий, ни блюд — скидка на всё меню."
+msgstr "Kategoriya ham, taom ham tanlanmagan — chegirma butun menyuga."
+
+msgid "Ничего"
+msgstr "Hech narsa"
+
+msgid "Ничего не отмечено — каждый день."
+msgstr "Hech narsa belgilanmagan — har kuni."
+
+msgid "Новая акция"
+msgstr "Yangi aksiya"
+
+msgid "Оба заказа должны быть открыты."
+msgstr "Ikkala buyurtma ham ochiq boʻlishi kerak."
+
+msgid "Объединён с заказом №%(id)s"
+msgstr "№%(id)s buyurtma bilan birlashtirildi"
+
+msgid "Отметьте, сколько перенести. Перенесёте всё — столы объединятся, этот заказ закроется."
+msgstr "Qancha koʻchirishni belgilang. Hammasini koʻchirsangiz — stollar birlashadi, bu buyurtma yopiladi."
+
+msgid "Перенесено позиций: %(n)s → %(p)s."
+msgstr "Koʻchirilgan pozitsiyalar: %(n)s → %(p)s."
+
+msgid "Перенести"
+msgstr "Koʻchirish"
+
+msgid "Перенести блюда"
+msgstr "Taomlarni koʻchirish"
+
+msgid "Перенести блюда или объединить столы"
+msgstr "Taomlarni koʻchirish yoki stollarni birlashtirish"
+
+msgid "Пн"
+msgstr "Dush"
+
+msgid "Пт"
+msgstr "Juma"
+
+msgid "Пусто — весь день. Можно через полночь: 22:00–02:00."
+msgstr "Boʻsh — kun boʻyi. Yarim tundan oʻtishi mumkin: 22:00–02:00."
+
+msgid "Пусто — каждый день."
+msgstr "Boʻsh — har kuni."
+
+msgid "Сб"
+msgstr "Shan"
+
+msgid "Скидка должна быть от 1 до 99%."
+msgstr "Chegirma 1 dan 99% gacha boʻlishi kerak."
+
+msgid "Скидка, %"
+msgstr "Chegirma, %"
+
+msgid "Скидки по дням и часам: «счастливые часы», бизнес-ланч, акции выходного дня. Цена со скидкой ставится сама, когда блюдо добавляют в заказ."
+msgstr "Kun va soatlar boʻyicha chegirmalar: «baxtli soatlar», biznes-lanch, dam olish kuni aksiyalari. Chegirmali narx taom buyurtmaga qoʻshilganda oʻzi qoʻyiladi."
+
+msgid "Состав набора"
+msgstr "Toʻplam tarkibi"
+
+msgid "Ср"
+msgstr "Chor"
+
+msgid "Столы объединены: всё перенесено в %(p)s."
+msgstr "Stollar birlashtirildi: hammasi %(p)s ga koʻchirildi."
+
+msgid "Удалить акцию?"
+msgstr "Aksiya oʻchirilsinmi?"
+
+msgid "Укажите и начало, и конец, или оставьте оба пустыми."
+msgstr "Boshlanish va tugashni koʻrsating yoki ikkalasini ham boʻsh qoldiring."
+
+msgid "Чт"
+msgstr "Pay"
+
+msgid "в заказе %(q)s"
+msgstr "buyurtmada %(q)s"
+
+msgid "весь день"
+msgstr "kun boʻyi"
+
+msgid "идёт сейчас"
+msgstr "hozir amalda"
+
+msgid "по умолчанию на всё меню"
+msgstr "odatda butun menyuga"
