@@ -374,6 +374,7 @@ class OrderItem(models.Model):
     weight_grams = models.PositiveIntegerField(_("Вес, г"), null=True, blank=True)
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    promo_label = models.CharField(_("Акция"), max_length=100, blank=True)
     status = models.CharField(_("Статус"), max_length=20, choices=Status.choices, default=Status.NEW)
     sent_at = models.DateTimeField(_("Отправлено на кухню"), null=True, blank=True)
     ready_at = models.DateTimeField(_("Готово в"), null=True, blank=True)
@@ -390,6 +391,14 @@ class OrderItem(models.Model):
         # Фиксируем цену блюда на момент заказа, чтобы старые заказы не менялись при смене цен в меню
         if self.price is None:
             self.price = self.dish.price
+            if self._state.adding:
+                # Акция или «счастливые часы»: скидка фиксируется в момент добавления блюда
+                from menu.models import best_promotion, promo_price
+
+                promo = best_promotion(self.dish)
+                if promo:
+                    self.price = promo_price(self.dish.price, promo.percent)
+                    self.promo_label = f"{promo.name} −{promo.percent}%"[:100]
         if self._state.adding and self.dish.sold_by_weight:
             self.by_weight = True
         super().save(*args, **kwargs)

@@ -168,3 +168,39 @@ def modifier_delete(request, modifier_id):
         modifier.delete()
         messages.success(request, _("Модификатор удалён."))
     return redirect("manage_modifiers")
+
+
+@manager_only
+def manage_promotions(request, promotion_id=None):
+    """Акции и «счастливые часы»: скидка на блюда по дням и часам."""
+    from django.utils import timezone
+
+    from .forms import PromotionForm
+    from .models import Promotion
+
+    result = _simple_crud(request, Promotion, PromotionForm, "manage/promotions.html", promotion_id)
+    if not isinstance(result, tuple):
+        return result
+    form, instance = result
+    now = timezone.localtime()
+    promotions = list(Promotion.objects.prefetch_related("categories", "dishes"))
+    for promo in promotions:
+        promo.running = promo.runs_at(now)
+        promo.days_label = [label for code, label in _weekday_labels() if code in promo.weekdays.split(",")]
+    return render(request, "manage/promotions.html", {"form": form, "instance": instance, "promotions": promotions})
+
+
+def _weekday_labels():
+    from .models import WEEKDAY_CHOICES
+
+    return WEEKDAY_CHOICES
+
+
+@manager_only
+@require_POST
+def promotion_delete(request, promotion_id):
+    from .models import Promotion
+
+    get_object_or_404(Promotion, id=promotion_id).delete()
+    messages.success(request, _("Акция удалена."))
+    return redirect("manage_promotions")

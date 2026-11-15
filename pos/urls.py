@@ -35,6 +35,7 @@ urlpatterns = [
     path("orders/<int:order_id>/cancel/", views.cancel_order, name="cancel_order"),
     path("orders/<int:order_id>/move/", views.move_form, name="move_form"),
     path("orders/<int:order_id>/move/<int:table_id>/", views.move_order, name="move_order"),
+    path("orders/<int:order_id>/move-items/", views.move_items, name="move_items"),
     path("orders/<int:order_id>/pay/", views.pay, name="pay"),
     path("debts/", views.debts, name="debts"),
     path("debts/<int:customer_id>/", views.debt_detail, name="debt_detail"),

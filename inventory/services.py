@@ -12,10 +12,8 @@ def write_off_order(order):
     if StockMovement.objects.filter(order=order, kind=StockMovement.Kind.SALE).exists():
         return
     with transaction.atomic():
-        dish_ids = [item.dish_id for item in order.items.all()]
-        product_ids = sorted(list(
-            RecipeItem.objects.filter(dish_id__in=dish_ids).values_list("product_id", flat=True).distinct()
-        ))
+        dishes = {item.dish_id: item.dish for item in order.items.select_related("dish")}
+        product_ids = sorted({product.id for dish in dishes.values() for product, _qty in recipe_lines(dish)})
         if product_ids:
             list(Product.objects.filter(id__in=product_ids).select_for_update())
         # Запоминаем, кто был выше минимума: после продажи сообщим только о тех, кто опустился до него
@@ -33,11 +31,11 @@ def write_off_order(order):
                 comment = f"{item.dish.name} × {item.quantity}"
             if factor != 1:
                 comment += _(", расход ×%(f)s") % {"f": f"{factor:.2f}"}
-            for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
+            for product, per_unit in recipe_lines(item.dish):
                 StockMovement.objects.create(
-                    product=recipe.product,
+                    product=product,
                     kind=StockMovement.Kind.SALE,
-                    quantity=recipe.quantity * item.quantity * item.weight_factor * factor,
+                    quantity=per_unit * item.quantity * item.weight_factor * factor,
                     order=order,
                     comment=comment,
                 )
@@ -61,11 +59,19 @@ def find_shortages(lines):
         factor = Decimal(1)
         for modifier in item.modifiers.all():
             factor *= modifier.consumption_multiplier
-        for recipe in RecipeItem.objects.filter(dish=item.dish).select_related("product"):
-            product = recipe.product
-            need[product] = need.get(product, Decimal(0)) + recipe.quantity * qty * item.weight_factor * factor
+        for product, per_unit in recipe_lines(item.dish):
+            need[product] = need.get(product, Decimal(0)) + per_unit * qty * item.weight_factor * factor
     return [
         {"name": p.name, "need": n, "stock": p.stock, "unit": p.get_unit_display()}
         for p, n in need.items()
         if p.stock < n
     ]
+
+def recipe_lines(dish):
+    """Расход продуктов на одну порцию блюда: [(продукт, количество)].
+    У комбо-набора — его собственная техкарта (например, упаковка) плюс техкарты входящих блюд."""
+    lines = [(r.product, r.quantity) for r in RecipeItem.objects.filter(dish=dish).select_related("product")]
+    for part in dish.combo_items.select_related("component"):
+        for r in RecipeItem.objects.filter(dish=part.component).select_related("product"):
+            lines.append((r.product, r.quantity * part.quantity))
+    return lines

@@ -14,4 +14,7 @@ urlpatterns = [
     path("modifiers/", views.manage_modifiers, name="manage_modifiers"),
     path("modifiers/<int:modifier_id>/", views.manage_modifiers, name="manage_modifiers_edit"),
     path("modifiers/<int:modifier_id>/delete/", views.modifier_delete, name="modifier_delete"),
+    path("promotions/", views.manage_promotions, name="manage_promotions"),
+    path("promotions/<int:promotion_id>/", views.manage_promotions, name="manage_promotions_edit"),
+    path("promotions/<int:promotion_id>/delete/", views.promotion_delete, name="promotion_delete"),
 ]

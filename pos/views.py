@@ -172,7 +172,14 @@ def _clean_comment(request):
 
 
 def _find_same(order, dish, modifier_ids, comment):
-    items = order.items.filter(dish=dish, status=OrderItem.Status.NEW, comment=comment).prefetch_related("modifiers")
+    from menu.models import best_promotion, promo_price
+
+    # Склеиваем только позиции с той же ценой: началась или кончилась акция — новая строка по новой цене
+    promo = best_promotion(dish)
+    price = promo_price(dish.price, promo.percent) if promo else dish.price
+    items = order.items.filter(
+        dish=dish, status=OrderItem.Status.NEW, comment=comment, price=price
+    ).prefetch_related("modifiers")
     for item in items:
         if {m.id for m in item.modifiers.all()} == set(modifier_ids):
             return item
@@ -414,7 +421,7 @@ def quick_add(request, dish_id):
         item.quantity += 1
         item.save(update_fields=["quantity"])
     else:
-        order.items.create(dish=dish, quantity=1, price=dish.price, status=OrderItem.Status.NEW)
+        order.items.create(dish=dish, quantity=1, status=OrderItem.Status.NEW)  # цену (с акцией) ставит модель
     _order_changed(order)
     return redirect(f"{reverse('floor')}?order_id={order.id}")
 
@@ -1227,4 +1234,58 @@ def debt_detail(request, customer_id):
         "error": error,
         "shift_open": services.get_current_shift() is not None,
         "methods": DebtEntry.Method.choices,
+    })
+
+
+# ---------- перенос блюд между столами и объединение ----------
+
+@login_required
+def move_items(request, order_id):
+    """Окно «Перенести блюда»: часть позиций или все (объединение) — в другой открытый заказ или на свободный стол."""
+    order = _get_order(request, order_id)
+    items = list(order.items.select_related("dish").prefetch_related("modifiers"))
+    targets = Order.objects.filter(status=Order.Status.OPEN).exclude(id=order.id).select_related("table__hall", "waiter")
+    if not request.user.sees_all_orders:
+        targets = targets.filter(waiter=request.user)
+    targets = [t for t in targets.order_by("table__hall__id", "table__number", "id") if t.items.exists()]
+    busy = _busy_table_ids()
+    free_tables = [t for t in Table.objects.select_related("hall").order_by("hall__id", "number") if t.id not in busy]
+    error = ""
+
+    if request.method == "POST":
+        selection = {}
+        for item in items:
+            raw = request.POST.get(f"qty_{item.id}", "0").strip()
+            if raw.isdigit() and int(raw) > 0:
+                selection[item.id] = min(int(raw), item.quantity)
+        target_raw = request.POST.get("target", "")
+        target = None
+        if target_raw.startswith("order:") and target_raw[6:].isdigit():
+            target = next((t for t in targets if t.id == int(target_raw[6:])), None)
+        elif target_raw.startswith("table:") and target_raw[6:].isdigit():
+            table = next((t for t in free_tables if t.id == int(target_raw[6:])), None)
+            if table:
+                target = services.create_order(request.user, Order.OrderType.DINE_IN, table)
+        if target is None:
+            error = _("Выберите, куда перенести.")
+        else:
+            try:
+                moved = services.move_items(order, target, selection)
+            except services.PaymentError as exc:
+                error = str(exc)
+                if target_raw.startswith("table:") and not target.items.exists():
+                    target.delete()  # пустой черновик на свободном столе не оставляем
+            else:
+                order.refresh_from_db()
+                place = target.place_label
+                if order.status == Order.Status.CANCELLED:
+                    messages.success(request, _("Столы объединены: всё перенесено в %(p)s.") % {"p": place})
+                else:
+                    messages.success(request, _("Перенесено позиций: %(n)s → %(p)s.") % {"n": moved, "p": place})
+                response = HttpResponse("")
+                response["HX-Redirect"] = reverse("order_detail", args=[target.id])
+                return response
+
+    return render(request, "pos/_move_items_form.html", {
+        "order": order, "items": items, "targets": targets, "free_tables": free_tables, "error": error,
     })

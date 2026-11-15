@@ -130,3 +130,103 @@ class Dish(models.Model):
     @property
     def can_order(self):
         return self.is_available and not self.is_hidden
+
+
+WEEKDAY_CHOICES = [
+    ("0", _("Пн")), ("1", _("Вт")), ("2", _("Ср")), ("3", _("Чт")), ("4", _("Пт")), ("5", _("Сб")), ("6", _("Вс")),
+]
+
+
+class Promotion(models.Model):
+    """Акция или «счастливые часы»: скидка в процентах на блюда в выбранные дни и часы.
+    Цена со скидкой фиксируется в позиции заказа при добавлении, поэтому конец акции не меняет уже набранные заказы."""
+
+    name = models.CharField(_("Название"), max_length=100)
+    name_uz = models.CharField(_("Название (узб.)"), max_length=100, blank=True)
+    percent = models.PositiveSmallIntegerField(_("Скидка, %"))
+    weekdays = models.CharField(
+        _("Дни недели"), max_length=20, blank=True, default="0,1,2,3,4,5,6",
+        help_text=_("Пусто — каждый день."),
+    )
+    start_time = models.TimeField(_("С"), null=True, blank=True)
+    end_time = models.TimeField(_("До"), null=True, blank=True, help_text=_("Пусто — весь день. Можно через полночь: 22:00–02:00."))
+    date_from = models.DateField(_("Действует с"), null=True, blank=True)
+    date_to = models.DateField(_("Действует по"), null=True, blank=True)
+    categories = models.ManyToManyField(Category, verbose_name=_("Категории"), blank=True)
+    dishes = models.ManyToManyField(Dish, verbose_name=_("Блюда"), blank=True)
+    is_active = models.BooleanField(_("Включена"), default=True)
+
+    class Meta:
+        verbose_name = _("Акция")
+        verbose_name_plural = _("Акции")
+        ordering = ["-is_active", "name"]
+
+    def __str__(self):
+        return f"{self.name} −{self.percent}%"
+
+    def runs_at(self, moment):
+        """Действует ли акция в этот момент (местное время)."""
+        if not self.is_active:
+            return False
+        day = moment.date()
+        if self.date_from and day < self.date_from or self.date_to and day > self.date_to:
+            return False
+        now_t = moment.time()
+        start, end = self.start_time, self.end_time
+        days = [d for d in self.weekdays.split(",") if d]
+        weekday = moment.weekday()
+        if start and end and end <= start:
+            # Через полночь: после начала — сегодняшний день, до конца — день, когда акция началась (вчера)
+            if now_t >= start:
+                return not days or str(weekday) in days
+            if now_t < end:
+                return not days or str((weekday - 1) % 7) in days
+            return False
+        if days and str(weekday) not in days:
+            return False
+        if start and now_t < start or end and now_t >= end:
+            return False
+        return True
+
+    def applies_to(self, dish):
+        cats = {c.id for c in self.categories.all()}
+        dishes = {d.id for d in self.dishes.all()}
+        if not cats and not dishes:
+            return True
+        return dish.category_id in cats or dish.id in dishes
+
+
+def best_promotion(dish, moment=None):
+    """Самая выгодная для гостя действующая акция на блюдо или None."""
+    from django.utils import timezone
+
+    moment = timezone.localtime(moment) if moment else timezone.localtime()
+    best = None
+    for promo in Promotion.objects.filter(is_active=True).prefetch_related("categories", "dishes"):
+        if promo.runs_at(moment) and promo.applies_to(dish) and (best is None or promo.percent > best.percent):
+            best = promo
+    return best
+
+
+def promo_price(price, percent):
+    """Цена со скидкой, округлённая до целых сумов."""
+    from decimal import ROUND_HALF_UP, Decimal
+
+    return (Decimal(price) * (100 - percent) / 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+
+
+class ComboItem(models.Model):
+    """Состав комбо-набора: набор — обычное блюдо со своей ценой, в него входят другие блюда.
+    Кухня видит состав, склад списывает продукты по техкартам входящих блюд."""
+
+    combo = models.ForeignKey(Dish, verbose_name=_("Набор"), on_delete=models.CASCADE, related_name="combo_items")
+    component = models.ForeignKey(Dish, verbose_name=_("Блюдо в наборе"), on_delete=models.PROTECT, related_name="+")
+    quantity = models.PositiveSmallIntegerField(_("Количество"), default=1)
+
+    class Meta:
+        verbose_name = _("Блюдо в наборе")
+        verbose_name_plural = _("Состав набора")
+        unique_together = ("combo", "component")
+
+    def __str__(self):
+        return f"{self.combo.name}: {self.component.name} ×{self.quantity}"

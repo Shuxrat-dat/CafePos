@@ -12,6 +12,9 @@
         · {{ order.waiter.first_name|default:order.waiter.username }}
       </p>
     </div>
+    {% if order_items %}
+      <button type="button" class="icon-btn shrink-0" hx-get="{% url 'move_items' order.id %}" hx-target="#modal" title="{% translate 'Перенести блюда или объединить столы' %}" aria-label="{% translate 'Перенести блюда или объединить столы' %}">{% icon "layout-grid" 18 %}</button>
+    {% endif %}
     {% if order.is_dine_in %}
       <button type="button" class="icon-btn shrink-0" hx-get="{% url 'move_form' order.id %}" hx-target="#modal" title="{% translate 'Перенести на другой стол' %}" aria-label="{% translate 'Перенести на другой стол' %}">{% icon "move" 18 %}</button>
     {% endif %}
@@ -70,6 +73,7 @@
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <div class="font-semibold leading-snug">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} <span class="font-bold text-brand-700 tabular-nums whitespace-nowrap">{{ item.weight_grams|weight }}</span>{% endif %}</div>
+          {% if item.promo_label %}<span class="mt-0.5 badge bg-emerald-50 text-emerald-700">{% icon "check" 12 %}{{ item.promo_label }}</span>{% endif %}
           {% if item.needs_weight %}
             <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="mt-1 badge bg-amber-100 text-amber-900">{% icon "alert" 14 %}{% translate 'Укажите вес' %}</button>
           {% endif %}

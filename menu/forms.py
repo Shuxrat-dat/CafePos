@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from core.forms import StyledModelForm, localized_name, style_form
 from inventory.models import RecipeItem
 
-from .models import ALLERGEN_CHOICES, Category, Dish, Modifier
+from .models import ALLERGEN_CHOICES, WEEKDAY_CHOICES, Category, Dish, Modifier, Promotion
 
 MAX_PHOTO_BYTES = 3 * 1024 * 1024
 
@@ -69,6 +69,54 @@ class CategoryForm(StyledModelForm):
     class Meta:
         model = Category
         fields = ["name", "name_uz", "icon", "station", "sort_order", "is_active"]
+
+
+class PromotionForm(StyledModelForm):
+    class Meta:
+        model = Promotion
+        fields = ["name", "name_uz", "percent", "weekdays", "start_time", "end_time", "date_from", "date_to",
+                  "categories", "dishes", "is_active"]
+        widgets = {
+            "start_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "end_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "date_from": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "date_to": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "categories": forms.CheckboxSelectMultiple,
+            "dishes": forms.CheckboxSelectMultiple,
+        }
+
+    weekdays = forms.MultipleChoiceField(
+        label=_("Дни недели"), required=False, choices=WEEKDAY_CHOICES, widget=forms.CheckboxSelectMultiple,
+        help_text=_("Ничего не отмечено — каждый день."),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["categories"].label_from_instance = localized_name
+        self.fields["categories"].help_text = _("Не выбрано ни категорий, ни блюд — скидка на всё меню.")
+        self.fields["dishes"].queryset = Dish.objects.filter(is_hidden=False).order_by("category__sort_order", "name")
+        self.fields["dishes"].label_from_instance = localized_name
+        if self.instance and self.instance.pk:
+            self.initial["weekdays"] = [d for d in self.instance.weekdays.split(",") if d]
+        else:
+            self.initial.setdefault("weekdays", [c for c, _label in WEEKDAY_CHOICES])
+
+    def clean_weekdays(self):
+        return ",".join(sorted(self.cleaned_data.get("weekdays") or []))
+
+    def clean_percent(self):
+        value = self.cleaned_data.get("percent")
+        if value is None or not 1 <= value <= 99:
+            raise forms.ValidationError(_("Скидка должна быть от 1 до 99%."))
+        return value
+
+    def clean(self):
+        data = super().clean()
+        if bool(data.get("start_time")) != bool(data.get("end_time")):
+            self.add_error("end_time", _("Укажите и начало, и конец, или оставьте оба пустыми."))
+        if data.get("date_from") and data.get("date_to") and data["date_to"] < data["date_from"]:
+            self.add_error("date_to", _("Дата окончания раньше даты начала."))
+        return data
 
 
 class ModifierForm(StyledModelForm):

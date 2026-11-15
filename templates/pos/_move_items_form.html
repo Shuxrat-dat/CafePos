@@ -1,0 +1,69 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block width %}max-w-xl{% endblock %}
+{% block modal_title %}{% translate 'Перенести блюда' %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{% translate 'Отметьте, сколько перенести. Перенесёте всё — столы объединятся, этот заказ закроется.' %}</p>{% endblock %}
+{% block modal_body %}
+<form hx-post="{% url 'move_items' order.id %}" hx-target="#modal" hx-swap="innerHTML" class="space-y-4" id="move-items-form">
+  {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
+  <div class="flex items-center justify-between">
+    <span class="text-sm font-semibold">{% blocktranslate trimmed with p=order.place_label n=order.id %}Из: {{ p }} · №{{ n }}{% endblocktranslate %}</span>
+    <span class="flex gap-1">
+      <button type="button" class="btn btn-sm btn-ghost" data-fill="all">{% translate 'Всё' %}</button>
+      <button type="button" class="btn btn-sm btn-ghost" data-fill="none">{% translate 'Ничего' %}</button>
+    </span>
+  </div>
+  <ul class="divide-y divide-line rounded-xl border border-line">
+    {% for item in items %}
+      <li class="flex items-center justify-between gap-3 px-3 py-2">
+        <span class="min-w-0">
+          <span class="block font-medium truncate">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item.weight_grams|weight }}{% endif %}</span>
+          <span class="text-xs text-muted">{{ item.get_status_display }} · {% blocktranslate trimmed with q=item.quantity %}в заказе {{ q }}{% endblocktranslate %}</span>
+        </span>
+        <span class="flex items-center gap-1 shrink-0">
+          <button type="button" class="icon-btn w-9 h-9" data-step="-1" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 16 %}</button>
+          <input name="qty_{{ item.id }}" type="number" min="0" max="{{ item.quantity }}" value="0" class="input w-14 min-h-[36px] text-center px-1 tabular-nums" data-max="{{ item.quantity }}">
+          <button type="button" class="icon-btn w-9 h-9" data-step="1" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 16 %}</button>
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+  <div>
+    <label class="label" for="move-target">{% translate 'Куда' %}</label>
+    <select id="move-target" name="target" class="input" required>
+      <option value="">{% translate 'Выберите…' %}</option>
+      {% if targets %}
+        <optgroup label="{% translate 'К открытому заказу (объединить)' %}">
+          {% for t in targets %}<option value="order:{{ t.id }}">{{ t.place_label }} · №{{ t.id }} · {{ t.waiter.first_name|default:t.waiter.username }}</option>{% endfor %}
+        </optgroup>
+      {% endif %}
+      {% if free_tables %}
+        <optgroup label="{% translate 'На свободный стол (новый заказ)' %}">
+          {% for t in free_tables %}<option value="table:{{ t.id }}">{{ t.hall|tr }} · {% blocktranslate trimmed with n=t.number %}стол {{ n }}{% endblocktranslate %}</option>{% endfor %}
+        </optgroup>
+      {% endif %}
+    </select>
+  </div>
+  <div class="grid grid-cols-2 gap-2">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg">{% translate 'Отмена' %}</button>
+    <button class="btn btn-primary btn-lg">{% icon "check" 18 %}{% translate 'Перенести' %}</button>
+  </div>
+</form>
+<script>
+  (function () {
+    var form = document.getElementById('move-items-form');
+    form.addEventListener('click', function (e) {
+      var step = e.target.closest('[data-step]');
+      if (step) {
+        var input = step.parentNode.querySelector('input');
+        var v = (parseInt(input.value, 10) || 0) + parseInt(step.dataset.step, 10);
+        input.value = Math.max(0, Math.min(parseInt(input.dataset.max, 10), v));
+      }
+      var fill = e.target.closest('[data-fill]');
+      if (fill) {
+        form.querySelectorAll('input[data-max]').forEach(function (i) { i.value = fill.dataset.fill === 'all' ? i.dataset.max : 0; });
+      }
+    });
+  })();
+</script>
+{% endblock %}

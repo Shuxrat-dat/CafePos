@@ -511,3 +511,48 @@ def repay_debt(customer, amount, method, cashier, comment=""):
             customer=locked, amount=-amount, method=method, shift=shift, cashier=cashier,
             comment=(comment or "").strip()[:200] or _("Погашение долга"),
         )
+
+
+# ---------- перенос блюд и объединение столов ----------
+
+def move_items(source, target, selection):
+    """Переносит позиции из одного открытого заказа в другой. selection: {id позиции: сколько перенести}.
+    Часть количества переносится копией позиции с той же ценой, модификаторами и стадией кухни.
+    Если в исходном заказе ничего не осталось, он отменяется как объединённый. Возвращает число перенесённых штук."""
+    if source.pk == target.pk:
+        raise PaymentError(_("Выберите другой заказ."))
+    with transaction.atomic():
+        locked = {o.pk: o for o in Order.objects.select_for_update().filter(pk__in=[source.pk, target.pk])}
+        src, dst = locked.get(source.pk), locked.get(target.pk)
+        if not src or not dst or src.status != Order.Status.OPEN or dst.status != Order.Status.OPEN:
+            raise PaymentError(_("Оба заказа должны быть открыты."))
+        moved = 0
+        for item in src.items.prefetch_related("modifiers").filter(id__in=selection.keys()):
+            qty = min(int(selection[item.id]), item.quantity)
+            if qty <= 0:
+                continue
+            if qty == item.quantity:
+                item.order = dst
+                item.save(update_fields=["order"])
+            else:
+                item.quantity -= qty
+                item.save(update_fields=["quantity"])
+                copy = OrderItem.objects.create(
+                    order=dst, dish=item.dish, quantity=qty, price=item.price, by_weight=item.by_weight,
+                    weight_grams=item.weight_grams, comment=item.comment, promo_label=item.promo_label,
+                    status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
+                )
+                copy.modifiers.set(item.modifiers.all())
+            moved += qty
+        if not moved:
+            raise PaymentError(_("Выберите хотя бы одну позицию."))
+        for order in (src, dst):
+            if order.bill_requested_at:
+                order.bill_requested_at = None
+                order.save(update_fields=["bill_requested_at"])
+        if not src.items.exists():
+            src.status = Order.Status.CANCELLED
+            src.closed_at = timezone.now()
+            src.cancel_reason = _("Объединён с заказом №%(id)s") % {"id": dst.id}
+            src.save(update_fields=["status", "closed_at", "cancel_reason"])
+    return moved
