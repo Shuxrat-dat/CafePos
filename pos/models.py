@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
@@ -656,6 +657,43 @@ class Deposit(models.Model):
 
     def __str__(self):
         return f"{self.guest_name or self.table_id}: {self.amount}"
+
+
+class Booking(models.Model):
+    """Заявка на бронь от гостя (онлайн) с датой, временем и числом гостей. Сотрудник подтверждает её и выбирает стол;
+    в день брони подтверждённая бронь сама появляется на схеме столов."""
+
+    class Status(models.TextChoices):
+        NEW = "new", _("Новая заявка")
+        CONFIRMED = "confirmed", _("Подтверждена")
+        REJECTED = "rejected", _("Отклонена")
+        CANCELLED = "cancelled", _("Отменена")
+        DONE = "done", _("Прошла")
+
+    name = models.CharField(_("Имя"), max_length=100)
+    phone = models.CharField(_("Телефон"), max_length=20)
+    guests = models.PositiveSmallIntegerField(_("Гостей"), default=2)
+    date = models.DateField(_("Дата"), db_index=True)
+    time = models.TimeField(_("Время"))
+    comment = models.CharField(_("Пожелания"), max_length=200, blank=True)
+    status = models.CharField(_("Статус"), max_length=12, choices=Status.choices, default=Status.NEW, db_index=True)
+    table = models.ForeignKey(Table, verbose_name=_("Стол"), on_delete=models.SET_NULL, null=True, blank=True, related_name="bookings")
+    applied = models.BooleanField(_("Показана на схеме"), default=False)
+    handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    handled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Бронь")
+        verbose_name_plural = _("Брони")
+        ordering = ["date", "time", "id"]
+
+    def __str__(self):
+        return f"{self.name} {self.date} {self.time:%H:%M}"
+
+    @property
+    def starts_at(self):
+        return timezone.make_aware(datetime.combine(self.date, self.time))
 
 
 class LoyaltyEntry(models.Model):

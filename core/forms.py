@@ -58,7 +58,12 @@ class CafeSettingsForm(StyledModelForm):
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
             "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_mixed", "accept_debt", "kitchen_warn_minutes",
             "loyalty_percent", "cashier_max_discount", "guest_auto_send",
+            "booking_enabled", "booking_open", "booking_close", "booking_max_guests", "booking_days_ahead",
         ]
+        widgets = {
+            "booking_open": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+            "booking_close": forms.TimeInput(attrs={"type": "time"}, format="%H:%M"),
+        }
 
     def clean(self):
         data = super().clean()

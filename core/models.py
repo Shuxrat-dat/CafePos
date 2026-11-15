@@ -1,3 +1,4 @@
+import datetime
 from django.conf import settings
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
@@ -107,6 +108,14 @@ class CafeSettings(models.Model):
     tg_notify_cancel = models.BooleanField(_("Отмена заказов"), default=True)
     tg_notify_discount = models.BooleanField(_("Крупные скидки"), default=True)
     tg_notify_stock = models.BooleanField(_("Заканчиваются продукты"), default=True)
+    booking_enabled = models.BooleanField(
+        _("Онлайн-бронь для гостей"), default=False,
+        help_text=_("Гости оставляют заявку на странице брони (ссылка и QR в разделе «Брони»), сотрудники подтверждают её и выбирают стол."),
+    )
+    booking_open = models.TimeField(_("Бронь: первое время"), default=datetime.time(10, 0))
+    booking_close = models.TimeField(_("Бронь: заведение закрывается"), default=datetime.time(22, 0))
+    booking_max_guests = models.PositiveSmallIntegerField(_("Бронь: гостей не больше"), default=20)
+    booking_days_ahead = models.PositiveSmallIntegerField(_("Бронь: на сколько дней вперёд"), default=30)
     setup_done = models.BooleanField(_("Быстрая настройка завершена"), default=False)
     tg_notify_review = models.BooleanField(_("Плохие отзывы гостей"), default=True)
     tg_notify_orders = models.BooleanField(_("Новые заказы доставки Juma"), default=True)

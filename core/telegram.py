@@ -392,3 +392,21 @@ def notify_low_stock(products):
     except Exception:
         log.exception("Telegram: сообщение о складе не собрано")
         return False
+
+
+def notify_booking(booking):
+    """Новая заявка на онлайн-бронь: администратор должен подтвердить её, пока гость ждёт ответа."""
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            lines = [
+                "🗓 " + _("Заявка на бронь · %(cafe)s") % {"cafe": cafe.name},
+                _("%(d)s в %(t)s, гостей: %(n)s") % {"d": booking.date.strftime("%d.%m"), "t": booking.time.strftime("%H:%M"), "n": booking.guests},
+                f"{booking.name}, +998 {booking.phone}",
+            ]
+            if booking.comment:
+                lines.append("«" + booking.comment + "»")
+        return send("\n".join(lines), "orders")
+    except Exception:
+        log.exception("Telegram: сообщение о брони не собрано")
+        return False

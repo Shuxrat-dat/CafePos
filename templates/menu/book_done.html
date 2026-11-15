@@ -1,0 +1,16 @@
+{% extends "menu/_guest_base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Заявка принята' %}{% endblock %}
+{% block subtitle %}{% translate 'Бронь стола' %}{% endblock %}
+{% block content %}
+<main class="max-w-xl mx-auto px-4 py-10 text-center">
+  <span class="inline-grid place-items-center w-16 h-16 rounded-2xl bg-sage-100 text-sage mb-4">{% icon "check-circle" 30 %}</span>
+  <h1 class="text-2xl font-extrabold tracking-tight">{% translate 'Заявка принята' %}</h1>
+  {% if summary %}
+    <p class="mt-3 text-lg font-semibold">{{ summary.date }} · {{ summary.time }} · {% blocktranslate trimmed with n=summary.guests %}гостей: {{ n }}{% endblocktranslate %}</p>
+    <p class="text-muted">{{ summary.name }}</p>
+  {% endif %}
+  <p class="text-muted mt-3">{% translate 'Мы свяжемся с вами и подтвердим бронь. Стол станет вашим после подтверждения.' %}</p>
+  {% if cafe_phone %}<a href="tel:{{ cafe_phone }}" class="inline-block mt-5 px-5 min-h-[48px] leading-[48px] rounded-xl bg-brand text-white font-bold">{{ cafe_phone }}</a>{% endif %}
+</main>
+{% endblock %}

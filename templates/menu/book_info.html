@@ -1,0 +1,12 @@
+{% extends "menu/_guest_base.html" %}
+{% load i18n ui %}
+{% block title %}{{ title }}{% endblock %}
+{% block subtitle %}{% translate 'Бронь стола' %}{% endblock %}
+{% block content %}
+<main class="max-w-xl mx-auto px-4 py-10 text-center">
+  <span class="inline-grid place-items-center w-16 h-16 rounded-2xl bg-brand-50 text-brand mb-4">{% icon icon 30 %}</span>
+  <h1 class="text-2xl font-extrabold tracking-tight">{{ title }}</h1>
+  <p class="text-muted mt-2">{{ text }}</p>
+  {% if cafe.phone %}<a href="tel:{{ cafe.phone }}" class="inline-block mt-5 px-5 min-h-[48px] leading-[48px] rounded-xl bg-brand text-white font-bold">{{ cafe.phone }}</a>{% endif %}
+</main>
+{% endblock %}

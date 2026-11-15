@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import guest_views, orders_views, views
+from . import booking_views, guest_views, orders_views, views
 
 urlpatterns = [
     path("", views.floor, name="floor"),
@@ -37,6 +37,7 @@ urlpatterns = [
     path("orders/<int:order_id>/move/<int:table_id>/", views.move_order, name="move_order"),
     path("orders/<int:order_id>/move-items/", views.move_items, name="move_items"),
     path("orders/<int:order_id>/pay/", views.pay, name="pay"),
+    path("bookings/", booking_views.bookings, name="bookings"),
     path("debts/", views.debts, name="debts"),
     path("debts/<int:customer_id>/", views.debt_detail, name="debt_detail"),
     path("orders/<int:order_id>/receipt/", views.receipt, name="receipt"),

@@ -4611,3 +4611,192 @@ msgstr "Usul"
 
 msgid "Что сделать с депозитом, если гости не придут?"
 msgstr "Mehmonlar kelmasa, depozit bilan nima qilinsin?"
+
+msgid "%(d)s в %(t)s, гостей: %(n)s"
+msgstr "%(d)s soat %(t)s da, mehmonlar: %(n)s"
+
+msgid "Больше"
+msgstr "Koʻproq"
+
+msgid "Меньше"
+msgstr "Kamroq"
+
+msgid "Брони"
+msgstr "Bronlar"
+
+msgid "Бронь возможна на ближайшие %(n)s дней."
+msgstr "Bron keyingi %(n)s kun uchun mumkin."
+
+msgid "Бронь отменена."
+msgstr "Bron bekor qilindi."
+
+msgid "Бронь подтверждена."
+msgstr "Bron tasdiqlandi."
+
+msgid "Бронь стола"
+msgstr "Stol bronlash"
+
+msgid "Бронь: гостей не больше"
+msgstr "Bron: mehmonlar koʻpi bilan"
+
+msgid "Бронь: заведение закрывается"
+msgstr "Bron: muassasa yopiladi"
+
+msgid "Бронь: на сколько дней вперёд"
+msgstr "Bron: necha kun oldindan"
+
+msgid "Бронь: первое время"
+msgstr "Bron: birinchi vaqt"
+
+msgid "Ваше имя"
+msgstr "Ismingiz"
+
+msgid "Выберите время из списка."
+msgstr "Vaqtni roʻyxatdan tanlang."
+
+msgid "Выберите дату."
+msgstr "Sanani tanlang."
+
+msgid "Гостей"
+msgstr "Mehmonlar"
+
+msgid "Гости оставляют заявку на странице брони (ссылка и QR в разделе «Брони»), сотрудники подтверждают её и выбирают стол."
+msgstr "Mehmonlar bron sahifasida ariza qoldiradi (havola va QR «Bronlar» boʻlimida), xodimlar uni tasdiqlab, stol tanlaydi."
+
+msgid "Детское кресло, у окна, день рождения…"
+msgstr "Bolalar stulchasi, deraza yonida, tugʻilgan kun…"
+
+msgid "Для такой компании у нас нет подходящего стола. Позвоните нам."
+msgstr "Bunday guruh uchun mos stolimiz yoʻq. Bizga qoʻngʻiroq qiling."
+
+msgid "Забронировать стол"
+msgstr "Stol bronlash"
+
+msgid "Заявка на бронь · %(cafe)s"
+msgstr "Bron arizasi · %(cafe)s"
+
+msgid "Заявка отклонена."
+msgstr "Ariza rad etildi."
+
+msgid "Заявка принята"
+msgstr "Ariza qabul qilindi"
+
+msgid "Заявка уже обработана."
+msgstr "Ariza allaqachon koʻrib chiqilgan."
+
+msgid "Заявки гостей с сайта. Подтвердите заявку и выберите стол: в день брони она появится на схеме столов."
+msgstr "Saytdan mehmonlar arizalari. Arizani tasdiqlang va stol tanlang: bron kuni u stollar sxemasida paydo boʻladi."
+
+msgid "Здесь пока пусто"
+msgstr "Bu yerda hozircha boʻsh"
+
+msgid "Или позвоните:"
+msgstr "Yoki qoʻngʻiroq qiling:"
+
+msgid "Мы свяжемся с вами и подтвердим бронь. Стол станет вашим после подтверждения."
+msgstr "Biz siz bilan bogʻlanib, bronni tasdiqlaymiz. Stol tasdiqlangandan keyin sizniki boʻladi."
+
+msgid "На это время нет свободного стола. Отклоните заявку или освободите стол."
+msgstr "Bu vaqtga boʻsh stol yoʻq. Arizani rad eting yoki stolni boʻshating."
+
+msgid "На это время свободных столов нет. Выберите другое время."
+msgstr "Bu vaqtga boʻsh stollar yoʻq. Boshqa vaqtni tanlang."
+
+msgid "Онлайн-бронь сейчас выключена."
+msgstr "Onlayn bron hozir oʻchirilgan."
+
+msgid "Онлайн-бронь для гостей"
+msgstr "Mehmonlar uchun onlayn bron"
+
+msgid "Онлайн-бронь"
+msgstr "Onlayn bron"
+
+msgid "Онлайн-бронь недоступна"
+msgstr "Onlayn bron mavjud emas"
+
+msgid "Позвоните нам, и мы забронируем стол."
+msgstr "Bizga qoʻngʻiroq qiling, biz stolni bronlaymiz."
+
+msgid "Укажите ваше имя."
+msgstr "Ismingizni kiriting."
+
+msgid "Укажите номер телефона, чтобы мы могли подтвердить бронь."
+msgstr "Bronni tasdiqlashimiz uchun telefon raqamingizni kiriting."
+
+msgid "Число гостей: от 1 до %(n)s. Для большей компании позвоните нам."
+msgstr "Mehmonlar soni: 1 dan %(n)s gacha. Kattaroq guruh uchun bizga qoʻngʻiroq qiling."
+
+msgid "Это время уже слишком близко. Выберите позже или позвоните нам."
+msgstr "Bu vaqt juda yaqin. Keyinroqni tanlang yoki bizga qoʻngʻiroq qiling."
+
+msgid "Такая заявка уже принята. Мы свяжемся с вами."
+msgstr "Bunday ariza allaqachon qabul qilingan. Biz siz bilan bogʻlanamiz."
+
+msgid "Этот стол на это время занят или мал. Выберите другой."
+msgstr "Bu stol shu vaqtga band yoki kichik. Boshqasini tanlang."
+
+msgid "Неверное действие."
+msgstr "Notoʻgʻri amal."
+
+msgid "Слишком много заявок с этого устройства. Попробуйте позже или позвоните нам."
+msgstr "Bu qurilmadan juda koʻp ariza. Keyinroq urinib koʻring yoki bizga qoʻngʻiroq qiling."
+
+msgid "Новая заявка"
+msgstr "Yangi ariza"
+
+msgid "Подтверждена"
+msgstr "Tasdiqlangan"
+
+msgid "Отменена"
+msgstr "Bekor qilingan"
+
+msgid "Прошла"
+msgstr "Oʻtgan"
+
+msgid "Пожелания"
+msgstr "Istaklar"
+
+msgid "Показана на схеме"
+msgstr "Sxemada koʻrsatilgan"
+
+msgid "Оставьте заявку, мы подтвердим бронь по телефону или сообщением."
+msgstr "Ariza qoldiring, bronni telefon yoki xabar orqali tasdiqlaymiz."
+
+msgid "Сколько гостей"
+msgstr "Nechta mehmon"
+
+msgid "Пожелания (необязательно)"
+msgstr "Istaklar (majburiy emas)"
+
+msgid "Отправить заявку"
+msgstr "Arizani yuborish"
+
+msgid "Ссылка для гостей"
+msgstr "Mehmonlar uchun havola"
+
+msgid "Ссылка скопирована"
+msgstr "Havola nusxalandi"
+
+msgid "Онлайн-бронь выключена"
+msgstr "Onlayn bron oʻchirilgan"
+
+msgid "Подтверждённые"
+msgstr "Tasdiqlanganlar"
+
+msgid "сегодня"
+msgstr "bugun"
+
+msgid "Подтвердить"
+msgstr "Tasdiqlash"
+
+msgid "Отменить бронь"
+msgstr "Bronni bekor qilish"
+
+msgid "Отменить эту бронь?"
+msgstr "Bu bron bekor qilinsinmi?"
+
+msgid "Новые заявки гостей появятся здесь, и вам придёт сообщение в Telegram."
+msgstr "Mehmonlarning yangi arizalari shu yerda paydo boʻladi va Telegramga xabar keladi."
+
+msgid "гостей: %(n)s"
+msgstr "mehmonlar: %(n)s"

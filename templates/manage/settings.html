@@ -50,6 +50,17 @@
   </section>
 
   <section class="card p-5 space-y-4">
+    <h2 class="section-title">{% translate 'Онлайн-бронь' %}</h2>
+    {% include "components/field.html" with field=form.booking_enabled %}
+    <div class="grid grid-cols-2 gap-3">
+      {% include "components/field.html" with field=form.booking_open %}
+      {% include "components/field.html" with field=form.booking_close %}
+      {% include "components/field.html" with field=form.booking_max_guests %}
+      {% include "components/field.html" with field=form.booking_days_ahead %}
+    </div>
+  </section>
+
+  <section class="card p-5 space-y-4">
     <h2 class="section-title">{% translate 'Чек' %}</h2>
     {% include "components/field.html" with field=form.receipt_header %}
     {% include "components/field.html" with field=form.receipt_footer %}

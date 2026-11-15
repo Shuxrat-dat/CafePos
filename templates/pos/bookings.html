@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Брони' %}{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="page-title">{% translate 'Брони' %}</h1>
+    <p class="page-sub">{% translate 'Заявки гостей с сайта. Подтвердите заявку и выберите стол: в день брони она появится на схеме столов.' %}</p>
+  </div>
+  {% if cafe.booking_enabled %}
+  <details class="relative">
+    <summary class="btn btn-secondary cursor-pointer list-none">{% icon "qr-code" 16 %}{% translate 'Ссылка для гостей' %}</summary>
+    <div class="absolute right-0 mt-2 z-20 w-72 card p-4 shadow-pop">
+      <div class="text-xs break-all text-muted mb-2" id="book-url">{{ book_url }}</div>
+      <button type="button" class="btn btn-sm btn-secondary w-full mb-3" onclick="navigator.clipboard && navigator.clipboard.writeText(document.getElementById('book-url').textContent.trim()); showToast('{% translate "Ссылка скопирована" as t %}{{ t|escapejs }}', 'success')">{% translate 'Копировать' %}</button>
+      {% if qr %}<div class="w-44 mx-auto [&_svg]:w-full [&_svg]:h-auto">{{ qr }}</div>{% endif %}
+    </div>
+  </details>
+  {% else %}
+    <span class="badge bg-slate-100 text-slate-600">{% translate 'Онлайн-бронь выключена' %}</span>
+  {% endif %}
+</div>
+
+<div class="flex gap-1 border-b border-line mb-4 overflow-x-auto no-scrollbar">
+  <a href="?tab=new" class="px-4 min-h-[44px] flex items-center gap-2 border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'new' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Новые' %}{% if counts.new %}<span class="min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[11px] font-bold inline-flex items-center justify-center">{{ counts.new }}</span>{% endif %}</a>
+  <a href="?tab=upcoming" class="px-4 min-h-[44px] flex items-center gap-2 border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'upcoming' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'Подтверждённые' %}{% if counts.upcoming %}<span class="min-w-[20px] h-5 px-1.5 rounded-full bg-stone-200 text-stone-700 text-[11px] font-bold inline-flex items-center justify-center">{{ counts.upcoming }}</span>{% endif %}</a>
+  <a href="?tab=history" class="px-4 min-h-[44px] flex items-center border-b-2 -mb-px font-semibold whitespace-nowrap {% if tab == 'history' %}border-brand text-ink{% else %}border-transparent text-muted hover:text-ink{% endif %}">{% translate 'История' %}</a>
+</div>
+
+<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+  {% for b in rows %}
+    <article class="card p-4 flex flex-col gap-3 {% if b.status == 'rejected' or b.status == 'cancelled' %}opacity-70{% endif %}">
+      <header class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-bold text-lg leading-tight truncate">{{ b.name }}</div>
+          <a href="tel:+998{{ b.phone }}" class="text-sm text-brand font-semibold tabular-nums">+998 {{ b.phone }}</a>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="font-extrabold tabular-nums {% if b.date == today %}text-brand{% endif %}">{{ b.time|time:"H:i" }}</div>
+          <div class="text-xs text-muted">{% if b.date == today %}{% translate 'сегодня' %}{% else %}{{ b.date|date:"d.m, D" }}{% endif %}</div>
+        </div>
+      </header>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="badge bg-stone-100 text-stone-700">{% icon "users" 13 %}{{ b.guests }}</span>
+        {% if b.table %}<span class="badge bg-emerald-50 text-emerald-800">{% icon "table" 13 %}{{ b.table.hall|tr }} · {{ b.table.number }}</span>{% endif %}
+        {% if tab == 'history' %}<span class="badge bg-slate-100 text-slate-600">{{ b.get_status_display }}</span>{% endif %}
+      </div>
+      {% if b.comment %}<p class="text-sm text-stone-600 bg-[#FAF6EF] rounded-lg px-3 py-2">«{{ b.comment }}»</p>{% endif %}
+
+      {% if tab == 'new' %}
+        <form method="post" class="space-y-2 mt-auto">
+          {% csrf_token %}
+          <input type="hidden" name="booking_id" value="{{ b.id }}"><input type="hidden" name="tab" value="new">
+          {% if b.free_tables %}
+            <select name="table" class="input" aria-label="{% translate 'Стол' %}">
+              {% for t in b.free_tables %}<option value="{{ t.id }}">{{ t.hall|tr }} · {{ t.number }} ({{ t.seats }} {% translate 'мест' %})</option>{% endfor %}
+            </select>
+            <div class="grid grid-cols-2 gap-2">
+              <button name="action" value="reject" class="btn btn-danger" formnovalidate>{% translate 'Отклонить' %}</button>
+              <button name="action" value="confirm" class="btn btn-primary">{% icon "check" 16 %}{% translate 'Подтвердить' %}</button>
+            </div>
+          {% else %}
+            <div class="alert-warn text-xs">{% icon "alert" 16 %}<span>{% translate 'На это время нет свободного стола. Отклоните заявку или освободите стол.' %}</span></div>
+            <button name="action" value="reject" class="btn btn-danger w-full">{% translate 'Отклонить' %}</button>
+          {% endif %}
+        </form>
+      {% elif tab == 'upcoming' %}
+        <form method="post" class="mt-auto" onsubmit="return confirm('{% translate "Отменить эту бронь?" as t %}{{ t|escapejs }}')">
+          {% csrf_token %}
+          <input type="hidden" name="booking_id" value="{{ b.id }}"><input type="hidden" name="tab" value="upcoming">
+          <button name="action" value="cancel" class="btn btn-ghost btn-sm text-red-700 hover:bg-red-50">{% translate 'Отменить бронь' %}</button>
+        </form>
+      {% endif %}
+    </article>
+  {% empty %}
+    <div class="card md:col-span-2 xl:col-span-3">{% translate 'Здесь пока пусто' as t1 %}{% translate 'Новые заявки гостей появятся здесь, и вам придёт сообщение в Telegram.' as t2 %}{% include "components/empty.html" with icon="calendar" title=t1 text=t2 %}</div>
+  {% endfor %}
+</div>
+{% endblock %}

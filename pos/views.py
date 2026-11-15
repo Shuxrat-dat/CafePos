@@ -210,6 +210,9 @@ def _busy_table_ids():
 
 def _floor_context(request):
     user = request.user
+    from . import booking
+
+    booking.sync_today()  # подтверждённые брони на сегодня появляются на схеме
     halls = list(Hall.objects.prefetch_related("tables"))
     orders = _open_orders().select_related("waiter", "table").prefetch_related("items__modifiers")
     by_table = {}

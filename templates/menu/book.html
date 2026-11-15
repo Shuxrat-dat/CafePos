@@ -1,0 +1,71 @@
+{% extends "menu/_guest_base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Бронь стола' %}{% endblock %}
+{% block subtitle %}{% translate 'Бронь стола' %}{% endblock %}
+{% block content %}
+<main class="max-w-xl mx-auto px-4 py-5 pb-10">
+  <h1 class="text-2xl font-extrabold tracking-tight">{% translate 'Забронировать стол' %}</h1>
+  <p class="text-muted mt-1">{% translate 'Оставьте заявку, мы подтвердим бронь по телефону или сообщением.' %}</p>
+
+  {% if error %}
+    <div class="mt-4 flex gap-2.5 items-start px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium" role="alert">{% icon "alert" 18 %}<span>{{ error }}</span></div>
+  {% endif %}
+
+  <form method="post" class="mt-4 space-y-4 rounded-2xl bg-white border border-line shadow-sm p-4 sm:p-5" autocomplete="on">
+    {% csrf_token %}
+    <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+
+    <div>
+      <label for="b-name" class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Ваше имя' %}</label>
+      <input id="b-name" name="name" required maxlength="100" value="{{ form.name|default:'' }}" autocomplete="name"
+             class="w-full rounded-xl border border-line bg-white px-3.5 min-h-[48px] text-base focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+    </div>
+    <div>
+      <label for="b-phone" class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Телефон' %}</label>
+      <input id="b-phone" name="phone" required type="tel" inputmode="tel" value="{{ form.phone|default:'' }}" placeholder="+998 90 123 45 67" autocomplete="tel"
+             class="w-full rounded-xl border border-line bg-white px-3.5 min-h-[48px] text-base focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label for="b-date" class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Дата' %}</label>
+        <input id="b-date" name="date" type="date" required min="{{ min_date }}" max="{{ max_date }}" value="{{ form.date|default:min_date }}"
+               class="w-full rounded-xl border border-line bg-white px-3 min-h-[48px] text-base focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+      </div>
+      <div>
+        <label for="b-time" class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Время' %}</label>
+        <select id="b-time" name="time" required class="w-full rounded-xl border border-line bg-white px-3 min-h-[48px] text-base focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+          <option value="">{% translate 'Выберите…' %}</option>
+          {% for s in slots %}<option value="{{ s }}" {% if form.time == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <span class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Сколько гостей' %}</span>
+      <div class="flex items-center gap-3">
+        <button type="button" data-step="-1" class="w-12 h-12 rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100" aria-label="{% translate 'Меньше' %}">−</button>
+        <input id="b-guests" name="guests" type="number" inputmode="numeric" min="1" max="{{ max_guests }}" required value="{{ form.guests|default:'2' }}"
+               class="w-20 text-center rounded-xl border border-line bg-white min-h-[48px] text-xl font-bold focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+        <button type="button" data-step="1" class="w-12 h-12 rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100" aria-label="{% translate 'Больше' %}">+</button>
+      </div>
+    </div>
+    <div>
+      <label for="b-comment" class="block text-[13px] font-semibold text-stone-600 mb-1.5">{% translate 'Пожелания (необязательно)' %}</label>
+      <input id="b-comment" name="comment" maxlength="200" value="{{ form.comment|default:'' }}" placeholder="{% translate 'Детское кресло, у окна, день рождения…' %}"
+             class="w-full rounded-xl border border-line bg-white px-3.5 min-h-[48px] text-base focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+    </div>
+    <button class="w-full min-h-[54px] rounded-xl bg-brand text-white text-lg font-bold hover:bg-brand-600 active:scale-[.99] transition">{% translate 'Отправить заявку' %}</button>
+    {% if cafe_phone %}<p class="text-center text-sm text-muted">{% translate 'Или позвоните:' %} <a href="tel:{{ cafe_phone }}" class="font-semibold text-brand">{{ cafe_phone }}</a></p>{% endif %}
+  </form>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll('[data-step]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var i = document.getElementById('b-guests');
+      var v = (parseInt(i.value, 10) || 1) + parseInt(b.dataset.step, 10);
+      i.value = Math.max(parseInt(i.min, 10), Math.min(parseInt(i.max, 10), v));
+    });
+  });
+</script>
+{% endblock %}

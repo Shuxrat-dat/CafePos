@@ -6,6 +6,20 @@ from django.utils.translation import gettext as _
 from accounts.permissions import KITCHEN_ROLES, MANAGE_ROLES, PAYMENT_ROLES, REPORT_ROLES, SERVICE_ROLES, STOCK_ROLES, has_role
 
 
+def _bookings_enabled(request):
+    """Пункт «Брони» нужен, если онлайн-бронь включена или заявки уже были."""
+    cafe_settings = getattr(request, "cafe", None)
+    if cafe_settings is None:
+        from .models import CafeSettings
+
+        cafe_settings = CafeSettings.get()
+    if cafe_settings.booking_enabled:
+        return True
+    from pos.models import Booking
+
+    return Booking.objects.exists()
+
+
 def _debts_enabled(request):
     """Пункт «Долги» нужен, если запись в долг включена или ещё остались непогашенные долги."""
     cafe_settings = getattr(request, "cafe", None)
@@ -34,6 +48,11 @@ def _nav(request):
 
     from pos.models import Order
     open_count = Order.objects.filter(status=Order.Status.OPEN).count() or 5
+    booking_new = None
+    if has_role(user, SERVICE_ROLES) and _bookings_enabled(request):
+        from pos.models import Booking
+
+        booking_new = Booking.objects.filter(status=Booking.Status.NEW).count() or None
     printer_problems = None
     if has_role(user, MANAGE_ROLES):
         from printing.services import problem_count
@@ -62,6 +81,7 @@ def _nav(request):
         # Кнопка создаёт заказ навынос, так и называем
         ("new_order", _("Навынос"), "shopping-bag", SERVICE_ROLES, set()),
         ("juma_board", "Juma", "bike", PAYMENT_ROLES, {"juma_board"}, juma_badge),
+        ("bookings", _("Брони"), "calendar", SERVICE_ROLES, {"bookings"}, booking_new),
         ("debts", _("Долги"), "wallet", PAYMENT_ROLES, {"debts", "debt_detail"}),
         ("stock", _("Склад"), "package", STOCK_ROLES, {"stock", "stock_count", "stock_movements", "stock_writeoff", "product_create", "product_edit"}),
         ("reports", _("Отчёты"), "bar-chart", REPORT_ROLES, {"reports"}),
@@ -79,6 +99,8 @@ def _nav(request):
         if name == "table_map" and has_role(user, MANAGE_ROLES):
             continue
         if name == "debts" and not _debts_enabled(request):
+            continue
+        if name == "bookings" and not _bookings_enabled(request):
             continue
         if name == "juma_board" and not juma_on:
             continue
