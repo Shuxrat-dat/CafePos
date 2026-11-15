@@ -69,6 +69,9 @@ class BoardViewTests(TestCase):
         for data in (receipt, kitchen):
             self.assertTrue(data)
         self.assertIn(link.pickup_code.encode("cp866", "ignore"), receipt)
+        # На кухонном бланке: номер Juma и код выдачи.
+        self.assertIn(f"Juma {link.number}".encode("cp866", "ignore"), kitchen)
+        self.assertIn(link.pickup_code.encode("cp866", "ignore"), kitchen)
 
     def test_get_is_not_allowed_for_actions(self):
         cashier, link = make_link(S.SENT)

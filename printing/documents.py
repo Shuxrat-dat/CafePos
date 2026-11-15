@@ -116,6 +116,11 @@ def kitchen(order, items, printer, addition=False):
             t.text(_("Дозаказ").upper(), align="center", bold=True, size=SIZE_TALL)
         t.text(f"№{order.id}", align="center", bold=True, size=SIZE_BIG)
         t.text(str(order.place_label), align="center", bold=True, size=SIZE_TALL)
+        # Заказ Juma: номер для покупателя и код выдачи водителю. Адрес покупателя на кухню не печатаем.
+        juma = getattr(order, "juma", None)
+        if juma is not None:
+            t.text(f"Juma {juma.number}", align="center", bold=True)
+            t.text(f"{_('Код выдачи')}: {juma.pickup_code}", align="center", bold=True)
         t.pair(_("Официант"), _person(order.waiter))
         t.pair(_("Время"), timezone.localtime().strftime("%H:%M"))
         t.rule()
