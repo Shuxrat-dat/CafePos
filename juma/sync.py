@@ -1,6 +1,7 @@
 """Синхронизация состояния заказов Juma: события из облака и состояние кухни на кассе."""
 import logging
 
+from core import telegram
 from pos.models import OrderItem
 
 from . import actions, client
@@ -16,7 +17,9 @@ def _apply_event(link, event):
     if kind == "CANCELLED":
         # Отмену заведением мы уже провели сами; важны отмены покупателем, системой (таймаут) и администратором
         if link.status != S.CANCELLED:
-            actions.mark_cancelled(link, None, (event.get("details") or {}).get("reason", "OTHER"))
+            reason = (event.get("details") or {}).get("reason", "OTHER")
+            actions.mark_cancelled(link, None, reason)
+            telegram.notify_juma_cancelled(link, reason)
         return
     if kind == "PAYMENT_PAID":
         link.payment_status = JumaOrder.Payment.PAID

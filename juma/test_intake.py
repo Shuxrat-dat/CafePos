@@ -83,6 +83,18 @@ class IntakeTests(TestCase):
         _ok, call = self.run_intake([data])
         self.assertNotIn(ack, [c[1].split("?")[0] for c in call.calls])  # уже подтверждён
 
+    def test_owner_is_notified_once_when_the_order_is_accepted_from_the_cloud(self):
+        _cashier, dish = make_world()
+        data = juma_order(dish)
+        ack = f"/orders/{data['id']}/ack"
+        with mock.patch("juma.intake.telegram.notify_juma_order") as notify:
+            self.run_intake([data], {("POST", ack): (0, {})})
+            notify.assert_not_called()  # подтверждения нет: заказ ещё не принят из облака
+            self.run_intake([data])
+            self.assertEqual(notify.call_count, 1)
+            self.run_intake([data])
+            self.assertEqual(notify.call_count, 1)  # повторный опрос не дублирует сообщение
+
     def test_unavailable_unknown_or_weighed_dish_is_rejected_and_nothing_is_created(self):
         _cashier, dish = make_world()
         for patch, setup in (

@@ -155,12 +155,24 @@ class CashShift(models.Model):
         return -(val or Decimal(0))
 
     @property
+    def deposits_cash_in(self):
+        """Наличные депозиты броней, принятые в эту смену."""
+        from django.db.models import Sum
+        return self.deposits.filter(method="cash").aggregate(s=Sum("amount"))["s"] or Decimal(0)
+
+    @property
+    def deposits_cash_out(self):
+        """Наличные, возвращённые гостям из депозитов в эту смену."""
+        from django.db.models import Sum
+        return self.deposit_refunds.filter(method="cash").aggregate(s=Sum("refund_amount"))["s"] or Decimal(0)
+
+    @property
     def expected_cash(self):
         """Ожидаемые наличные в кассе по формуле инварианта:
         Начальный остаток + Наличная выручка - Возвраты наличными + Внесения - Изъятия + Погашение долгов наличными
         """
         return (self.initial_cash + self.cash_sales - self.cash_refunds + self.cash_deposits - self.cash_withdrawals
-                + self.debt_cash_repaid)
+                + self.debt_cash_repaid + self.deposits_cash_in - self.deposits_cash_out)
 
     @property
     def difference(self):
@@ -234,6 +246,8 @@ class Order(models.Model):
     # Аренда кабины фиксируется в момент оплаты; до этого считается по часам заново
     room_charge = models.DecimalField(_("Аренда кабины"), max_digits=12, decimal_places=0, null=True, blank=True)
     room_minutes = models.PositiveIntegerField(_("Минут аренды"), null=True, blank=True)
+    # Депозит брони, зачтённый в счёт этого заказа: гость уже заплатил эту часть раньше
+    deposit_applied = models.DecimalField(_("Депозит в счёт заказа"), max_digits=12, decimal_places=0, default=0)
     cancel_reason = models.CharField(_("Причина отмены"), max_length=200, blank=True)
     cancelled_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name=_("Кто отменил"), on_delete=models.SET_NULL,
@@ -302,18 +316,23 @@ class Order(models.Model):
         return self.totals["total"]
 
     @property
+    def amount_due(self):
+        """Сколько гость платит сейчас: итог минус депозит, внесённый при брони."""
+        return max(Decimal(0), self.total - (self.deposit_applied or 0))
+
+    @property
     def cash_amount(self):
-        """Сколько из итога оплачено наличными (без сдачи)."""
+        """Сколько из итога оплачено наличными (без сдачи и без депозита)."""
         if self.payment_method == self.PaymentMethod.CASH:
-            return self.total
+            return self.amount_due
         if self.payment_method == self.PaymentMethod.MIXED:
-            return self.total - (self.card_amount or 0)
+            return self.amount_due - (self.card_amount or 0)
         return Decimal(0)
 
     @property
     def card_paid(self):
         if self.payment_method == self.PaymentMethod.CARD:
-            return self.total
+            return self.amount_due
         if self.payment_method == self.PaymentMethod.MIXED:
             return self.card_amount or Decimal(0)
         return Decimal(0)
@@ -601,6 +620,42 @@ class DebtEntry(models.Model):
 
     def __str__(self):
         return f"{self.customer}: {self.amount}"
+
+
+class Deposit(models.Model):
+    """Депозит брони. Деньги приняты в смену при брони; потом они идут в счёт заказа гостя, возвращаются
+    или остаются заведению, если гость не пришёл."""
+
+    class Method(models.TextChoices):
+        CASH = "cash", _("Наличные")
+        CARD = "card", _("Карта")
+
+    class Status(models.TextChoices):
+        HELD = "held", _("Ждёт гостя")
+        APPLIED = "applied", _("Зачтён в заказ")
+        REFUNDED = "refunded", _("Возвращён")
+        KEPT = "kept", _("Оставлен заведению")
+
+    table = models.ForeignKey(Table, verbose_name=_("Стол"), on_delete=models.SET_NULL, null=True, blank=True, related_name="deposits")
+    guest_name = models.CharField(_("На чьё имя"), max_length=100, blank=True)
+    amount = models.DecimalField(_("Сумма"), max_digits=12, decimal_places=0)
+    method = models.CharField(_("Способ"), max_length=10, choices=Method.choices, default=Method.CASH)
+    status = models.CharField(_("Статус"), max_length=10, choices=Status.choices, default=Status.HELD, db_index=True)
+    shift = models.ForeignKey(CashShift, verbose_name=_("Смена приёма"), on_delete=models.PROTECT, related_name="deposits")
+    cashier = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    order = models.ForeignKey(Order, verbose_name=_("Заказ"), on_delete=models.SET_NULL, null=True, blank=True, related_name="deposits")
+    refund_amount = models.DecimalField(_("Возвращено"), max_digits=12, decimal_places=0, default=0)
+    refund_shift = models.ForeignKey(CashShift, verbose_name=_("Смена возврата"), on_delete=models.PROTECT, null=True, blank=True, related_name="deposit_refunds")
+    created_at = models.DateTimeField(auto_now_add=True)
+    settled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Депозит брони")
+        verbose_name_plural = _("Депозиты броней")
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.guest_name or self.table_id}: {self.amount}"
 
 
 class LoyaltyEntry(models.Model):

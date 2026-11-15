@@ -515,37 +515,73 @@ def open_table(request, table_id):
         # Гость по брони пришёл: бронь снимается, стол становится занятым
         table.reserved_for, table.reserved_at = "", None
         table.save(update_fields=["reserved_for", "reserved_at"])
+        # Депозит, внесённый при брони, зачитывается в заказ
+        if services.attach_deposits(table, order):
+            messages.success(request, _("Депозит брони зачтён в счёт заказа."))
     return redirect("order_detail", order_id=order.id)
 
 
 @login_required
 def reserve_table(request, table_id):
+    """Бронь стола. При брони можно принять депозит; при снятии брони депозит возвращают или оставляют заведению."""
     table = get_object_or_404(Table.objects.select_related("hall"), id=table_id)
     error = ""
     if request.method == "POST":
         if request.POST.get("action") == "clear":
-            table.reserved_for, table.reserved_at = "", None
-            table.save(update_fields=["reserved_for", "reserved_at"])
-            messages.success(request, _("Бронь снята."))
-            return HttpResponse(headers={"HX-Redirect": reverse("floor")})
-        name = request.POST.get("name", "").strip()[:100]
-        raw_time = request.POST.get("time", "").strip()
-        reserved_at = None
-        if raw_time:
-            try:
-                hour, minute = (int(x) for x in raw_time.split(":")[:2])
-                today = timezone.localdate()
-                reserved_at = timezone.make_aware(datetime(today.year, today.month, today.day, hour, minute))
-            except ValueError:
-                error = _("Укажите время в формате ЧЧ:ММ.")
-        if not name and not error:
-            error = _("Укажите, на чьё имя бронь.")
-        if not error:
-            table.reserved_for, table.reserved_at = name, reserved_at
-            table.save(update_fields=["reserved_for", "reserved_at"])
-            messages.success(request, _("Стол забронирован."))
-            return HttpResponse(headers={"HX-Redirect": reverse("floor")})
-    return render(request, "pos/_reserve_form.html", {"table": table, "error": error, "form": request.POST})
+            held = services.held_deposits(table)
+            choice = request.POST.get("deposit_action", "")
+            if held and choice not in ("refund", "keep"):
+                error = _("Выберите, что сделать с депозитом.")
+            else:
+                try:
+                    services.settle_deposits(table, choice, request.user)
+                except services.PaymentError as exc:
+                    error = str(exc)
+                else:
+                    table.reserved_for, table.reserved_at = "", None
+                    table.save(update_fields=["reserved_for", "reserved_at"])
+                    messages.success(request, _("Бронь снята."))
+                    return HttpResponse(headers={"HX-Redirect": reverse("floor")})
+        else:
+            name = request.POST.get("name", "").strip()[:100]
+            raw_time = request.POST.get("time", "").strip()
+            reserved_at = None
+            if raw_time:
+                try:
+                    hour, minute = (int(x) for x in raw_time.split(":")[:2])
+                    today = timezone.localdate()
+                    reserved_at = timezone.make_aware(datetime(today.year, today.month, today.day, hour, minute))
+                except ValueError:
+                    error = _("Укажите время в формате ЧЧ:ММ.")
+            if not name and not error:
+                error = _("Укажите, на чьё имя бронь.")
+            deposit_amount = None
+            if not error and request.POST.get("deposit", "").strip():
+                try:
+                    deposit_amount = services.parse_money(request.POST.get("deposit", ""))
+                except services.PaymentError:
+                    error = _("Введите депозит числом больше нуля.")
+            if not error:
+                from django.db import transaction as db_transaction
+
+                try:
+                    with db_transaction.atomic():
+                        table.reserved_for, table.reserved_at = name, reserved_at
+                        table.save(update_fields=["reserved_for", "reserved_at"])
+                        if deposit_amount is not None:
+                            services.take_deposit(table, name, deposit_amount,
+                                                  request.POST.get("deposit_method", "cash"), request.user)
+                except services.PaymentError as exc:
+                    error = str(exc)
+                    table.refresh_from_db()
+                else:
+                    messages.success(request, _("Стол забронирован."))
+                    return HttpResponse(headers={"HX-Redirect": reverse("floor")})
+    held = services.held_deposits(table)
+    return render(request, "pos/_reserve_form.html", {
+        "table": table, "error": error, "form": request.POST,
+        "held_total": sum((d.amount for d in held), Decimal(0)), "held": held,
+    })
 
 
 # ---------- экран заказа ----------
@@ -989,7 +1025,7 @@ def pay(request, order_id):
                 pay_all = all(selected.get(i.id) == i.quantity for i in items)
 
         if pay_all:
-            due = totals["total"]
+            due = order.amount_due
         else:
             due = split_totals(order, sum(i.unit_total * selected[i.id] for i in items if i.id in selected))["total"]
 
@@ -1033,7 +1069,9 @@ def pay(request, order_id):
             "methods": allowed,
             "received": received_raw,
             "card": card_raw,
-            "quick_amounts": _quick_amounts(totals["total"]),
+            "quick_amounts": _quick_amounts(order.amount_due),
+            "due_total": order.amount_due,
+            "deposit": order.deposit_applied,
             "shortages": find_shortages(lines),
             "percent_discount": order.discount_value if order.discount_kind == Order.DiscountKind.PERCENT else 0,
             "idempotency_key": idempotency_key or str(uuid.uuid4()),

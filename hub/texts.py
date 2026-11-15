@@ -7,9 +7,9 @@ LANGS = ("uz", "ru")
 DEFAULT_LANG = "uz"
 
 # Типы уведомлений, которые получатель включает и выключает в /sozlamalar
-CATEGORIES = ("shift", "cancel", "discount", "stock", "review", "morning", "shopping", "error", "backup")
+CATEGORIES = ("shift", "cancel", "discount", "stock", "review", "orders", "morning", "shopping", "error", "backup")
 # Эти типы приходят из кассы как события; остальные бот формирует сам
-EVENT_CATEGORIES = ("shift", "cancel", "discount", "stock", "review", "error")
+EVENT_CATEGORIES = ("shift", "cancel", "discount", "stock", "review", "orders", "error")
 # Второму и следующему получателю заведения эти типы по умолчанию выключены (в копии базы данные гостей)
 SENSITIVE_DEFAULT_OFF = ("backup", "error")
 
@@ -70,7 +70,8 @@ S = {
         "btn_stock": "🛒 Ombor", "btn_shift": "Smena", "btn_top": "🍽 Top",
         "cat_shift": "Smena yopilishi", "cat_cancel": "Bekor qilish va qaytarishlar",
         "cat_discount": "Katta chegirmalar", "cat_stock": "Mahsulot tugayapti",
-        "cat_review": "Yomon baholar", "cat_morning": "Ertalabki hisobot (09:00)",
+        "cat_review": "Yomon baholar", "cat_orders": "Juma yetkazib berish buyurtmalari",
+        "cat_morning": "Ertalabki hisobot (09:00)",
         "cat_shopping": "Sotib olish roʻyxati (09:00)", "cat_error": "Server xatolari",
         "cat_backup": "Baza nusxasi",
         "unknown": "Tushunmadim. Buyruqlar roʻyxati: /yordam",
@@ -131,7 +132,8 @@ S = {
         "btn_stock": "🛒 Склад", "btn_shift": "Смена", "btn_top": "🍽 Топ",
         "cat_shift": "Закрытие смены", "cat_cancel": "Отмены и возвраты",
         "cat_discount": "Крупные скидки", "cat_stock": "Заканчиваются продукты",
-        "cat_review": "Плохие отзывы", "cat_morning": "Утренняя сводка (09:00)",
+        "cat_review": "Плохие отзывы", "cat_orders": "Заказы доставки Juma",
+        "cat_morning": "Утренняя сводка (09:00)",
         "cat_shopping": "Список закупки (09:00)", "cat_error": "Ошибки сервера",
         "cat_backup": "Копия базы",
         "unknown": "Не понял. Список команд: /yordam",

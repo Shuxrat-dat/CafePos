@@ -135,6 +135,20 @@ class DeliveryTests(HubTestCase):
         self.assertEqual(self.hub.send_event(venue, "cancel", "Бекор")["sent"], 1)
         self.assertEqual(self.api.texts_to(111)[-1], "Бекор")
 
+    def test_juma_orders_event_reaches_chat_and_can_be_switched_off(self):
+        venue = self.connect()
+        self.assertEqual(self.hub.send_event(venue, "orders", "Yangi Juma buyurtmasi")["sent"], 1)
+        self.store.set_off(111, {"orders"})
+        self.assertEqual(self.hub.send_event(venue, "orders", "x")["sent"], 0)
+
+    def test_settings_keyboard_lists_juma_orders_in_both_languages(self):
+        from . import texts
+
+        for lang in texts.LANGS:
+            buttons = [row[0]["callback_data"] for row in texts.settings_keyboard(lang, set())["inline_keyboard"]]
+            self.assertIn("set:orders", buttons)
+            self.assertIn("Juma", texts.T(lang, "cat_orders"))
+
     def test_unknown_event_is_rejected(self):
         venue = self.connect()
         with self.assertRaises(HubError):

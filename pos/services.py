@@ -11,7 +11,7 @@ from core.models import CafeSettings
 from inventory.services import write_off_order
 
 from . import loyalty
-from .models import CashMovement, CashShift, Customer, DebtEntry, Order, OrderItem, Payment
+from .models import CashMovement, CashShift, Customer, DebtEntry, Deposit, Order, OrderItem, Payment
 
 MAX_SUM = Decimal(1_000_000_000)
 
@@ -372,27 +372,39 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
 
         # Расчёт сумм платежа
         total = target.total
+        # Депозит брони уже оплачен гостем: платится только остаток. Лишний депозит возвращается
+        deposit = target.deposit_applied or Decimal(0)
+        if deposit > total:
+            leftover = deposit - total
+            target.deposit_applied = deposit = total
+            target.save(update_fields=["deposit_applied"])
+            last = target.deposits.filter(status=Deposit.Status.APPLIED).order_by("-id").first()
+            if last:
+                last.refund_amount += leftover
+                last.refund_shift = shift
+                last.save(update_fields=["refund_amount", "refund_shift"])
+        collect = total - deposit
         if method == Order.PaymentMethod.CASH:
-            cash_amount = total
+            cash_amount = collect
             card_amount = Decimal(0)
-            change = (received - total) if received is not None else Decimal(0)
+            change = (received - collect) if received is not None else Decimal(0)
         elif method == Order.PaymentMethod.CARD:
             cash_amount = Decimal(0)
-            card_amount = total
+            card_amount = collect
             change = Decimal(0)
         elif method == Order.PaymentMethod.DEBT:
             # Денег в кассу не поступило: сумма уходит в долг гостя
             cash_amount = card_amount = change = Decimal(0)
         else:  # MIXED
             card_amount = card or Decimal(0)
-            cash_amount = total - card_amount
+            cash_amount = collect - card_amount
             change = (received - cash_amount) if received is not None else Decimal(0)
 
         Payment.objects.create(
             order=target,
             shift=shift,
             payment_method=method,
-            amount=total,
+            amount=collect,
             cash_amount=cash_amount,
             card_amount=card_amount,
             cash_received=received,
@@ -407,7 +419,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
                 phone=debt_phone, defaults={"name": target.customer_name.strip()[:100]}
             )
             DebtEntry.objects.create(
-                customer=customer, order=target, amount=total, shift=shift, cashier=cashier,
+                customer=customer, order=target, amount=collect, shift=shift, cashier=cashier,
                 comment=_("Заказ №%(id)s в долг") % {"id": target.id},
             )
 
@@ -453,7 +465,7 @@ def refund_order(order, user, reason, return_to_stock=True):
             order=locked,
             shift=shift,
             payment_method=locked.payment_method,
-            amount=locked.total,
+            amount=locked.total - (locked.deposit_applied or 0),
             cash_amount=cash_refund,
             card_amount=card_refund,
             cashier=user,
@@ -560,3 +572,66 @@ def move_items(source, target, selection):
             src.cancel_reason = _("Объединён с заказом №%(id)s") % {"id": dst.id}
             src.save(update_fields=["status", "closed_at", "cancel_reason"])
     return moved
+
+
+# ---------- депозиты броней ----------
+
+MAX_DEPOSIT = Decimal(100_000_000)
+
+
+def held_deposits(table):
+    return list(Deposit.objects.filter(table=table, status=Deposit.Status.HELD))
+
+
+def take_deposit(table, guest_name, amount, method, cashier):
+    """Принимает депозит при брони. Деньги попадают в текущую смену: без открытой смены принять нельзя."""
+    if method not in Deposit.Method.values:
+        raise PaymentError(_("Выберите способ оплаты."))
+    if amount is None or amount <= 0 or amount > MAX_DEPOSIT:
+        raise PaymentError(_("Введите депозит числом больше нуля."))
+    shift = get_current_shift()
+    if not shift:
+        raise PaymentError(no_shift_message())
+    return Deposit.objects.create(
+        table=table, guest_name=(guest_name or "")[:100], amount=amount, method=method, shift=shift, cashier=cashier,
+    )
+
+
+def settle_deposits(table, action, cashier):
+    """Бронь снята без прихода гостя: депозит возвращается из кассы (refund) или остаётся заведению (keep)."""
+    held = held_deposits(table)
+    if not held:
+        return 0
+    with transaction.atomic():
+        shift = get_current_shift()
+        if action == "refund" and not shift:
+            raise PaymentError(no_shift_message())
+        for deposit in held:
+            if action == "refund":
+                deposit.status = Deposit.Status.REFUNDED
+                deposit.refund_amount = deposit.amount
+                deposit.refund_shift = shift
+            elif action == "keep":
+                deposit.status = Deposit.Status.KEPT
+            else:
+                raise PaymentError(_("Выберите, что сделать с депозитом."))
+            deposit.settled_at = timezone.now()
+            deposit.save(update_fields=["status", "refund_amount", "refund_shift", "settled_at"])
+    return len(held)
+
+
+def attach_deposits(table, order):
+    """Гость пришёл: депозиты стола зачитываются в его заказ и уменьшают сумму к оплате."""
+    held = held_deposits(table)
+    if not held:
+        return Decimal(0)
+    with transaction.atomic():
+        total = sum((d.amount for d in held), Decimal(0))
+        for deposit in held:
+            deposit.status = Deposit.Status.APPLIED
+            deposit.order = order
+            deposit.settled_at = timezone.now()
+            deposit.save(update_fields=["status", "order", "settled_at"])
+        order.deposit_applied = (order.deposit_applied or Decimal(0)) + total
+        order.save(update_fields=["deposit_applied"])
+    return total

@@ -4503,3 +4503,111 @@ msgstr "shu jumladan kabina ijarasi, %(m)s daq."
 
 msgid "№"
 msgstr "№"
+
+msgid "Новый заказ Juma %(num)s · %(cafe)s"
+msgstr "Yangi Juma buyurtmasi %(num)s · %(cafe)s"
+
+msgid "Сумма за товар: %(sum)s, позиций: %(n)s"
+msgstr "Mahsulot summasi: %(sum)s, pozitsiyalar: %(n)s"
+
+msgid "Откройте раздел «Juma» на кассе и нажмите «Принять»."
+msgstr "Kassada «Juma» boʻlimini oching va «Qabul qilish» tugmasini bosing."
+
+msgid "Заказ Juma %(num)s отменён · %(cafe)s"
+msgstr "Juma buyurtmasi %(num)s bekor qilindi · %(cafe)s"
+
+msgid "Сумма за товар: %(sum)s"
+msgstr "Mahsulot summasi: %(sum)s"
+
+msgid "Заказ был оплачен: верните деньги покупателю и нажмите «Возврат выполнен»."
+msgstr "Buyurtma toʻlangan: pulni xaridorga qaytaring va «Pul qaytarildi» tugmasini bosing."
+
+msgid "Новые заказы доставки Juma"
+msgstr "Juma yetkazib berish yangi buyurtmalari"
+
+msgid "покупатель отменил заказ"
+msgstr "xaridor buyurtmani bekor qildi"
+
+msgid "вышло время оплаты"
+msgstr "toʻlov muddati oʻtdi"
+
+msgid "заведение не ответило вовремя"
+msgstr "muassasa oʻz vaqtida javob bermadi"
+
+msgid "нет связи с кассой"
+msgstr "kassa bilan aloqa yoʻq"
+
+msgid "отменил администратор Juma"
+msgstr "Juma administratori bekor qildi"
+
+msgid "Введите депозит числом больше нуля."
+msgstr "Depozitni noldan katta son bilan kiriting."
+
+msgid "Вернуть гостю"
+msgstr "Mehmonga qaytarish"
+
+msgid "Возврат депозитов (наличные):"
+msgstr "Depozitlarni qaytarish (naqd):"
+
+msgid "Возвращено"
+msgstr "Qaytarildi"
+
+msgid "Возвращён"
+msgstr "Qaytarildi"
+
+msgid "Выберите, что сделать с депозитом."
+msgstr "Depozit bilan nima qilishni tanlang."
+
+msgid "Деньги принимаются в открытую смену. Когда гости придут, депозит вычтется из счёта."
+msgstr "Pul ochiq smenaga qabul qilinadi. Mehmonlar kelganda depozit hisobdan ayiriladi."
+
+msgid "Депозит"
+msgstr "Depozit"
+
+msgid "Депозит %(s)s"
+msgstr "Depozit %(s)s"
+
+msgid "Депозит (необязательно)"
+msgstr "Depozit (majburiy emas)"
+
+msgid "Депозит брони"
+msgstr "Bron depoziti"
+
+msgid "Депозит брони зачтён в счёт заказа."
+msgstr "Bron depoziti buyurtma hisobiga hisoblandi."
+
+msgid "Депозит в счёт заказа"
+msgstr "Buyurtma hisobiga depozit"
+
+msgid "Депозиты броней"
+msgstr "Bron depozitlari"
+
+msgid "Депозиты броней (наличные):"
+msgstr "Bron depozitlari (naqd):"
+
+msgid "Ждёт гостя"
+msgstr "Mehmonni kutmoqda"
+
+msgid "Зачтён в заказ"
+msgstr "Buyurtmaga hisoblandi"
+
+msgid "Итого %(s)s, депозит брони %(d)s уже оплачен"
+msgstr "Jami %(s)s, bron depoziti %(d)s allaqachon toʻlangan"
+
+msgid "Оставить заведению (неявка)"
+msgstr "Muassasada qoldirish (kelmadi)"
+
+msgid "Оставлен заведению"
+msgstr "Muassasada qoldirildi"
+
+msgid "Смена возврата"
+msgstr "Qaytarish smenasi"
+
+msgid "Смена приёма"
+msgstr "Qabul qilish smenasi"
+
+msgid "Способ"
+msgstr "Usul"
+
+msgid "Что сделать с депозитом, если гости не придут?"
+msgstr "Mehmonlar kelmasa, depozit bilan nima qilinsin?"

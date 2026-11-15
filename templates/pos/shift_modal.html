@@ -60,6 +60,18 @@
             <span class="font-bold text-emerald-600">+{{ shift.debt_cash_repaid|money }}</span>
           </div>
         {% endif %}
+        {% if shift.deposits_cash_in %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Депозиты броней (наличные):' %}</span>
+            <span class="font-bold text-emerald-600">+{{ shift.deposits_cash_in|money }}</span>
+          </div>
+        {% endif %}
+        {% if shift.deposits_cash_out %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Возврат депозитов (наличные):' %}</span>
+            <span class="font-bold text-red-600">-{{ shift.deposits_cash_out|money }}</span>
+          </div>
+        {% endif %}
         {% if shift.cash_withdrawals %}
           <div class="flex justify-between text-stone-500">
             <span>{% translate 'Инкассация / изъятия:' %}</span>

@@ -237,6 +237,49 @@ def notify_order_cancelled(order, user):
         return False
 
 
+def notify_juma_order(link):
+    """Пришёл новый заказ доставки Juma: владелец видит сумму и номер, кассир принимает заказ на экране «Juma».
+    Телефон и адрес покупателя в сообщение не попадают (бот общий, персональные данные не нужны)."""
+    try:
+        cafe = CafeSettings.get()
+        count = link.order.items.count()
+        with _lang(cafe):
+            lines = [
+                "🛵 " + _("Новый заказ Juma %(num)s · %(cafe)s") % {"num": link.number, "cafe": cafe.name},
+                _("Сумма за товар: %(sum)s, позиций: %(n)s") % {"sum": money(link.items_total), "n": count},
+                _("Откройте раздел «Juma» на кассе и нажмите «Принять»."),
+            ]
+        return send("\n".join(lines), "orders")
+    except Exception:
+        log.exception("Telegram: сообщение о заказе Juma не собрано")
+        return False
+
+
+def notify_juma_cancelled(link, reason):
+    """Заказ Juma отменён не кассой (покупателем, по таймауту, администратором)."""
+    try:
+        cafe = CafeSettings.get()
+        with _lang(cafe):
+            reasons = {
+                "CUSTOMER_CANCELLED": _("покупатель отменил заказ"),
+                "PAYMENT_TIMEOUT": _("вышло время оплаты"),
+                "MERCHANT_NO_RESPONSE": _("заведение не ответило вовремя"),
+                "POS_UNREACHABLE": _("нет связи с кассой"),
+                "ADMIN_CANCELLED": _("отменил администратор Juma"),
+            }
+            lines = [
+                "❌ " + _("Заказ Juma %(num)s отменён · %(cafe)s") % {"num": link.number, "cafe": cafe.name},
+                _("Сумма за товар: %(sum)s") % {"sum": money(link.items_total)},
+                _("Причина: %(text)s") % {"text": reasons.get(reason) or _("не указана")},
+            ]
+            if link.payment_status == "REFUND_PENDING":
+                lines.append(_("Заказ был оплачен: верните деньги покупателю и нажмите «Возврат выполнен»."))
+        return send("\n".join(lines), "orders")
+    except Exception:
+        log.exception("Telegram: сообщение об отмене заказа Juma не собрано")
+        return False
+
+
 def notify_refund(order, user, reason):
     """Возврат оплаченного заказа: деньги уходят из кассы, владелец должен знать сразу."""
     try:

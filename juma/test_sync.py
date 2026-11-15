@@ -33,6 +33,16 @@ class EventsTests(TestCase):
         self.assertEqual((link.status, link.cancel_reason, link.order.status), (S.CANCELLED, "CUSTOMER_CANCELLED", Order.Status.CANCELLED))
         self.assertEqual(JumaState.get().events_cursor, 7)
 
+    def test_owner_is_notified_about_cancellation_not_made_by_the_register(self):
+        _cashier, link = make_link(S.SENT)
+        with mock.patch("juma.sync.telegram.notify_juma_cancelled") as notify:
+            self.feed([event(link, "CANCELLED", "CANCELLED", reason="CUSTOMER_CANCELLED", cursor=1)])
+            self.assertEqual(notify.call_count, 1)
+            self.assertEqual(notify.call_args.args[1], "CUSTOMER_CANCELLED")
+            # Та же отмена повторно (событие пришло ещё раз): второго сообщения нет.
+            self.feed([event(link, "CANCELLED", "CANCELLED", reason="CUSTOMER_CANCELLED", cursor=2)])
+            self.assertEqual(notify.call_count, 1)
+
     def test_timeout_cancellation_of_a_paid_order_asks_for_refund(self):
         _cashier, link = make_link(S.ACCEPTED, P.PAID)
         self.feed([event(link, "CANCELLED", "CANCELLED", actor="SYSTEM", reason="POS_UNREACHABLE")])

@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 
+from core import telegram
 from menu.models import Dish
 from pos import services
 from pos.models import Order, OrderItem
@@ -114,4 +115,6 @@ def intake_once():
             if client.ok(ack_code):
                 link.status = JumaOrder.Status.SENT
                 link.save(update_fields=["status"])
+                # Владельцу: один раз, когда заказ принят из облака (повторный опрос после сбоя ack не дублирует).
+                telegram.notify_juma_order(link)
     return True

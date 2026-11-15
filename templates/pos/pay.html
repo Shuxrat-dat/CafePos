@@ -28,7 +28,7 @@
 
 <form method="post" id="pay-form" class="grid lg:grid-cols-[minmax(0,1fr)_440px] gap-4 items-start"
       data-percent="{{ percent_discount|default:0 }}" data-service="{{ order.service_percent }}" data-split="{{ split|yesno:'1,0' }}"
-      data-total="{{ totals.total|stringformat:'d' }}" data-currency="{% translate 'сум' %}">
+      data-total="{{ due_total|stringformat:'d' }}" data-currency="{% translate 'сум' %}">
   {% csrf_token %}
   <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
   {% if split %}<input type="hidden" name="split" value="1">{% endif %}
@@ -75,7 +75,8 @@
   {# ---------- Приём оплаты ---------- #}
   <section class="card p-5 lg:sticky lg:top-4">
     <p class="text-sm text-muted">{% translate 'К оплате' %}</p>
-    <p id="due" class="text-[40px] leading-tight font-extrabold tracking-tight tabular-nums">{% if split %}0 {% translate 'сум' %}{% else %}{{ totals.total|money }}{% endif %}</p>
+    <p id="due" class="text-[40px] leading-tight font-extrabold tracking-tight tabular-nums">{% if split %}0 {% translate 'сум' %}{% else %}{{ due_total|money }}{% endif %}</p>
+    {% if deposit and not split %}<p class="text-sm text-emerald-700 font-medium">{% blocktranslate trimmed with s=totals.total|money d=deposit|money %}Итого {{ s }}, депозит брони {{ d }} уже оплачен{% endblocktranslate %}</p>{% endif %}
 
     {% if error %}<div class="alert-error mt-3">{% icon "alert" 18 %}<span>{{ error }}</span></div>{% endif %}
     {% if shortages %}

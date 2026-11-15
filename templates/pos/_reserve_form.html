@@ -8,13 +8,22 @@
     <div class="text-sm text-slate-700">{% translate 'Забронирован' %}</div>
     <div class="font-semibold text-lg">{{ table.reserved_for }}</div>
     {% if table.reserved_at %}<div class="text-sm text-slate-600">{{ table.reserved_at|time:"H:i" }}</div>{% endif %}
+    {% if held_total %}<div class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-semibold px-2.5 py-1">{% icon "wallet" 14 %}{% blocktranslate trimmed with s=held_total|money %}Депозит {{ s }}{% endblocktranslate %}</div>{% endif %}
   </div>
+  {% if error %}<div class="alert-error mb-3">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
   <form method="post" action="{% url 'open_table' table.id %}" class="mb-2">
     {% csrf_token %}
     <button class="btn btn-primary btn-lg w-full">{% icon "utensils" 18 %}{% translate 'Гости пришли — открыть заказ' %}</button>
   </form>
-  <form hx-post="{% url 'reserve_table' table.id %}" hx-target="#modal">
+  <form hx-post="{% url 'reserve_table' table.id %}" hx-target="#modal" class="space-y-3">
     <input type="hidden" name="action" value="clear">
+    {% if held_total %}
+    <div class="rounded-xl border border-line p-3 space-y-2" role="radiogroup" aria-label="{% translate 'Депозит' %}">
+      <div class="text-sm font-semibold">{% translate 'Что сделать с депозитом, если гости не придут?' %}</div>
+      <label class="flex items-start gap-2 text-sm"><input type="radio" name="deposit_action" value="refund" class="mt-1" checked><span>{% translate 'Вернуть гостю' %}</span></label>
+      <label class="flex items-start gap-2 text-sm"><input type="radio" name="deposit_action" value="keep" class="mt-1"><span>{% translate 'Оставить заведению (неявка)' %}</span></label>
+    </div>
+    {% endif %}
     <button class="btn btn-danger w-full">{% translate 'Снять бронь' %}</button>
   </form>
 {% else %}
@@ -27,6 +36,15 @@
     <div>
       <label class="label" for="r-time">{% translate 'Время (сегодня)' %}</label>
       <input id="r-time" name="time" type="time" class="input" value="{{ form.time|default:'' }}">
+    </div>
+    <div class="rounded-xl bg-[#FAF6EF] border border-line p-3 space-y-2">
+      <label class="label" for="r-deposit">{% translate 'Депозит (необязательно)' %}</label>
+      <input id="r-deposit" name="deposit" inputmode="numeric" class="input tabular-nums" value="{{ form.deposit|default:'' }}" placeholder="0">
+      <div class="flex gap-4 text-sm">
+        <label class="flex items-center gap-1.5"><input type="radio" name="deposit_method" value="cash" checked>{% translate 'Наличные' %}</label>
+        <label class="flex items-center gap-1.5"><input type="radio" name="deposit_method" value="card">{% translate 'Карта' %}</label>
+      </div>
+      <p class="text-xs text-muted">{% translate 'Деньги принимаются в открытую смену. Когда гости придут, депозит вычтется из счёта.' %}</p>
     </div>
     <div class="flex gap-2 pt-1">
       <button type="button" class="btn btn-secondary flex-1" onclick="closeModal()">{% translate 'Отмена' %}</button>
