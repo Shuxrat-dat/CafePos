@@ -26,6 +26,13 @@ S = {
         "vs_prev_week": "Oldingi 7 kunga nisbatan: {sign}{pct}%",
         "best_day": "🏆 Eng yaxshi kun: {date}, {sum}",
         "asof": "🕐 {time} holatiga",
+        "net_title": "🌐 Tarmoq · {label}",
+        "net_total": "💰 Jami tushum: {sum}",
+        "net_row": "{i}. {venue}: {sum} ({share}%) · {n} ta",
+        "net_empty": "• {venue}: {reason}",
+        "net_best": "🏆 Eng yaxshisi: {venue}",
+        "net_single": "Tarmoq hisoboti ikki va undan koʻp muassasa ulanganda ishlaydi.",
+        "btn_network": "🌐 Tarmoq",
         "no_data": "Hali maʼlumot kelmagan. Kassa ulangandan keyin bir necha daqiqa kuting.",
         "top_title": "🍽 Eng koʻp sotilganlar · {venue}",
         "top_today": "Bugun",
@@ -60,6 +67,7 @@ S = {
             "/ombor — nima sotib olish kerak\n"
             "/smena — joriy smena\n"
             "/top — eng koʻp sotilgan taomlar\n"
+            "/tarmoq — barcha muassasalar jami\n"
             "/sozlamalar — qaysi xabarlar kelsin\n"
             "/til — tilni oʻzgartirish (UZ/RU)"
         ),
@@ -88,6 +96,13 @@ S = {
         "vs_prev_week": "К предыдущим 7 дням: {sign}{pct}%",
         "best_day": "🏆 Лучший день: {date}, {sum}",
         "asof": "🕐 данные на {time}",
+        "net_title": "🌐 Сеть · {label}",
+        "net_total": "💰 Выручка сети: {sum}",
+        "net_row": "{i}. {venue}: {sum} ({share}%) · {n} зак.",
+        "net_empty": "• {venue}: {reason}",
+        "net_best": "🏆 Лучшая точка: {venue}",
+        "net_single": "Отчёт по сети работает, когда подключено два заведения и больше.",
+        "btn_network": "🌐 Сеть",
         "no_data": "Данных пока нет. Подождите несколько минут после подключения кассы.",
         "top_title": "🍽 Что чаще берут · {venue}",
         "top_today": "Сегодня",
@@ -122,6 +137,7 @@ S = {
             "/ombor — что нужно купить\n"
             "/smena — текущая смена\n"
             "/top — самые продаваемые блюда\n"
+            "/tarmoq — итог по всем заведениям\n"
             "/sozlamalar — какие сообщения получать\n"
             "/til — сменить язык (UZ/RU)"
         ),
@@ -279,11 +295,45 @@ def shopping_report(lang, venue, rows, limit=15):
     return "\n".join(lines)
 
 
-def main_keyboard(lang):
+def main_keyboard(lang, network=False):
     def row(*keys):
         return [{"text": T(lang, f"btn_{k}"), "callback_data": f"cmd:{k}"} for k in keys]
 
-    return {"inline_keyboard": [row("today", "yesterday", "week"), row("stock", "shift", "top")]}
+    rows = [row("today", "yesterday", "week"), row("stock", "shift", "top")]
+    if network:
+        rows.append(row("network"))  # кнопка нужна только тем, у кого подключено несколько заведений
+    return {"inline_keyboard": rows}
+
+
+def network_report(lang, kind, rows):
+    """Итог по всем заведениям чата. rows: [{"name": ..., "day": сводка дня или недели либо None}]. Лучшие сверху."""
+    lines = [T(lang, "net_title", label=T(lang, kind))]
+    sold = sorted((r for r in rows if r["day"] and r["day"].get("orders")), key=lambda r: -float(r["day"]["revenue"]))
+    total = sum(float(r["day"]["revenue"]) for r in sold)
+    orders = sum(int(r["day"]["orders"]) for r in sold)
+    if sold:
+        lines.append(T(lang, "net_total", sum=money(total, lang)))
+        lines.append(T(lang, "orders_avg", n=orders, avg=money(total / orders, lang)))
+        costed = [r["day"] for r in sold if r["day"].get("has_cost")]
+        if costed:
+            revenue = sum(float(d["revenue"]) for d in costed)
+            profit = sum(float(d["profit"]) for d in costed)
+            lines.append(T(lang, "profit", sum=money(profit, lang), pct=round(profit / revenue * 100) if revenue else 0))
+        lines.append("")
+        for i, r in enumerate(sold, 1):
+            share = round(float(r["day"]["revenue"]) / total * 100) if total else 0
+            lines.append(T(lang, "net_row", i=i, venue=r["name"], sum=money(r["day"]["revenue"], lang),
+                           share=share, n=r["day"]["orders"]))
+        if len(sold) > 1:
+            lines.append("")
+            lines.append(T(lang, "net_best", venue=sold[0]["name"]))
+    else:
+        lines.append(T(lang, "no_sales"))
+    for r in rows:
+        if r not in sold:
+            reason = T(lang, "no_sales") if r["day"] is not None else T(lang, "no_data")
+            lines.append(T(lang, "net_empty", venue=r["name"], reason=reason))
+    return "\n".join(lines)
 
 
 def settings_keyboard(lang, off):

@@ -353,3 +353,90 @@ class HttpTests(HubTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NetworkTests(HubTestCase):
+    """Сеть заведений: несколько точек в одном чате, общий итог командой /tarmoq."""
+
+    def setUp(self):
+        super().setUp()
+        self.a, reply_a = self.register("Kafe A")
+        self.say(111, f"/start {reply_a['code']}")
+        self.b, reply_b = self.register("Kafe B")
+        self.say(111, f"/start {reply_b['code']}")
+        self.hub.set_snapshot(self.a, snapshot(venue="Kafe A"))
+        self.hub.set_snapshot(self.b, snapshot(venue="Kafe B", today=day(3000000, 50), yesterday=day(1000000, 10, date="2026-11-07"),
+                                               week={"revenue": 20000000, "orders": 300, "profit": 9000000,
+                                                     "has_cost": True, "prev_revenue": 1}))
+        self.api.sent.clear()
+
+    def last(self):
+        return self.api.texts_to(111)[-1]
+
+    def test_total_share_and_best_point(self):
+        self.say(111, "/tarmoq")
+        text = self.last()
+        self.assertIn("4 500 000 soʻm", text)
+        self.assertLess(text.index("1. Kafe B"), text.index("2. Kafe A"))
+        self.assertIn("67%", text)
+        self.assertIn("33%", text)
+        self.assertIn("Eng yaxshisi: Kafe B", text)
+        self.assertIn("Foyda: 2 700 000", text)  # 60% от 4,5 млн
+
+    def test_yesterday_and_week_arguments(self):
+        self.say(111, "/tarmoq kecha")
+        self.assertIn("3 000 000 soʻm", self.last())  # 2 000 000 + 1 000 000
+        self.say(111, "/tarmoq hafta")
+        self.assertIn("29 000 000 soʻm", self.last())  # 9 000 000 + 20 000 000
+
+    def test_russian_labels(self):
+        self.say(111, "/til")
+        self.say(111, "/tarmoq")
+        self.assertIn("Выручка сети", self.last())
+        self.assertIn("Лучшая точка: Kafe B", self.last())
+
+    def test_single_venue_gets_a_hint(self):
+        hub = HubTestCase()
+        hub.setUp()
+        venue = hub.connect(222)
+        hub.hub.set_snapshot(venue, snapshot())
+        hub.say(222, "/tarmoq")
+        self.assertIn("ikki va undan", hub.api.texts_to(222)[-1])
+
+    def test_venue_without_data_is_listed(self):
+        c, reply = self.register("Kafe C")
+        self.say(111, f"/start {reply['code']}")
+        self.say(111, "/tarmoq")
+        self.assertIn("• Kafe C: Hali maʼlumot kelmagan", self.last())
+        self.assertIn("4 500 000 soʻm", self.last())
+
+    def test_quiet_venue_is_listed_separately(self):
+        self.hub.set_snapshot(self.a, snapshot(venue="Kafe A", today=day(0, 0)))
+        self.say(111, "/tarmoq")
+        self.assertIn("• Kafe A: Hali savdo yoʻq", self.last())
+        self.assertIn("1. Kafe B", self.last())
+
+    def test_button_for_network_and_callback(self):
+        self.say(111, "/bugun")
+        keyboard = self.api.sent[-1][2]
+        flat = [b["callback_data"] for row in keyboard["inline_keyboard"] for b in row]
+        self.assertIn("cmd:network", flat)
+        self.api.sent.clear()
+        self.hub.process_update({"callback_query": {"id": "1", "data": "cmd:network",
+                                                    "message": {"chat": {"id": 111}, "message_id": 5}}})
+        self.assertIn("4 500 000", self.last())
+
+    def test_no_button_for_a_single_venue(self):
+        hub = HubTestCase()
+        hub.setUp()
+        venue = hub.connect(333)
+        hub.hub.set_snapshot(venue, snapshot())
+        hub.say(333, "/bugun")
+        flat = [b["callback_data"] for row in hub.api.sent[-1][2]["inline_keyboard"] for b in row]
+        self.assertNotIn("cmd:network", flat)
+
+    def test_command_is_in_the_bot_menu(self):
+        self.hub.setup_commands()
+        sent = [p["commands"] for m, p in self.api.calls if m == "setMyCommands"]
+        self.assertTrue(sent)
+        self.assertTrue(all(any(c["command"] == "tarmoq" for c in commands) for commands in sent))

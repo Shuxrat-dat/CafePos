@@ -190,6 +190,10 @@ class Hub:
             return self._reply(chat_id, T(lang, "not_linked"))
         if command in self.COMMANDS:
             return self._report(chat_id, self.COMMANDS[command], known)
+        if command == "tarmoq":
+            kind = {"kecha": "yesterday", "вчера": "yesterday", "yesterday": "yesterday",
+                    "hafta": "week", "неделя": "week", "week": "week"}.get(arg.lower(), "today")
+            return self._network(chat_id, kind, known)
         if command == "sozlamalar":
             return self._reply(chat_id, T(lang, "settings_title"), texts.settings_keyboard(lang, known["off"]))
         if command == "til":
@@ -230,7 +234,9 @@ class Hub:
         if not known:
             return
         lang = known["lang"]
-        if data.startswith("cmd:"):
+        if data == "cmd:network":
+            self._network(chat_id, "today", known)
+        elif data.startswith("cmd:"):
             self._report(chat_id, data[4:], known)
         elif data.startswith("set:") and data[4:] in texts.CATEGORIES:
             off = set(known["off"])
@@ -278,7 +284,24 @@ class Hub:
                 body = texts.top_report(lang, name, snapshot)
             else:
                 return
-            self._reply(chat_id, body, texts.main_keyboard(lang))
+            self._reply(chat_id, body, texts.main_keyboard(lang, network=len(venues) > 1))
+
+    def _network(self, chat_id, kind, chat):
+        """Итог по всем заведениям этого чата: сумма, доли и лучшая точка. Данные берутся из последних сводок касс."""
+        lang = chat["lang"]
+        venues = self.store.venues_of_chat(chat_id)
+        if len(venues) < 2:
+            return self._reply(chat_id, T(lang, "net_single"), texts.main_keyboard(lang))
+        rows = []
+        for venue in venues:
+            snapshot, _at = self.store.snapshot(venue)
+            day = None
+            if snapshot:
+                today, yesterday = self._local_days(snapshot)
+                day = {"today": today, "yesterday": yesterday, "week": snapshot.get("week")}[kind]
+                day = day or {}
+            rows.append({"name": venue["name"], "day": day})
+        self._reply(chat_id, texts.network_report(lang, kind, rows), texts.main_keyboard(lang, network=True))
 
     # ---------- утренние сводки ----------
 
@@ -322,11 +345,13 @@ class Hub:
         uz = [
             ("bugun", "Bugungi tushum va foyda"), ("kecha", "Kechagi natija"), ("hafta", "Oxirgi 7 kun"),
             ("ombor", "Nima sotib olish kerak"), ("smena", "Joriy smena"), ("top", "Eng koʻp sotilganlar"),
+            ("tarmoq", "Barcha muassasalar jami"),
             ("sozlamalar", "Qaysi xabarlar kelsin"), ("yordam", "Buyruqlar roʻyxati"), ("til", "Til: UZ/RU"),
         ]
         ru = [
             ("bugun", "Выручка и прибыль сегодня"), ("kecha", "Итоги вчера"), ("hafta", "Последние 7 дней"),
             ("ombor", "Что нужно купить"), ("smena", "Текущая смена"), ("top", "Самые продаваемые"),
+            ("tarmoq", "Итог по всем заведениям"),
             ("sozlamalar", "Какие сообщения получать"), ("yordam", "Список команд"), ("til", "Язык: UZ/RU"),
         ]
         for lang_code, rows in ((None, uz), ("uz", uz), ("ru", ru)):
