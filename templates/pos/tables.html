@@ -4,18 +4,26 @@
 {% block main_class %}{% if user.simple_floor %}px-2 py-2 sm:px-3 w-full{% else %}px-4 py-4 lg:px-6 lg:py-5 w-full mx-auto{% endif %}{% endblock %}
 {% block content %}
 {% if user.simple_floor %}
-{# Официант: узкий список залов слева, компактные карточки столов справа #}
-<div class="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start">
-  <div id="hall-filter" class="flex sm:flex-col gap-1.5 w-full sm:w-[104px] shrink-0 overflow-x-auto sm:overflow-visible no-scrollbar sm:sticky sm:top-16">
+{# Официант: залы слева (на телефоне лентой сверху), фильтры по состоянию, крупные адаптивные карточки #}
+<div class="flex flex-col md:flex-row gap-3 md:gap-4 items-start">
+  <div id="hall-filter" class="flex md:flex-col gap-1.5 w-full md:w-[132px] lg:w-[168px] shrink-0 overflow-x-auto md:overflow-visible no-scrollbar md:sticky md:top-[72px]">
     <button type="button" data-hall="" class="hall-btn hall-btn-active"><span>{% translate 'Все' %}</span></button>
     {% for hall in halls %}
       <button type="button" data-hall="{{ hall.id }}" class="hall-btn"><span class="truncate">{{ hall|tr }}</span><span class="hall-count" data-hall-count="{{ hall.id }}"></span></button>
     {% endfor %}
   </div>
   <div class="flex-1 min-w-0 w-full">
-    <div class="relative mb-2 md:hidden">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{% icon "search" 16 %}</span>
-      <input id="table-search" type="search" class="input pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <div id="table-filter" class="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 flex-1">
+        <button type="button" data-filter="all" class="chip chip-active">{% translate 'Все' %}<span class="chip-n" data-count="all"></span></button>
+        <button type="button" data-filter="free" class="chip">{% translate 'Свободные' %}<span class="chip-n" data-count="free"></span></button>
+        <button type="button" data-filter="mine" class="chip">{% translate 'Мои' %}<span class="chip-n" data-count="mine"></span></button>
+        <button type="button" data-filter="bill" class="chip">{% translate 'Ожидают оплаты' %}<span class="chip-n" data-count="bill"></span></button>
+      </div>
+      <div class="relative w-full sm:w-44 md:hidden">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{% icon "search" 16 %}</span>
+        <input id="table-search" type="search" class="input pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
+      </div>
     </div>
     <div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_floor_grid.html" %}
@@ -23,11 +31,42 @@
   </div>
 </div>
 <style>
-  .hall-btn { display:flex; align-items:center; justify-content:space-between; gap:6px; min-height:44px; padding:0 10px; border-radius:12px; background:#EFE8DC; color:#57534e; font-size:13px; font-weight:600; white-space:nowrap; text-align:left; flex-shrink:0; }
-  .hall-btn-active { background:#7A3F1E; color:#fff; }
-  .hall-count { min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:#fff; color:#7A3F1E; font-size:11px; font-weight:700; display:none; align-items:center; justify-content:center; }
+  .hall-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; padding:0 14px; border-radius:14px; background:#EFE8DC; color:#57534e; font-size:14px; font-weight:700; white-space:nowrap; text-align:left; flex-shrink:0; transition:background .15s; }
+  .hall-btn:hover { background:#E6DCCB; }
+  .hall-btn-active, .hall-btn-active:hover { background:#7A3F1E; color:#fff; }
+  .hall-count { min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:#fff; color:#7A3F1E; font-size:12px; font-weight:800; display:none; align-items:center; justify-content:center; }
   .hall-count.on { display:inline-flex; }
-  @media (min-width:640px) { .hall-btn { width:100%; } }
+  @media (min-width:768px) { .hall-btn { width:100%; } }
+  .chip-n { min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:#EFE8DC; color:#57534e; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+  .chip-active .chip-n { background:#7A3F1E; color:#fff; }
+
+  .wgrid { display:grid; gap:clamp(8px,1.1vw,14px); grid-template-columns:repeat(auto-fill,minmax(clamp(112px,13vw,172px),1fr)); }
+  .wcard { position:relative; display:flex; flex-direction:column; justify-content:space-between; min-height:clamp(100px,11vw,136px); padding:clamp(11px,1.2vw,15px) clamp(11px,1.2vw,15px) clamp(11px,1.2vw,15px) clamp(15px,1.5vw,19px); border-radius:18px; border:1px solid #E8DFD2; background:#fff; overflow:hidden; box-shadow:0 1px 2px rgba(60,36,18,.05), 0 6px 16px -10px rgba(60,36,18,.18); transition:transform .12s, box-shadow .12s, border-color .12s; }
+  .wcard::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:#10B981; }
+  .wcard:hover { box-shadow:0 8px 22px -10px rgba(60,36,18,.35); }
+  .wcard:active { transform:scale(.97); }
+  .wcard-num { font-size:clamp(22px,2.3vw,30px); font-weight:800; line-height:1; letter-spacing:-.02em; }
+  .wcard-total { font-size:clamp(13px,1.3vw,17px); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .wcard-plus { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; background:#ECFDF5; color:#047857; }
+  .wcard-meta { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:#78716c; }
+  .wcard-pill { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; background:#ECFDF5; color:#047857; }
+  .wcard-alert { position:absolute; right:10px; bottom:10px; display:grid; place-items:center; width:22px; height:22px; border-radius:999px; background:#DC2626; color:#fff; animation:wpulse 1.6s ease-in-out infinite; }
+  @keyframes wpulse { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.5); } 50% { box-shadow:0 0 0 7px rgba(220,38,38,0); } }
+  .wcard-busy { background:linear-gradient(160deg,#FFF9DB,#FFEFA8); border-color:#F2D45C; }
+  .wcard-busy::before { background:#E0A800; }
+  .wcard-busy .wcard-pill { background:rgba(255,255,255,.75); color:#78350F; }
+  .wcard-bill { background:linear-gradient(160deg,#FFEEDD,#FFD7B0); border-color:#F4A261; }
+  .wcard-bill::before { background:#EA580C; }
+  .wcard-bill .wcard-pill { background:#fff; color:#9A3412; }
+  .wcard-reserved { background:#EFF6FF; border-color:#BFDBFE; }
+  .wcard-reserved::before { background:#3B82F6; }
+  .wcard-reserved .wcard-pill { background:#DBEAFE; color:#1D4ED8; }
+  .wcard-locked { background:#F5F5F4; border-color:#E7E5E4; box-shadow:none; }
+  .wcard-locked::before { background:#D6D3D1; }
+  .wcard-locked .wcard-num { color:#A8A29E; }
+  .wcard-locked .wcard-pill { background:#E7E5E4; color:#78716C; }
+  .wcard[data-mine="1"] { outline:2px solid rgba(122,63,30,.55); outline-offset:-2px; }
+  @media (prefers-reduced-motion: reduce) { .wcard-alert { animation:none; } .wcard { transition:none; } }
 </style>
 {% else %}
 <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -78,8 +117,10 @@
     var chips = document.getElementById('table-filter');
     var halls = document.getElementById('hall-filter');
     var state = 'all', hall = '';
-    function match(s) {
+    function match(el) {
+      var s = el.dataset.state;
       if (state === 'all') return true;
+      if (state === 'mine') return el.dataset.mine === '1';
       if (state === 'busy') return s === 'busy' || s === 'bill' || s === 'locked';
       return s === state;
     }
@@ -89,7 +130,7 @@
         var visible = false;
         if (hall && section.dataset.hallSection !== hall) { section.classList.add('hidden'); return; }
         section.querySelectorAll('[data-table]').forEach(function (t) {
-          var ok = match(t.dataset.state) && (term === '' || t.dataset.table.toLowerCase().indexOf(term) !== -1);
+          var ok = match(t) && (term === '' || t.dataset.table.toLowerCase().indexOf(term) !== -1);
           t.classList.toggle('hidden', !ok);
           if (ok) visible = true;
         });
@@ -101,6 +142,14 @@
     }
     // Счётчик занятых столов рядом с названием зала
     function counts() {
+      var tot = { all: 0, free: 0, mine: 0, bill: 0 };
+      box.querySelectorAll('[data-table]').forEach(function (t) {
+        tot.all++;
+        if (t.dataset.state === 'free') tot.free++;
+        if (t.dataset.state === 'bill') tot.bill++;
+        if (t.dataset.mine === '1') tot.mine++;
+      });
+      document.querySelectorAll('[data-count]').forEach(function (b) { b.textContent = tot[b.dataset.count]; });
       if (!halls) return;
       box.querySelectorAll('[data-hall-section]').forEach(function (section) {
         var n = 0;

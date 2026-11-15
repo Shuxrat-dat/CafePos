@@ -4446,3 +4446,9 @@ msgstr "hozir amalda"
 
 msgid "по умолчанию на всё меню"
 msgstr "odatda butun menyuga"
+
+msgid "Мои"
+msgstr "Meniki"
+
+msgid "Ожидают оплаты"
+msgstr "Toʻlov kutmoqda"
