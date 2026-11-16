@@ -4531,6 +4531,9 @@ msgstr "xaridor buyurtmani bekor qildi"
 msgid "вышло время оплаты"
 msgstr "toʻlov muddati oʻtdi"
 
+msgid "водитель не найден"
+msgstr "haydovchi topilmadi"
+
 msgid "заведение не ответило вовремя"
 msgstr "muassasa oʻz vaqtida javob bermadi"
 

@@ -265,6 +265,7 @@ def notify_juma_cancelled(link, reason):
                 "PAYMENT_TIMEOUT": _("вышло время оплаты"),
                 "MERCHANT_NO_RESPONSE": _("заведение не ответило вовремя"),
                 "POS_UNREACHABLE": _("нет связи с кассой"),
+                "NO_DRIVER": _("водитель не найден"),
                 "ADMIN_CANCELLED": _("отменил администратор Juma"),
             }
             lines = [
