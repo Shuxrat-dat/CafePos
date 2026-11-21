@@ -130,6 +130,7 @@
           <span class="badge bg-blue-100 text-blue-700 mt-1">{{ user.get_role_display }}</span>
         </div>
         <div class="pt-2 space-y-1">
+          <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
           <form method="post" action="{% url 'clock' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
             <button class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg font-semibold {% if work_shift %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100{% else %}bg-brand text-white hover:bg-brand-600{% endif %}">{% icon "clock" 18 %}{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</button>
           </form>
@@ -195,6 +196,9 @@
             <span class="block text-[13px] font-bold text-ink truncate leading-tight">{{ user.first_name|default:user.username }}</span>
           </div>
         </div>
+        <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Панель цифр на экране' %}">
+          {% icon "layout-grid" 16 %}<span class="hidden xl:inline" data-numpad-mode>{% translate 'Панель цифр: авто' %}</span>
+        </button>
         <form method="post" action="{% url 'clock' %}" class="m-0">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold {% if work_shift %}text-emerald-700 bg-emerald-50{% else %}text-stone-600{% endif %} hover:bg-white transition-colors" title="{% if work_shift %}{% translate 'Закончить смену' %}{% else %}{% translate 'Начать смену' %}{% endif %}">
             {% icon "clock" 16 %}
@@ -249,6 +253,7 @@
           {% endif %}
         {% endfor %}
         <div class="border-t border-line my-2"></div>
+        <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
         <form method="post" action="{% url 'clock' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
           <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 {% if work_shift %}text-emerald-700 font-semibold{% endif %}">{% icon "clock" 18 %}{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</button>
         </form>

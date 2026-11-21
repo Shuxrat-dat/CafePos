@@ -14,8 +14,23 @@
 </div>
 <script>
   (function () {
-    // Только для сенсорных экранов: на компьютере с клавиатурой поля работают как обычно
-    if (!window.matchMedia || !window.matchMedia('(pointer: coarse)').matches) return;
+    // Режим выбирают на устройстве: «авто» — только сенсорные экраны, «вкл» — всегда, «выкл» — никогда
+    var MODES = { auto: '{% translate "Панель цифр: авто" as t %}{{ t|escapejs }}', on: '{% translate "Панель цифр: включена" as t %}{{ t|escapejs }}', off: '{% translate "Панель цифр: выключена" as t %}{{ t|escapejs }}' };
+    var mode = 'auto';
+    try { mode = localStorage.getItem('numpad_mode') || 'auto'; } catch (e) {}
+    if (!MODES[mode]) mode = 'auto';
+    document.querySelectorAll('[data-numpad-mode]').forEach(function (el) {
+      el.textContent = MODES[mode];
+      el.closest('button').setAttribute('aria-pressed', mode === 'on' ? 'true' : mode === 'off' ? 'false' : 'mixed');
+    });
+    window.cycleNumpadMode = function () {
+      var next = { auto: 'on', on: 'off', off: 'auto' }[mode];
+      try { localStorage.setItem('numpad_mode', next); } catch (e) {}
+      if (window.showToast) showToast(MODES[next], 'success');
+      setTimeout(function () { location.reload(); }, 400);
+    };
+    var coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    if (mode === 'off' || (mode === 'auto' && !coarse)) return;
     var sheet = document.getElementById('numpad-sheet'), pad = sheet.querySelector('[data-numpad]');
     var label = document.getElementById('numpad-sheet-label'), current = null, seq = 0;
     var SELECTOR = 'input[type=number], input[data-pad]';

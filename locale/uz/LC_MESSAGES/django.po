@@ -4866,3 +4866,15 @@ msgstr "qadoq %(n)s dona"
 
 msgid "Сейчас вводите"
 msgstr "Hozir kiritilmoqda"
+
+msgid "Панель цифр: авто"
+msgstr "Raqamlar paneli: avto"
+
+msgid "Панель цифр: включена"
+msgstr "Raqamlar paneli: yoqilgan"
+
+msgid "Панель цифр: выключена"
+msgstr "Raqamlar paneli: oʻchirilgan"
+
+msgid "Панель цифр на экране"
+msgstr "Ekrandagi raqamlar paneli"

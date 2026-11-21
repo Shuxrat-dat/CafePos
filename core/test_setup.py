@@ -217,3 +217,18 @@ class NumpadSheetTests(TestCase):
 
     def test_guest_menu_has_no_sheet(self):
         self.assertNotContains(self.client.get("/menu/"), 'id="numpad-sheet"')
+
+
+class NumpadModeSwitchTests(TestCase):
+    """Кнопка ручного включения панели цифр: у сотрудников в боковом меню и в меню официанта."""
+
+    def test_switch_is_offered_to_staff(self):
+        from accounts.models import User as Staff
+
+        for role in ("owner", "waiter"):
+            user = Staff.objects.create_user(username=f"{role}_mode", password="pass12345", role=role)
+            self.client.force_login(user)
+            html = self.client.get("/tables/" if role == "waiter" else "/manage/settings/").content.decode()
+            self.assertIn("cycleNumpadMode()", html)
+            self.assertIn("data-numpad-mode", html)
+            self.assertIn("window.cycleNumpadMode", html)
