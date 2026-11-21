@@ -91,9 +91,26 @@
           })();
         </script>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="label" for="in-qty">{% translate 'Количество' %}</label><input id="in-qty" name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="input"></div>
-          <div><label class="label" for="in-cost">{% translate 'Цена за ед.' %}</label><input id="in-cost" name="cost" value="{{ form.cost }}" inputmode="decimal" class="input" placeholder="{% translate 'не менять' %}"></div>
+          <div><label class="label" for="in-qty">{% translate 'Количество' %}</label><input id="in-qty" name="quantity" value="{{ form.quantity }}" inputmode="none" autocomplete="off" data-pad-field class="input text-lg font-bold tabular-nums"></div>
+          <div><label class="label" for="in-cost">{% translate 'Цена за ед.' %}</label><input id="in-cost" name="cost" value="{{ form.cost }}" inputmode="none" autocomplete="off" data-pad-field class="input text-lg font-bold tabular-nums" placeholder="{% translate 'не менять' %}"></div>
         </div>
+        <div id="income-pad">{% include "components/numpad.html" with target="in-qty" %}</div>
+        <script>
+          (function () {
+            // Одна панель на два поля: пишет в то, которого коснулись (количество или цена), выбранное подсвечено
+            var pad = document.querySelector("#income-pad [data-numpad]");
+            var fields = document.querySelectorAll("[data-pad-field]");
+            function target(f) {
+              pad.dataset.numpad = f.id;
+              fields.forEach(function (x) { x.classList.toggle("ring-2", x === f); x.classList.toggle("ring-brand/40", x === f); });
+            }
+            fields.forEach(function (f) {
+              f.addEventListener("focus", function () { target(f); });
+              f.addEventListener("pointerdown", function () { target(f); });
+            });
+            target(document.getElementById("in-qty"));
+          })();
+        </script>
         <div>
           <label class="label" for="in-supplier">{% translate 'Поставщик' %} <span class="text-muted font-normal">· <a href="{% url 'suppliers' %}" class="text-brand hover:underline">{% translate 'добавить' %}</a></span></label>
           <select id="in-supplier" name="supplier" class="input">

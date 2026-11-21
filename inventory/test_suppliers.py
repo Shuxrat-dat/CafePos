@@ -57,3 +57,22 @@ class SupplierTests(TestCase):
         self.client.force_login(self.cashier)
         self.assertEqual(self.client.get(reverse("suppliers")).status_code, 403)
         self.assertEqual(self.client.get(reverse("supplier_detail", args=[self.supplier.id])).status_code, 403)
+
+
+class IncomeNumpadTests(TestCase):
+    def test_income_form_has_number_pad_for_quantity_and_price(self):
+        admin = User.objects.create_user(username="admin_pad", password="pass12345", role="admin")
+        self.client.force_login(admin)
+        html = self.client.get(reverse("stock")).content.decode()
+        self.assertIn('data-numpad="in-qty"', html)
+        self.assertIn('id="in-qty" name="quantity" value="" inputmode="none"', html)
+        self.assertIn('id="in-cost" name="cost" value="" inputmode="none"', html)
+
+    def test_decimal_quantity_with_comma_still_works(self):
+        admin = User.objects.create_user(username="admin_pad2", password="pass12345", role="admin")
+        product = Product.objects.create(name="Мука", unit="g")
+        self.client.force_login(admin)
+        self.client.post(reverse("stock"), {"product": product.id, "quantity": "1500,5", "cost": "12,5"})
+        product.refresh_from_db()
+        self.assertEqual(product.stock, Decimal("1500.5"))
+        self.assertEqual(product.cost_per_unit, Decimal("12.50"))
