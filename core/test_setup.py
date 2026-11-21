@@ -199,3 +199,21 @@ class BackupTests(TestCase):
     def test_page_opens_for_owner(self):
         self.client.force_login(self.owner)
         self.assertContains(self.client.get(reverse("manage_backup")), "Скачать копию")
+
+
+class NumpadSheetTests(TestCase):
+    """Общая панель с цифрами есть на страницах сотрудников (настройки, кухня), но не у гостей."""
+
+    def test_staff_pages_include_the_sheet(self):
+        from accounts.models import User as Staff
+
+        owner = Staff.objects.create_user(username="o_sheet", password="pass12345", role="owner")
+        cook = Staff.objects.create_user(username="k_sheet", password="pass12345", role="cook")
+        self.client.force_login(owner)
+        for url in ("/manage/settings/", "/manage/staff/new/"):
+            self.assertContains(self.client.get(url), 'id="numpad-sheet"')
+        self.client.force_login(cook)
+        self.assertContains(self.client.get("/kitchen/"), 'id="numpad-sheet"')
+
+    def test_guest_menu_has_no_sheet(self):
+        self.assertNotContains(self.client.get("/menu/"), 'id="numpad-sheet"')

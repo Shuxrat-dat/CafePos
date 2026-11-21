@@ -1,0 +1,83 @@
+{% load i18n ui %}
+{# Общая выезжающая панель с цифрами для сенсорных экранов: любое числовое поле без своей панели получает её при касании #}
+<div id="numpad-sheet" data-numpad-sheet class="no-print hidden fixed inset-x-0 bottom-0 z-[65] bg-white border-t border-line shadow-pop px-3 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+  <div class="max-w-md mx-auto">
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0"><div class="text-xs text-muted">{% translate 'Сейчас вводите' %}</div><div id="numpad-sheet-label" class="font-bold truncate">—</div></div>
+      <div class="flex gap-1.5 shrink-0">
+        <button type="button" id="numpad-sheet-next" class="btn btn-sm btn-secondary">{% translate 'Далее' %} {% icon "chevron-right" 14 %}</button>
+        <button type="button" id="numpad-sheet-done" class="btn btn-sm btn-primary">{% translate 'Готово' %}</button>
+      </div>
+    </div>
+    {% include "components/numpad.html" with target="" %}
+  </div>
+</div>
+<script>
+  (function () {
+    // Только для сенсорных экранов: на компьютере с клавиатурой поля работают как обычно
+    if (!window.matchMedia || !window.matchMedia('(pointer: coarse)').matches) return;
+    var sheet = document.getElementById('numpad-sheet'), pad = sheet.querySelector('[data-numpad]');
+    var label = document.getElementById('numpad-sheet-label'), current = null, seq = 0;
+    var SELECTOR = 'input[type=number], input[data-pad]';
+
+    // Числовые поля без своей панели: без системной клавиатуры, как текст (иначе браузер не даёт набрать «12,»)
+    function prepare(root) {
+      (root || document).querySelectorAll(SELECTOR).forEach(function (i) {
+        if (i.dataset.padAuto || i.closest('[data-numpad-sheet]') || i.disabled || i.readOnly) return;
+        if (i.type === 'number') i.dataset.padNumber = '1';
+        i.dataset.padAuto = '1';
+        i.type = 'text';
+        i.inputMode = 'none';
+        i.autocomplete = 'off';
+        if (!i.id) i.id = 'padf-' + (++seq);
+      });
+    }
+    function fields(form) {
+      return Array.prototype.slice.call((form || document).querySelectorAll('[data-pad-auto]')).filter(function (x) {
+        return x.offsetParent !== null;
+      });
+    }
+    function caption(i) {
+      var l = i.id && document.querySelector('label[for="' + i.id + '"]');
+      return (l ? l.textContent : (i.getAttribute('aria-label') || i.placeholder || i.name || '')).trim();
+    }
+    function open(i) {
+      if (current) current.classList.remove('ring-2', 'ring-brand/40');
+      current = i;
+      pad.dataset.numpad = i.id;
+      label.textContent = caption(i) || '—';
+      i.classList.add('ring-2', 'ring-brand/40');
+      sheet.classList.remove('hidden');
+      document.body.style.paddingBottom = sheet.offsetHeight + 'px';
+      i.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    function close() {
+      if (current) current.classList.remove('ring-2', 'ring-brand/40');
+      current = null;
+      sheet.classList.add('hidden');
+      document.body.style.paddingBottom = '';
+    }
+    document.addEventListener('focusin', function (e) {
+      if (e.target.matches && e.target.matches('[data-pad-auto]')) open(e.target);
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (e.target.matches && e.target.matches('[data-pad-auto]')) { open(e.target); return; }
+      if (!current || sheet.contains(e.target)) return;
+      close();
+    });
+    // Числа в формах Django пишутся с точкой: запятую с панели превращаем в точку
+    document.addEventListener('input', function (e) {
+      var i = e.target;
+      if (i.dataset && i.dataset.padNumber && i.value.indexOf(',') !== -1) i.value = i.value.replace(',', '.');
+    });
+    document.getElementById('numpad-sheet-next').addEventListener('click', function () {
+      if (!current) return;
+      var list = fields(current.form), idx = list.indexOf(current);
+      if (list.length) open(list[(idx + 1) % list.length]);
+    });
+    document.getElementById('numpad-sheet-done').addEventListener('click', close);
+    prepare();
+    // Окна и куски страниц, загруженные через HTMX, тоже получают панель
+    document.body.addEventListener('htmx:afterSwap', function (e) { prepare(e.target); });
+  })();
+</script>

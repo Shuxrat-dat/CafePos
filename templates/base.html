@@ -471,6 +471,7 @@
   })();
 </script>
 {% if user.is_authenticated %}
+{% include "components/numpad_sheet.html" %}
 <script>
   window.TOUR_I18N = { next: '{% translate "Далее" as t %}{{ t|escapejs }}', done: '{% translate "Готово" as t %}{{ t|escapejs }}', skip: '{% translate "Пропустить" as t %}{{ t|escapejs }}', of: '{% translate "из" as t %}{{ t|escapejs }}' };
   window.TOUR_KEY = 'cafepos_tour_{{ user.id }}';
