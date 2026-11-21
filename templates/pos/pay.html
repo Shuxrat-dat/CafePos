@@ -103,11 +103,11 @@
     <div class="mt-4 space-y-3">
       <div data-show="mixed">
         <label class="label" for="card">{% translate 'Оплачено картой' %}</label>
-        <input id="card" name="card" value="{{ card }}" inputmode="numeric" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
+        <input id="card" name="card" value="{{ card }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
       </div>
       <div data-show="cash mixed">
         <label class="label" for="received">{% translate 'Получено наличными' %} <span class="text-muted font-normal">· {% translate 'пусто — без сдачи' %}</span></label>
-        <input id="received" name="received" value="{{ received }}" inputmode="numeric" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
+        <input id="received" name="received" value="{{ received }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
         <div class="flex flex-wrap gap-2 mt-2" id="quick">
           <button type="button" class="chip" data-exact>{% translate 'Без сдачи' %}</button>
           {% for a in quick_amounts %}<button type="button" class="chip tabular-nums" data-amount="{{ a }}">{{ a|num }}</button>{% endfor %}
@@ -123,8 +123,9 @@
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="label" for="debt_name">{% translate 'Имя гостя' %}</label><input id="debt_name" name="debt_name" value="{{ order.customer_name }}" maxlength="100" class="input" autocomplete="off"></div>
-          <div><label class="label" for="debt_phone">{% translate 'Телефон' %}</label><input id="debt_phone" name="debt_phone" value="{{ order.customer_phone }}" maxlength="20" inputmode="tel" class="input" placeholder="+998 90 123 45 67" autocomplete="off"></div>
+          <div><label class="label" for="debt_phone">{% translate 'Телефон' %}</label><input id="debt_phone" name="debt_phone" value="{{ order.customer_phone }}" maxlength="20" inputmode="none" class="input" placeholder="+998 90 123 45 67" autocomplete="off"></div>
         </div>
+        {% include "components/numpad.html" with target="debt_phone" no_comma=True %}
       </div>
       {% endif %}
 
@@ -135,12 +136,7 @@
       </div>
       <p id="pay-hint" class="hidden text-sm text-red-700 font-medium"></p>
       <button id="pay-btn" class="btn btn-primary w-full min-h-[60px] text-lg">{% icon "check-circle" 22 %}<span>{% translate 'Принять оплату' %}</span></button>
-      <div data-show="cash mixed" class="grid grid-cols-3 gap-2 select-none" id="keypad">
-        {% for k in "123456789" %}<button type="button" class="btn btn-secondary text-xl" data-key="{{ k }}">{{ k }}</button>{% endfor %}
-        <button type="button" class="btn btn-secondary text-lg" data-key="000">000</button>
-        <button type="button" class="btn btn-secondary text-xl" data-key="0">0</button>
-        <button type="button" class="btn btn-secondary" data-key="back" aria-label="{% translate 'Стереть' %}">{% icon "arrow-left" 20 %}</button>
-      </div>
+      <div data-show="cash mixed" id="keypad">{% include "components/numpad.html" with target="received" no_comma=True %}</div>
     </div>
 
   </section>
@@ -208,7 +204,16 @@
 
     form.addEventListener('input', recalc);
     form.addEventListener('change', recalc);
-    form.querySelectorAll('[data-money]').forEach(function (i) { i.addEventListener('focus', function () { activeInput = i; }); });
+    function target(i) { activeInput = i; if (pad) pad.dataset.numpad = i.id; }
+    form.querySelectorAll('[data-money]').forEach(function (i) {
+      i.addEventListener('focus', function () { target(i); });
+      i.addEventListener('pointerdown', function () { target(i); });
+    });
+    // Сменили способ оплаты: «Смешанная» — сначала сумма по карте, иначе — полученные наличные
+    form.addEventListener('change', function (e) {
+      if (e.target.name !== 'method') return;
+      target(document.getElementById(e.target.value === 'mixed' ? 'card' : 'received'));
+    });
     form.querySelectorAll('[data-step]').forEach(function (b) {
       b.addEventListener('click', function () {
         var input = b.parentNode.querySelector('.split-qty');
@@ -217,14 +222,8 @@
         recalc();
       });
     });
-    document.getElementById('keypad').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-key]');
-      if (!b) return;
-      var v = activeInput.value.replace(/[^\d]/g, '');
-      if (b.dataset.key === 'back') v = v.slice(0, -1); else v = (v + b.dataset.key).replace(/^0+/, '');
-      activeInput.value = v;
-      recalc();
-    });
+    // Панель с цифрами пишет в поле, которое выбрано последним: «Получено» или «Оплачено картой»
+    var pad = document.querySelector('#keypad [data-numpad]');
     document.getElementById('quick').addEventListener('click', function (e) {
       var b = e.target.closest('button');
       if (!b) return;

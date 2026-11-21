@@ -37,7 +37,8 @@
       <h2 class="section-title">{% translate 'Принять погашение' %}</h2>
       {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
       {% if not shift_open %}<div class="alert-warn">{% icon "alert" 18 %}{% translate 'Кассовая смена не открыта. Откройте смену, чтобы принять деньги.' %}</div>{% endif %}
-      <div><label class="label" for="repay-amount">{% translate 'Сумма' %}</label><input id="repay-amount" name="amount" inputmode="numeric" value="{{ debt|floatformat:0 }}" class="input text-lg font-semibold tabular-nums" required></div>
+      <div><label class="label" for="repay-amount">{% translate 'Сумма' %}</label><input id="repay-amount" name="amount" inputmode="none" autocomplete="off" value="{{ debt|floatformat:0 }}" class="input text-lg font-semibold tabular-nums" required>
+        {% include "components/numpad.html" with target="repay-amount" no_comma=True %}</div>
       <div class="seg" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
         {% for value, label in methods %}
           <label class="seg-item cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">

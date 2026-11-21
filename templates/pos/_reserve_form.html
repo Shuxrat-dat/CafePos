@@ -39,7 +39,8 @@
     </div>
     <div class="rounded-xl bg-[#FAF6EF] border border-line p-3 space-y-2">
       <label class="label" for="r-deposit">{% translate 'Депозит (необязательно)' %}</label>
-      <input id="r-deposit" name="deposit" inputmode="numeric" class="input tabular-nums" value="{{ form.deposit|default:'' }}" placeholder="0">
+      <input id="r-deposit" name="deposit" inputmode="none" autocomplete="off" class="input text-xl font-bold tabular-nums" value="{{ form.deposit|default:'' }}" placeholder="0">
+      {% include "components/numpad.html" with target="r-deposit" no_comma=True %}
       <div class="flex gap-4 text-sm">
         <label class="flex items-center gap-1.5"><input type="radio" name="deposit_method" value="cash" checked>{% translate 'Наличные' %}</label>
         <label class="flex items-center gap-1.5"><input type="radio" name="deposit_method" value="card">{% translate 'Карта' %}</label>

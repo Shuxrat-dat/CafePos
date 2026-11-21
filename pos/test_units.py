@@ -153,3 +153,46 @@ class UnitTests(TestCase):
         services.pay_order(order, self.admin, "card", None, None)
         stock.refresh_from_db()
         self.assertEqual(stock.stock, Decimal("17"))  # 40 − 3 − 20
+
+
+class NumpadScreensTests(TestCase):
+    """Панель с цифрами на экране оплаты, в окне брони и при погашении долга."""
+
+    def setUp(self):
+        from core.models import CafeSettings
+        from pos.models import Hall, Table
+
+        settings = CafeSettings.get()
+        settings.accept_debt = True
+        settings.save()
+        self.cashier = User.objects.create_user(username="c_pad", password="pass12345", role="cashier")
+        category = Category.objects.create(name="Горячее")
+        dish = Dish.objects.create(category=category, name="Плов", price=Decimal("50000"))
+        self.order = services.create_order(self.cashier, Order.OrderType.TAKEAWAY)
+        OrderItem.objects.create(order=self.order, dish=dish, quantity=1, status=OrderItem.Status.SERVED)
+        self.table = Table.objects.create(hall=Hall.objects.create(name="Зал"), number="9")
+        services.open_shift(self.cashier, initial_cash=Decimal("0"))
+        self.client.force_login(self.cashier)
+
+    def test_pay_screen_has_pad_for_cash_card_and_phone(self):
+        html = self.client.get(reverse("pay", args=[self.order.id])).content.decode()
+        self.assertIn('data-numpad="received"', html)
+        self.assertIn('data-numpad="debt_phone"', html)
+        self.assertIn('id="received" name="received" value="" inputmode="none"', html)
+        self.assertIn('id="card" name="card" value="" inputmode="none"', html)
+        self.assertNotIn('data-key=","', html.split('data-numpad="received"')[1].split("</div>")[0])
+
+    def test_reservation_window_has_pad_for_deposit(self):
+        html = self.client.get(reverse("reserve_table", args=[self.table.id])).content.decode()
+        self.assertIn('data-numpad="r-deposit"', html)
+        self.assertIn('id="r-deposit" name="deposit" inputmode="none"', html)
+
+    def test_debt_repayment_has_pad(self):
+        from pos.models import Customer
+
+        self.order.customer_name, self.order.customer_phone = "Акмаль", "901234567"
+        self.order.save()
+        services.pay_order(self.order, self.cashier, "debt", None, None)
+        customer = Customer.objects.get()
+        html = self.client.get(reverse("debt_detail", args=[customer.id])).content.decode()
+        self.assertIn('data-numpad="repay-amount"', html)
