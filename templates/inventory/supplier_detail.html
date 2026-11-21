@@ -59,7 +59,8 @@
       {% csrf_token %}
       <h2 class="section-title">{% translate 'Оплатить поставщику' %}</h2>
       {% if error %}<div class="alert-error">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
-      <div><label class="label" for="pay-amount">{% translate 'Сумма' %}</label><input id="pay-amount" name="amount" inputmode="numeric" class="input text-lg font-semibold tabular-nums" {% if supplier.debt > 0 %}value="{{ supplier.debt|floatformat:0 }}"{% endif %} required></div>
+      <div><label class="label" for="pay-amount">{% translate 'Сумма' %}</label><input id="pay-amount" name="amount" inputmode="none" autocomplete="off" class="input text-lg font-semibold tabular-nums" {% if supplier.debt > 0 %}value="{{ supplier.debt|floatformat:0 }}"{% endif %} required>
+        {% include "components/numpad.html" with target="pay-amount" no_comma=True %}</div>
       <div><label class="label" for="pay-comment">{% translate 'Комментарий' %}</label><input id="pay-comment" name="comment" maxlength="200" class="input" placeholder="{% translate 'Наличными, перевод, номер накладной' %}"></div>
       <button class="btn btn-primary w-full">{% icon "check" 17 %}{% translate 'Сохранить оплату' %}</button>
     </form>

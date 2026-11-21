@@ -4863,3 +4863,6 @@ msgstr "l"
 
 msgid "уп. %(n)s шт"
 msgstr "qadoq %(n)s dona"
+
+msgid "Сейчас вводите"
+msgstr "Hozir kiritilmoqda"

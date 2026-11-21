@@ -76,3 +76,33 @@ class IncomeNumpadTests(TestCase):
         product.refresh_from_db()
         self.assertEqual(product.stock, Decimal("1500.5"))
         self.assertEqual(product.cost_per_unit, Decimal("12.50"))
+
+
+class StockScreensNumpadTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(username="admin_pad3", password="pass12345", role="admin")
+        self.flour = Product.objects.create(name="Мука", unit="g", stock=Decimal("1000"))
+        self.salt = Product.objects.create(name="Соль", unit="g", stock=Decimal("500"))
+        self.client.force_login(self.admin)
+
+    def test_writeoff_has_pad(self):
+        html = self.client.get(reverse("stock_writeoff")).content.decode()
+        self.assertIn('data-numpad="w-qty"', html)
+        self.assertIn('id="w-qty" name="quantity" value="" inputmode="none"', html)
+
+    def test_count_has_one_pad_for_every_product(self):
+        html = self.client.get(reverse("stock_count")).content.decode()
+        self.assertIn('id="count-pad"', html)
+        self.assertEqual(html.count("data-pad-field data-name="), 2)  # по полю на продукт
+        self.assertIn(f'id="fact-{self.flour.id}"', html)
+
+    def test_count_still_applies_facts(self):
+        self.client.post(reverse("stock_count"), {f"fact_{self.flour.id}": "900", f"fact_{self.salt.id}": ""})
+        self.flour.refresh_from_db()
+        self.salt.refresh_from_db()
+        self.assertEqual((self.flour.stock, self.salt.stock), (Decimal("900"), Decimal("500")))
+
+    def test_supplier_payment_has_pad(self):
+        supplier = Supplier.objects.create(name="Овощи")
+        html = self.client.get(reverse("supplier_detail", args=[supplier.id])).content.decode()
+        self.assertIn('data-numpad="pay-amount"', html)

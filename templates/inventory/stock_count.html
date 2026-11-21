@@ -13,7 +13,8 @@
 {% endif %}
 {% if error %}<div class="alert-error mb-4 max-w-2xl">{% icon "alert" 18 %}{{ error }}</div>{% endif %}
 
-<form method="post" class="card p-5 max-w-2xl">
+<form method="post" class="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-w-5xl">
+<div class="card p-5 pb-6 min-w-0 mb-[340px] lg:mb-0">{# на телефоне снизу место под выезжающую панель #}
   {% csrf_token %}
   <p class="text-sm text-muted mb-3">{% translate 'Пустые поля пропускаются, остаток не меняется.' %}</p>
   <div class="divide-y divide-line">
@@ -23,12 +24,55 @@
           <div class="font-semibold">{{ p|tr }}</div>
           <div class="text-sm text-muted">{% translate 'В учёте' %}: {{ p.stock|qty }} {{ p.get_unit_display }}</div>
         </div>
-        <input name="fact_{{ p.id }}" value="{{ p.entered }}" inputmode="decimal" placeholder="{% translate 'факт' %}" class="input w-36 text-right">
+        <input id="fact-{{ p.id }}" name="fact_{{ p.id }}" value="{{ p.entered }}" inputmode="none" autocomplete="off" placeholder="{% translate 'факт' %}"
+               data-pad-field data-name="{{ p|tr }} · {{ p.get_unit_display }}" class="input w-36 text-right text-lg font-bold tabular-nums">
       </div>
     {% empty %}
       <p class="text-muted">{% translate 'Продуктов пока нет.' %}</p>
     {% endfor %}
   </div>
   <button class="mt-4 btn btn-primary btn-lg w-full">{% translate 'Применить пересчёт' %}</button>
+</div>
+{# Панель с цифрами: на компьютере колонкой справа, на телефоне выезжает снизу, когда выбрали продукт #}
+<div id="count-pad" class="hidden lg:block fixed lg:sticky inset-x-0 bottom-0 lg:top-20 z-30 bg-white lg:bg-transparent border-t border-line lg:border-0 p-3 lg:p-0 shadow-pop lg:shadow-none">
+  <div class="lg:card lg:p-4">
+    <div class="flex items-center justify-between gap-2">
+      <div class="min-w-0"><div class="text-xs text-muted">{% translate 'Сейчас вводите' %}</div><div id="count-pad-label" class="font-bold truncate">—</div></div>
+      <div class="flex gap-1.5 shrink-0">
+        <button type="button" id="count-pad-next" class="btn btn-sm btn-secondary">{% translate 'Далее' %} {% icon "chevron-right" 14 %}</button>
+        <button type="button" id="count-pad-done" class="btn btn-sm btn-primary lg:hidden">{% translate 'Готово' %}</button>
+      </div>
+    </div>
+    {% include "components/numpad.html" with target="" %}
+  </div>
+</div>
 </form>
+<script>
+  (function () {
+    var box = document.getElementById('count-pad'), pad = box.querySelector('[data-numpad]');
+    var label = document.getElementById('count-pad-label');
+    var fields = Array.prototype.slice.call(document.querySelectorAll('[data-pad-field]'));
+    var current = null, wide = window.matchMedia('(min-width: 1024px)');
+    function select(f, scroll) {
+      current = f;
+      pad.dataset.numpad = f.id;
+      label.textContent = f.dataset.name;
+      fields.forEach(function (x) { x.classList.toggle('ring-2', x === f); x.classList.toggle('ring-brand/40', x === f); });
+      box.classList.remove('hidden');
+      if (scroll && !wide.matches) f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    fields.forEach(function (f) {
+      f.addEventListener('pointerdown', function () { select(f, true); });
+      f.addEventListener('focus', function () { select(f, false); });
+    });
+    document.getElementById('count-pad-next').addEventListener('click', function () {
+      if (!fields.length) return;
+      var i = current ? fields.indexOf(current) + 1 : 0;
+      select(fields[i % fields.length], true);
+    });
+    document.getElementById('count-pad-done').addEventListener('click', function () { box.classList.add('hidden'); });
+    if (fields.length) select(fields[0], false);
+    if (!wide.matches) box.classList.add('hidden');  // на телефоне панель появляется по касанию поля
+  })();
+</script>
 {% endblock %}
