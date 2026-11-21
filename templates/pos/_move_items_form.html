@@ -17,7 +17,7 @@
     {% for item in items %}
       <li class="flex items-center justify-between gap-3 px-3 py-2">
         <span class="min-w-0">
-          <span class="block font-medium truncate">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item.weight_grams|weight }}{% endif %}</span>
+          <span class="block font-medium truncate">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item|item_qty }}{% endif %}</span>
           <span class="text-xs text-muted">{{ item.get_status_display }} · {% blocktranslate trimmed with q=item.quantity %}в заказе {{ q }}{% endblocktranslate %}</span>
         </span>
         <span class="flex items-center gap-1 shrink-0">

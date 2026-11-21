@@ -157,3 +157,30 @@ def ticket_served(request, order_id):
     else:
         services.serve_ready(order)
     return _tickets(request)
+
+
+@kitchen_only
+def item_weight(request, item_id):
+    """Повар взвесил блюдо (рыбу, мясо) и вводит вес с экранной панели. Сумма заказа пересчитывается сама."""
+    from pos.views import _clean_weight, _order_changed
+
+    item = get_object_or_404(
+        OrderItem.objects.select_related("dish", "order"), id=item_id, by_weight=True, order__status=Order.Status.OPEN
+    )
+    error = ""
+    if request.method == "POST":
+        grams, error = _clean_weight(request, item.dish)
+        if not error:
+            item.weight_grams, item.quantity = grams, 1
+            item.save(update_fields=["weight_grams", "quantity"])
+            _order_changed(item.order)
+            return _tickets(request)
+    response = render(request, "kitchen/_weight_form.html", {
+        "item": item, "dish": item.dish, "weight_error": error, "station": _station(request),
+        "weight": request.POST.get("weight", "") if request.method == "POST" else (item.weight_grams or ""),
+        "weight_mode": request.POST.get("weight_mode", "weight"),
+    })
+    if request.method == "POST":
+        response["HX-Retarget"] = "#modal"
+        response["HX-Reswap"] = "innerHTML"
+    return response

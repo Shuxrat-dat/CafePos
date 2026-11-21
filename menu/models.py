@@ -91,8 +91,16 @@ class Dish(models.Model):
     )
     price = models.DecimalField(_("Цена (сум)"), max_digits=12, decimal_places=0)
     sold_by_weight = models.BooleanField(
-        _("Продаётся на вес"), default=False,
-        help_text=_("Цена указывается за 1 кг, вес вводится в граммах при заказе. Техкарта — расход на 1 кг."),
+        _("Продаётся на вес или в розлив"), default=False,
+        help_text=_("Цена за 1 кг или за 1 л. При заказе вводят граммы (миллилитры) или сумму, на которую берёт гость. Техкарта — расход на 1 кг или 1 л."),
+    )
+    class Measure(models.TextChoices):
+        KG = "kg", _("Килограммы (рыба, мясо, сладости)")
+        L = "l", _("Литры (разливное пиво, водка, сок)")
+
+    measure = models.CharField(
+        _("Единица"), max_length=2, choices=Measure.choices, default=Measure.KG,
+        help_text=_("Только для блюд на вес или в розлив."),
     )
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     is_available = models.BooleanField(

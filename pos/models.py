@@ -418,6 +418,7 @@ class OrderItem(models.Model):
     price = models.DecimalField(_("Цена на момент заказа"), max_digits=12, decimal_places=0, null=True, blank=True)
     # Блюдо на вес: price — цена за 1 кг, сумма считается по weight_grams. Признак фиксируется при заказе.
     by_weight = models.BooleanField(_("На вес"), default=False)
+    measure = models.CharField(_("Единица"), max_length=2, default="kg")  # kg — граммы, l — миллилитры
     weight_grams = models.PositiveIntegerField(_("Вес, г"), null=True, blank=True)
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
@@ -448,6 +449,7 @@ class OrderItem(models.Model):
                     self.promo_label = f"{promo.name} −{promo.percent}%"[:100]
         if self._state.adding and self.dish.sold_by_weight:
             self.by_weight = True
+            self.measure = self.dish.measure
         super().save(*args, **kwargs)
 
     @property

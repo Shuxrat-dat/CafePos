@@ -4803,3 +4803,63 @@ msgstr "Mehmonlarning yangi arizalari shu yerda paydo boʻladi va Telegramga xab
 
 msgid "гостей: %(n)s"
 msgstr "mehmonlar: %(n)s"
+
+msgid "В миллилитрах: 500 — это 0,5 л. Можно в литрах через запятую: 0,5."
+msgstr "Millilitrda: 500 — bu 0,5 l. Litrda vergul bilan ham yozish mumkin: 0,5."
+
+msgid "Введите сумму, на которую берёт гость: количество посчитается само."
+msgstr "Mehmon qancha summaga olayotganini kiriting: miqdor oʻzi hisoblanadi."
+
+msgid "Введите сумму, например 50000."
+msgstr "Summani kiriting, masalan 50000."
+
+msgid "Вношу упаковками (количество и цена — за упаковку)"
+msgstr "Qadoqlab kiritaman (miqdor va narx — qadoq uchun)"
+
+msgid "Запятая"
+msgstr "Vergul"
+
+msgid "Как ввести"
+msgstr "Qanday kiritish"
+
+msgid "На сумму"
+msgstr "Summaga"
+
+msgid "Объём, мл"
+msgstr "Hajmi, ml"
+
+msgid "Килограммы (рыба, мясо, сладости)"
+msgstr "Kilogramm (baliq, goʻsht, shirinliklar)"
+
+msgid "Литры (разливное пиво, водка, сок)"
+msgstr "Litr (quyma pivo, aroq, sharbat)"
+
+msgid "Например, 20 сигарет в пачке: приход вносят пачками, а остаток и продажа идут поштучно. 1 — без упаковок."
+msgstr "Masalan, qutida 20 ta sigaret: kirim qutilab kiritiladi, qoldiq va sotuv donalab yuritiladi. 1 — qadoqsiz."
+
+msgid "Объём должен быть от 10 мл до 50 л. Например: 500 или 1000."
+msgstr "Hajm 10 ml dan 50 l gacha boʻlishi kerak. Masalan: 500 yoki 1000."
+
+msgid "От 1 до 10 000 штук."
+msgstr "1 dan 10 000 donagacha."
+
+msgid "Продаётся на вес или в розлив"
+msgstr "Tortib yoki quyib sotiladi"
+
+msgid "Только для блюд на вес или в розлив."
+msgstr "Faqat tortib yoki quyib sotiladigan taomlar uchun."
+
+msgid "Укажите объём в миллилитрах, например 500 или 1000."
+msgstr "Hajmni millilitrda kiriting, masalan 500 yoki 1000."
+
+msgid "Цена за 1 кг или за 1 л. При заказе вводят граммы (миллилитры) или сумму, на которую берёт гость. Техкарта — расход на 1 кг или 1 л."
+msgstr "Narx 1 kg yoki 1 l uchun. Buyurtmada gramm (millilitr) yoki mehmon olayotgan summa kiritiladi. Texkarta — 1 kg yoki 1 l uchun sarf."
+
+msgid "Штук в упаковке"
+msgstr "Qadoqdagi dona"
+
+msgid "л"
+msgstr "l"
+
+msgid "уп. %(n)s шт"
+msgstr "qadoq %(n)s dona"

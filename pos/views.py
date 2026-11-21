@@ -133,18 +133,35 @@ def _clean_qty(request):
 MAX_WEIGHT_GRAMS = 50000
 
 
-def _clean_weight(request):
-    """Вес блюда на вес в граммах: «1030» — граммы, «1,03» или «1.03» — килограммы.
+def _clean_weight(request, dish=None):
+    """Количество блюда на вес или в розлив в граммах (миллилитрах).
+    «1030» — граммы, «1,03» — килограммы; в режиме «на сумму» — сумма в сумах, из неё считаются граммы.
     Возвращает (граммы, None) или (None, текст ошибки)."""
+    from decimal import ROUND_HALF_UP
+
+    liters = dish is not None and dish.measure == "l"
+    hint = (_("Укажите объём в миллилитрах, например 500 или 1000.") if liters
+            else _("Укажите вес в граммах, например 450 или 1030."))
     raw = request.POST.get("weight", "").strip().replace(" ", "").replace(",", ".")
-    try:
-        value = Decimal(raw)
-    except InvalidOperation:
-        return None, _("Укажите вес в граммах, например 450 или 1030.")
-    if not value.is_finite():
-        return None, _("Укажите вес в граммах, например 450 или 1030.")
-    grams = int((value * 1000 if "." in raw else value).to_integral_value())
+    if request.POST.get("weight_mode") == "sum" and dish is not None and dish.price > 0:
+        try:
+            amount = Decimal(raw)
+        except InvalidOperation:
+            amount = None
+        if amount is None or not amount.is_finite() or amount <= 0:
+            return None, _("Введите сумму, например 50000.")
+        grams = int((amount * 1000 / dish.price).to_integral_value(ROUND_HALF_UP))
+    else:
+        try:
+            value = Decimal(raw)
+        except InvalidOperation:
+            return None, hint
+        if not value.is_finite():
+            return None, hint
+        grams = int((value * 1000 if "." in raw else value).to_integral_value())
     if grams < 10 or grams > MAX_WEIGHT_GRAMS:
+        if liters:
+            return None, _("Объём должен быть от 10 мл до 50 л. Например: 500 или 1000.")
         return None, _("Вес должен быть от 10 г до 50 кг. Например: 450 или 1030.")
     return grams, None
 
@@ -159,6 +176,7 @@ def _weight_form(request, order, dish, item, error):
             "order": order, "dish": dish, "item": item,
             "selected": {int(i) for i in request.POST.getlist("modifiers") if i.isdigit()},
             "quantity": 1, "comment": _clean_comment(request), "weight": request.POST.get("weight", ""),
+            "weight_mode": request.POST.get("weight_mode", "weight"),
             "weight_error": error, "groups": groups, "extras": extras,
         },
     )
@@ -644,7 +662,7 @@ def add_item(request, order_id, dish_id):
 
     if dish.sold_by_weight:
         # Каждое взвешивание — отдельная позиция: две рыбы разного веса не складываются
-        grams, error = _clean_weight(request)
+        grams, error = _clean_weight(request, dish)
         if error:
             return _weight_form(request, order, dish, None, error)
         item = OrderItem.objects.create(order=order, dish=dish, quantity=1, weight_grams=grams, comment=comment)
@@ -673,7 +691,7 @@ def edit_item(request, order_id, item_id):
 
     if request.method == "POST":
         if item.by_weight:
-            grams, error = _clean_weight(request)
+            grams, error = _clean_weight(request, item.dish)
             if error:
                 return _weight_form(request, order, item.dish, item, error)
             item.weight_grams, item.quantity = grams, 1

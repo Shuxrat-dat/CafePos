@@ -1,7 +1,7 @@
 {% extends "components/modal.html" %}
 {% load i18n ui %}
 {% block modal_title %}{% translate 'Убрать блюдо из заказа?' %}{% endblock %}
-{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item.weight_grams|weight }}{% else %} × {{ item.quantity }}{% endif %} · {{ item.line_total|money }}</p>{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item|item_qty }}{% else %} × {{ item.quantity }}{% endif %} · {{ item.line_total|money }}</p>{% endblock %}
 {% block modal_body %}
 <form hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" hx-swap="innerHTML"
       hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"

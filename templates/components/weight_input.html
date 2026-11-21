@@ -1,0 +1,80 @@
+{% load i18n ui %}
+{# Ввод для блюда на вес или в розлив: граммы (миллилитры) или сумма, на которую берёт гость. Экранная панель с цифрами #}
+<div data-weight-box data-price="{{ dish.price|stringformat:'d' }}" data-sum="{% translate 'сум' %}"
+     data-small="{% if dish.measure == 'l' %}{% translate 'мл' %}{% else %}{% translate 'г' %}{% endif %}"
+     data-big="{% if dish.measure == 'l' %}{% translate 'л' %}{% else %}{% translate 'кг' %}{% endif %}">
+  <div class="seg" role="radiogroup" aria-label="{% translate 'Как ввести' %}">
+    <label class="seg-item cursor-pointer min-h-[44px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+      <input type="radio" name="weight_mode" value="weight" class="sr-only" {% if weight_mode != 'sum' %}checked{% endif %}>
+      {% if dish.measure == 'l' %}{% translate 'Объём, мл' %}{% else %}{% translate 'Вес, г' %}{% endif %}
+    </label>
+    <label class="seg-item cursor-pointer min-h-[44px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+      <input type="radio" name="weight_mode" value="sum" class="sr-only" {% if weight_mode == 'sum' %}checked{% endif %}>{% translate 'На сумму' %}
+    </label>
+  </div>
+  <input id="{{ input_id|default:'item-weight' }}" name="weight" value="{{ weight }}" inputmode="none" autocomplete="off" required autofocus
+         aria-label="{% translate 'Количество' %}"
+         class="input mt-3 text-center text-3xl font-extrabold tabular-nums min-h-[60px]{% if weight_error %} border-red-500{% endif %}">
+  <p class="mt-2 text-center text-lg font-extrabold tabular-nums min-h-[28px] text-brand" data-weight-result></p>
+  {% if weight_error %}<p class="text-sm text-red-700 mt-1 text-center">{{ weight_error }}</p>{% endif %}
+  <div class="flex flex-wrap justify-center gap-2 mt-2" data-chips="weight">
+    {% if dish.measure == 'l' %}
+      <button type="button" class="chip tabular-nums" data-v="50">50 {% translate 'мл' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="100">100 {% translate 'мл' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="500">0,5 {% translate 'л' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="1000">1 {% translate 'л' %}</button>
+    {% else %}
+      <button type="button" class="chip tabular-nums" data-v="100">100 {% translate 'г' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="250">250 {% translate 'г' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="500">500 {% translate 'г' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="1000">1 {% translate 'кг' %}</button>
+    {% endif %}
+  </div>
+  <div class="flex flex-wrap justify-center gap-2 mt-2 hidden" data-chips="sum">
+    <button type="button" class="chip tabular-nums" data-v="10000">10 000</button>
+    <button type="button" class="chip tabular-nums" data-v="20000">20 000</button>
+    <button type="button" class="chip tabular-nums" data-v="50000">50 000</button>
+    <button type="button" class="chip tabular-nums" data-v="100000">100 000</button>
+  </div>
+  {% include "components/numpad.html" with target=input_id|default:'item-weight' %}
+  <p class="text-xs text-muted mt-2" data-hint="weight">{% if dish.measure == 'l' %}{% translate 'В миллилитрах: 500 — это 0,5 л. Можно в литрах через запятую: 0,5.' %}{% else %}{% translate 'В граммах: 450 — это 450 г, 1030 — это 1 кг 30 г. Можно и в килограммах через запятую: 1,03.' %}{% endif %}</p>
+  <p class="text-xs text-muted mt-2 hidden" data-hint="sum">{% translate 'Введите сумму, на которую берёт гость: количество посчитается само.' %}</p>
+</div>
+<script>
+  (function () {
+    var box = document.currentScript.previousElementSibling;
+    var input = box.querySelector('input[name=weight]'), out = box.querySelector('[data-weight-result]');
+    var price = +box.dataset.price, cur = box.dataset.sum, small = box.dataset.small, big = box.dataset.big;
+    function mode() { var r = box.querySelector('input[name=weight_mode]:checked'); return r ? r.value : 'weight'; }
+    function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+    function amount(g) {
+      if (g < 1000) return g + ' ' + small;
+      return (g / 1000).toFixed(3).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',') + ' ' + big;
+    }
+    function grams() {
+      var raw = input.value.replace(/\s/g, '').replace(',', '.');
+      if (!raw || isNaN(+raw)) return 0;
+      if (mode() === 'sum') return price > 0 ? Math.round(+raw * 1000 / price) : 0;
+      return raw.indexOf('.') !== -1 ? Math.round(+raw * 1000) : Math.round(+raw);
+    }
+    function show() {
+      var m = mode(), g = grams();
+      box.querySelectorAll('[data-chips], [data-hint]').forEach(function (el) {
+        el.classList.toggle('hidden', (el.dataset.chips || el.dataset.hint) !== m);
+      });
+      if (g < 10) { out.textContent = ''; return; }
+      out.textContent = m === 'sum'
+        ? '≈ ' + amount(g) + ' · ' + fmt(price * g / 1000) + ' ' + cur
+        : '= ' + fmt(price * g / 1000) + ' ' + cur;
+    }
+    box.addEventListener('change', function (e) {
+      if (e.target.name === 'weight_mode') { input.value = ''; show(); input.focus(); }
+    });
+    box.addEventListener('click', function (e) {
+      var chip = e.target.closest('[data-v]');
+      if (chip) { input.value = chip.dataset.v; show(); }
+    });
+    input.addEventListener('input', show);
+    show();
+  })();
+</script>

@@ -1,0 +1,32 @@
+{% load i18n ui %}
+{# Экранная панель с цифрами для планшетов и телефонов без клавиатуры. target — id поля ввода #}
+<div class="grid grid-cols-4 gap-2 mt-3 select-none" data-numpad="{{ target }}">
+  {% for k in "123" %}<button type="button" data-key="{{ k }}" class="min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">{{ k }}</button>{% endfor %}
+  <button type="button" data-key="back" class="min-h-[54px] rounded-xl border border-line bg-[#FAF6EF] grid place-items-center active:bg-stone-200" aria-label="{% translate 'Стереть' %}">{% icon "arrow-left" 22 %}</button>
+  {% for k in "456" %}<button type="button" data-key="{{ k }}" class="min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">{{ k }}</button>{% endfor %}
+  <button type="button" data-key="clear" class="min-h-[54px] rounded-xl border border-line bg-[#FAF6EF] text-lg font-bold text-red-700 active:bg-stone-200">C</button>
+  {% for k in "789" %}<button type="button" data-key="{{ k }}" class="min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">{{ k }}</button>{% endfor %}
+  <button type="button" data-key="," class="min-h-[54px] rounded-xl border border-line bg-[#FAF6EF] text-2xl font-bold active:bg-stone-200" aria-label="{% translate 'Запятая' %}">,</button>
+  <button type="button" data-key="00" class="min-h-[54px] rounded-xl border border-line bg-white text-xl font-bold active:bg-stone-100">00</button>
+  <button type="button" data-key="0" class="col-span-2 min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">0</button>
+  <button type="button" data-key="000" class="min-h-[54px] rounded-xl border border-line bg-white text-xl font-bold active:bg-stone-100">000</button>
+</div>
+<script>
+  (function () {
+    var pad = document.currentScript.previousElementSibling;
+    pad.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-key]');
+      if (!b) return;
+      var input = document.getElementById(pad.dataset.numpad);
+      if (!input) return;
+      var k = b.dataset.key, v = input.value;
+      if (k === 'back') v = v.slice(0, -1);
+      else if (k === 'clear') v = '';
+      else if (k === ',') { if (v.indexOf(',') === -1 && v.indexOf('.') === -1) v = (v || '0') + ','; }
+      else v = (v === '0' ? '' : v) + k;
+      if (v.replace(/\D/g, '').length > 10) return;
+      input.value = v;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  })();
+</script>

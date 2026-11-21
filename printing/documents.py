@@ -67,7 +67,7 @@ def receipt(order, printer, precheck=False):
         for item in items:
             t.pair(tr(item.dish), num(item.line_total))
             if item.by_weight:
-                detail = f"{weight(item.weight_grams)} x {num(item.price)} / {_('кг')}"
+                detail = f"{weight(item.weight_grams, item.measure)} x {num(item.price)} / {_('л') if item.measure == 'l' else _('кг')}"
             else:
                 detail = f"{item.quantity} x {num(item.unit_total)}"
             modifiers = ", ".join(tr(m) for m in item.modifiers.all())

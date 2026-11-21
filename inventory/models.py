@@ -20,6 +20,10 @@ class Product(models.Model):
     unit = models.CharField(_("Единица"), max_length=5, choices=Unit.choices, default=Unit.GRAM)
     stock = models.DecimalField(_("Остаток"), max_digits=14, decimal_places=3, default=0, editable=False)
     min_stock = models.DecimalField(_("Минимальный остаток"), max_digits=14, decimal_places=3, default=0)
+    pack_size = models.PositiveIntegerField(
+        _("Штук в упаковке"), default=1,
+        help_text=_("Например, 20 сигарет в пачке: приход вносят пачками, а остаток и продажа идут поштучно. 1 — без упаковок."),
+    )
     cost_per_unit = models.DecimalField(
         _("Цена за 1 единицу (сум)"), max_digits=12, decimal_places=2, default=0,
         help_text=_("Например, говядина 80 000 сум за кг это 80 сум за 1 г"),

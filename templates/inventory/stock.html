@@ -79,9 +79,17 @@
           <label class="label" for="in-product">{% translate 'Продукт' %}</label>
           <select id="in-product" name="product" class="input">
             <option value="">{% translate 'Выберите…' %}</option>
-            {% for p in all_products %}<option value="{{ p.id }}" {% if form.product == p.id|stringformat:"d" %}selected{% endif %}>{{ p|tr }} ({{ p.get_unit_display }})</option>{% endfor %}
+            {% for p in all_products %}<option value="{{ p.id }}" data-pack="{{ p.pack_size }}" {% if form.product == p.id|stringformat:"d" %}selected{% endif %}>{{ p|tr }} ({{ p.get_unit_display }}){% if p.pack_size > 1 %} · {% blocktranslate trimmed with n=p.pack_size %}уп. {{ n }} шт{% endblocktranslate %}{% endif %}</option>{% endfor %}
           </select>
         </div>
+        <label id="in-packs-box" class="hidden flex items-center gap-2 text-sm font-semibold text-stone-700"><input type="checkbox" name="in_packs" value="1" class="w-4 h-4 accent-[#7A3F1E]" {% if form.in_packs == '1' %}checked{% endif %}><span>{% translate 'Вношу упаковками (количество и цена — за упаковку)' %}</span></label>
+        <script>
+          (function () {
+            var sel = document.getElementById("in-product"), box = document.getElementById("in-packs-box");
+            function show() { var o = sel.options[sel.selectedIndex]; box.classList.toggle("hidden", !(o && +o.dataset.pack > 1)); }
+            sel.addEventListener("change", show); show();
+          })();
+        </script>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="label" for="in-qty">{% translate 'Количество' %}</label><input id="in-qty" name="quantity" value="{{ form.quantity }}" inputmode="decimal" class="input"></div>
           <div><label class="label" for="in-cost">{% translate 'Цена за ед.' %}</label><input id="in-cost" name="cost" value="{{ form.cost }}" inputmode="decimal" class="input" placeholder="{% translate 'не менять' %}"></div>

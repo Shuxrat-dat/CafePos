@@ -56,6 +56,12 @@
                     <div class="text-[17px] font-semibold leading-snug {% if item.status == 'ready' %}line-through decoration-2{% endif %}">
                       <span class="inline-grid place-items-center min-w-[28px] h-7 px-1 mr-1 rounded-md bg-ink text-white text-sm font-bold whitespace-nowrap">{% if item.by_weight %}{{ item|item_qty }}{% else %}{{ item.quantity }}{% endif %}</span>{{ item.dish|tr }}
                     </div>
+                    {% if item.by_weight and order.status == 'open' %}
+                      <button type="button" hx-get="{% url 'kitchen_item_weight' item.id %}{% if station %}?station={{ station }}{% endif %}" hx-target="#modal"
+                              class="ml-9 mt-1 inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-lg text-sm font-bold {% if item.weight_grams %}bg-stone-100 text-stone-700{% else %}bg-amber-100 text-amber-900{% endif %}">
+                        {% icon "pencil" 14 %}{% if item.weight_grams %}{% translate 'Изменить вес' %}{% else %}{% translate 'Укажите вес' %}{% endif %}
+                      </button>
+                    {% endif %}
                     {% if item.target_minutes and item.status != 'ready' %}
                       <div class="pl-9 text-xs font-semibold {% if item.level == 'late' %}text-red-700{% elif item.level == 'warn' %}text-orange-700{% else %}text-muted{% endif %}">
                         {% blocktranslate trimmed with m=item.target_minutes %}по плану {{ m }} мин{% endblocktranslate %}

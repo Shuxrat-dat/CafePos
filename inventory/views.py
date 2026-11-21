@@ -65,6 +65,10 @@ def stock(request):
     if request.method == "POST":
         form = request.POST
         error, product, quantity, cost, comment = _movement_form(request, StockMovement.Kind.INCOME)
+        if not error and product.pack_size > 1 and request.POST.get("in_packs") == "1":
+            quantity = quantity * product.pack_size
+            if cost is not None:
+                cost = cost / product.pack_size
         sid = request.POST.get("supplier", "")
         supplier = Supplier.objects.filter(id=sid).first() if sid.isdigit() else None
         paid_now = request.POST.get("paid_now") == "1"
@@ -191,8 +195,14 @@ def stock_movements(request):
 class ProductForm(StyledModelForm):
     class Meta:
         model = Product
-        fields = ["name", "name_uz", "unit", "min_stock", "cost_per_unit"]
+        fields = ["name", "name_uz", "unit", "pack_size", "min_stock", "cost_per_unit"]
         labels = {"cost_per_unit": gettext_lazy("Цена за 1 единицу (сум)")}
+
+    def clean_pack_size(self):
+        value = self.cleaned_data.get("pack_size") or 1
+        if not 1 <= value <= 10000:
+            raise forms.ValidationError(_("От 1 до 10 000 штук."))
+        return value
 
     def clean_min_stock(self):
         value = self.cleaned_data["min_stock"]

@@ -22,7 +22,7 @@ class DishForm(StyledModelForm):
         fields = [
             "name", "name_uz", "category", "price", "description", "description_uz",
             "photo", "modifiers", "allergens", "is_available", "is_hidden", "prep_minutes", "sort_order",
-            "sold_by_weight",
+            "sold_by_weight", "measure",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
@@ -39,6 +39,7 @@ class DishForm(StyledModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["prep_minutes"].required = False
+        self.fields["measure"].required = False  # нужна только блюдам на вес или в розлив, по умолчанию кг
         self.fields["category"].empty_label = _("Выберите категорию")
         self.fields["category"].label_from_instance = localized_name
         self.fields["modifiers"].label_from_instance = _modifier_label
@@ -47,6 +48,9 @@ class DishForm(StyledModelForm):
 
     def clean_allergens(self):
         return ",".join(self.cleaned_data.get("allergens") or [])
+
+    def clean_measure(self):
+        return self.cleaned_data.get("measure") or Dish.Measure.KG
 
     def clean_prep_minutes(self):
         value = self.cleaned_data.get("prep_minutes")

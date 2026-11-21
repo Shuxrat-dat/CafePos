@@ -45,7 +45,7 @@
         <li class="py-3 flex items-center justify-between gap-3">
           <div class="min-w-0">
             <div class="font-semibold">{{ item.dish|tr }} {% if split %}<span class="text-muted font-normal">{% blocktranslate trimmed with q=item.quantity %}из {{ q }}{% endblocktranslate %}</span>{% endif %}</div>
-            <div class="text-xs text-muted">{% if item.by_weight %}{{ item|item_qty }} · {{ item.price|num }} / {% translate 'кг' %}{% else %}{{ item.unit_total|money }}{% endif %}{% for m in item.modifiers.all %} · {{ m|tr }}{% endfor %}</div>
+            <div class="text-xs text-muted">{% if item.by_weight %}{{ item|item_qty }} · {{ item.price|num }}{{ item|per_kg }}{% else %}{{ item.unit_total|money }}{% endif %}{% for m in item.modifiers.all %} · {{ m|tr }}{% endfor %}</div>
           </div>
           {% if split %}
             <div class="flex items-center gap-1.5">

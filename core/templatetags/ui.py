@@ -192,29 +192,35 @@ def qty(value):
 
 
 @register.filter
-def weight(grams):
-    """Вес блюда на вес: 450 -> «450 г», 1030 -> «1,03 кг»."""
+def weight(grams, measure="kg"):
+    """Количество блюда на вес или в розлив: 450 -> «450 г», 1030 -> «1,03 кг»; для литров «330 мл», «1,5 л»."""
     try:
         grams = int(grams)
     except (ValueError, TypeError):
         return ""
+    small, big = (_("мл"), _("л")) if measure == "l" else (_("г"), _("кг"))
     if grams < 1000:
-        return f"{grams} {_('г')}"
-    return f"{qty(Decimal(grams) / 1000)} {_('кг')}"
+        return f"{grams} {small}"
+    return f"{qty(Decimal(grams) / 1000)} {big}"
 
 
 @register.filter
 def item_qty(item):
     """Сколько в позиции заказа: «× 2» или вес «1,03 кг» у блюда на вес («? г», пока вес не указан)."""
     if getattr(item, "by_weight", False):
-        return weight(item.weight_grams) if item.weight_grams else f"? {_('г')}"
+        measure = getattr(item, "measure", "kg")
+        if item.weight_grams:
+            return weight(item.weight_grams, measure)
+        return f"? {_('мл') if measure == 'l' else _('г')}"
     return f"× {item.quantity}"
 
 
 @register.filter
-def per_kg(dish):
-    """Подпись к цене блюда на вес: « / кг»."""
-    return f" / {_('кг')}" if getattr(dish, "sold_by_weight", False) else ""
+def per_kg(obj):
+    """Подпись к цене блюда (или позиции) на вес или в розлив: « / кг» или « / л»."""
+    if not (getattr(obj, "sold_by_weight", False) or getattr(obj, "by_weight", False)):
+        return ""
+    return f" / {_('л') if getattr(obj, 'measure', 'kg') == 'l' else _('кг')}"
 
 
 @register.filter
