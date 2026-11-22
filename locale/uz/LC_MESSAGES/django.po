@@ -4246,6 +4246,9 @@ msgstr "Topshirish kodi"
 msgid "Неверный код выдачи."
 msgstr "Topshirish kodi notoʻgʻri."
 
+msgid "Водитель ещё не вызван, подождите."
+msgstr "Haydovchi hali chaqirilmagan, kuting."
+
 msgid "Недавние"
 msgstr "Yaqinda"
 

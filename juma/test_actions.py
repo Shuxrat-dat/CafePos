@@ -123,6 +123,15 @@ class HandOverTests(TestCase):
         link.refresh_from_db()
         self.assertEqual((link.status, Payment.objects.count()), (S.READY, 0))
 
+    def test_when_no_driver_is_called_yet_nothing_is_paid_and_cashier_is_told_to_wait(self):
+        cashier, link = self.ready_link()
+        services.open_shift(cashier, 0)
+        body = {"error": {"details": {"reason": "NO_DELIVERY"}}}
+        (ok, text), _call = run(actions.hand_over, link, cashier, "4831", default=(409, body))
+        self.assertEqual((ok, text), (False, "Водитель ещё не вызван, подождите."))
+        link.refresh_from_db()
+        self.assertEqual((link.status, Payment.objects.count()), (S.READY, 0))
+
 
 @override_settings(**JUMA)
 class CancelAndRefundTests(TestCase):

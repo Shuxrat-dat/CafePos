@@ -27,6 +27,8 @@ def _conflict_text(code, body):
             return _("Заказ не оплачен.")
         if details.get("reason") == "PICKUP_CODE_MISMATCH":
             return _("Неверный код выдачи.")
+        if details.get("reason") == "NO_DELIVERY":
+            return _("Водитель ещё не вызван, подождите.")
         return _("Состояние заказа изменилось, обновите страницу.")
     return client.reason(code, body)
 
