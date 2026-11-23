@@ -102,6 +102,16 @@
   <button type="button" data-filter="reserved" class="chip">{% translate 'Бронь' %}</button>
 </div>
 
+{% if floor_waiters %}
+  <div id="waiter-filter" class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-sm text-muted mr-1">{% translate 'Официант' %}:</span>
+    <button type="button" data-waiter-filter="" class="chip chip-active">{% translate 'Все' %}</button>
+    {% for w in floor_waiters %}
+      <button type="button" data-waiter-filter="{{ w.user.id }}" class="chip">{{ w.user.first_name|default:w.user.username }}<span class="text-xs text-muted">{{ w.count }}</span></button>
+    {% endfor %}
+  </div>
+{% endif %}
+
 {# Столы обновляются сами: видно, когда стол освободился или гость сделал заявку #}
 <div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
   {% include "pos/_floor_grid.html" %}
@@ -116,9 +126,11 @@
     var search = document.getElementById('table-search');
     var chips = document.getElementById('table-filter');
     var halls = document.getElementById('hall-filter');
-    var state = 'all', hall = '';
+    var waiterBox = document.getElementById('waiter-filter');
+    var state = 'all', hall = '', waiter = '';
     function match(el) {
       var s = el.dataset.state;
+      if (waiter && el.dataset.waiter !== waiter) return false;
       if (state === 'all') return true;
       if (state === 'mine') return el.dataset.mine === '1';
       if (state === 'busy') return s === 'busy' || s === 'bill' || s === 'locked';
@@ -165,6 +177,13 @@
       if (!b) return;
       state = b.dataset.filter;
       chips.querySelectorAll('[data-filter]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
+      apply();
+    });
+    if (waiterBox) waiterBox.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-waiter-filter]');
+      if (!b) return;
+      waiter = b.dataset.waiterFilter;
+      waiterBox.querySelectorAll('[data-waiter-filter]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
       apply();
     });
     if (halls) halls.addEventListener('click', function (e) {

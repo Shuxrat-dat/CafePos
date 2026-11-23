@@ -489,6 +489,15 @@ def table_map(request):
     Официант видит чужие занятые столы, но открыть их не может, кассир открывает любые."""
     context = _floor_context(request)
     context["counter_orders"] = []  # навынос и доставка живут в «Заказах», здесь только столы
+    # Кассиру и администратору — фильтр «чьи это столы»: официанты, у которых сейчас есть открытые столы
+    waiters = {}
+    for hall in context["halls"]:
+        for table in hall.tables.all():
+            order = getattr(table, "open_order", None)
+            if order:
+                entry = waiters.setdefault(order.waiter_id, {"user": order.waiter, "count": 0})
+                entry["count"] += 1
+    context["floor_waiters"] = sorted(waiters.values(), key=lambda w: (w["user"].first_name or w["user"].username).lower())
     if request.headers.get("HX-Request"):
         return render(request, "pos/_floor_grid.html", context)
     return render(request, "pos/tables.html", context)
@@ -922,6 +931,34 @@ def cancel_order(request, order_id):
     if htmx:
         return HttpResponse(headers={"HX-Redirect": reverse("floor")})
     return redirect("floor")
+
+
+@login_required
+def assign_waiter(request, order_id):
+    """Кассир или администратор передаёт открытый заказ другому официанту (например, первый ушёл со смены).
+    Доля за заказ при оплате уйдёт новому официанту."""
+    from accounts.models import User
+    from core import audit
+
+    order = _get_order(request, order_id)
+    if not (request.user.can_take_payment or request.user.manages_cafe):
+        raise PermissionDenied
+    if order.status != Order.Status.OPEN:
+        raise Http404
+    waiters = User.objects.filter(is_active=True, role=User.Role.WAITER).order_by("first_name", "username")
+    if request.method == "POST":
+        new = get_object_or_404(waiters, id=request.POST.get("waiter_id") or 0)
+        if new.id != order.waiter_id:
+            old = order.waiter
+            order.waiter = new
+            order.save(update_fields=["waiter"])
+            place = (_("стол %(n)s") % {"n": order.table.number}) if order.table_id else f"№{order.id}"
+            audit.record(request.user, audit.A.WAITER_CHANGE, order=order, detail=_("%(place)s: %(old)s → %(new)s") % {
+                "place": place, "old": old.get_full_name() or old.username, "new": new.get_full_name() or new.username,
+            })
+            messages.success(request, _("Заказ передан официанту %(name)s.") % {"name": new.first_name or new.username})
+        return redirect("order_detail", order_id=order.id)
+    return render(request, "pos/_assign_waiter.html", {"order": order, "waiters": waiters})
 
 
 @login_required

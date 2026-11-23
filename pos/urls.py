@@ -33,6 +33,7 @@ urlpatterns = [
     path("orders/<int:order_id>/precheck/", views.precheck, name="precheck"),
     path("orders/<int:order_id>/cancel/form/", views.cancel_form, name="cancel_form"),
     path("orders/<int:order_id>/cancel/", views.cancel_order, name="cancel_order"),
+    path("orders/<int:order_id>/waiter/", views.assign_waiter, name="assign_waiter"),
     path("orders/<int:order_id>/move/", views.move_form, name="move_form"),
     path("orders/<int:order_id>/move/<int:table_id>/", views.move_order, name="move_order"),
     path("orders/<int:order_id>/move-items/", views.move_items, name="move_items"),

@@ -1,0 +1,23 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block width %}max-w-lg{% endblock %}
+{% block modal_title %}{% translate 'Передать другому официанту' %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{% blocktranslate trimmed with name=order.waiter.first_name|default:order.waiter.username %}Сейчас заказ ведёт {{ name }}. Доля за заказ при оплате достанется новому официанту.{% endblocktranslate %}</p>{% endblock %}
+{% block modal_body %}
+<div class="space-y-4">
+  <div class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
+    {% for w in waiters %}
+      <form method="post" action="{% url 'assign_waiter' order.id %}">
+        {% csrf_token %}<input type="hidden" name="waiter_id" value="{{ w.id }}">
+        <button class="w-full min-h-[60px] rounded-xl border px-3 flex items-center gap-2 {% if w.id == order.waiter_id %}border-brand bg-brand-50{% else %}border-line bg-white hover:border-brand hover:bg-brand-50{% endif %}" {% if w.id == order.waiter_id %}disabled{% endif %}>
+          <span class="grid place-items-center w-9 h-9 rounded-full bg-[#F6E6D2] text-brand font-bold uppercase shrink-0">{{ w.first_name|default:w.username|slice:":1" }}</span>
+          <span class="font-semibold truncate">{{ w.first_name|default:w.username }}</span>
+        </button>
+      </form>
+    {% empty %}
+      <p class="text-muted col-span-full">{% translate 'Официантов пока нет.' %}</p>
+    {% endfor %}
+  </div>
+  <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg w-full">{% translate 'Отмена' %}</button>
+</div>
+{% endblock %}

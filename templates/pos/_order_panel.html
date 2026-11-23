@@ -12,6 +12,9 @@
         · {{ order.waiter.first_name|default:order.waiter.username }}
       </p>
     </div>
+    {% if order.status == 'open' and user.can_take_payment or order.status == 'open' and user.manages_cafe %}
+      <button type="button" class="icon-btn shrink-0" hx-get="{% url 'assign_waiter' order.id %}" hx-target="#modal" title="{% translate 'Передать другому официанту' %}" aria-label="{% translate 'Передать другому официанту' %}" data-assign-waiter>{% icon "users" 18 %}</button>
+    {% endif %}
     {% if order_items %}
       <button type="button" class="icon-btn shrink-0" hx-get="{% url 'move_items' order.id %}" hx-target="#modal" title="{% translate 'Перенести блюда или объединить столы' %}" aria-label="{% translate 'Перенести блюда или объединить столы' %}">{% icon "layout-grid" 18 %}</button>
     {% endif %}

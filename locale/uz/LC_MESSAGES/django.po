@@ -5052,3 +5052,99 @@ msgstr "PIN yo‘q"
 
 msgid "это устройство"
 msgstr "bu qurilma"
+
+msgid "%(kind)s %(sum)s сум: %(name)s."
+msgstr "%(kind)s %(sum)s so‘m: %(name)s."
+
+msgid "%(name)s: %(n)s заказов, заработал %(sum)s, к выплате всего %(left)s"
+msgstr "%(name)s: %(n)s ta buyurtma, ishlab topdi %(sum)s, jami to‘lanishi kerak %(left)s"
+
+msgid "%(place)s: %(old)s → %(new)s"
+msgstr "%(place)s: %(old)s → %(new)s"
+
+msgid "«Начислено» и «Выдано» — за выбранный период. «Остаток» — за всё время: сколько заведение должно сотруднику сейчас. Минус — выдано больше, чем заработано (аванс). Каждая выдача сразу попадает в расходы, статья «Зарплата»."
+msgstr "«Hisoblandi» va «Berildi» — tanlangan davr uchun. «Qoldiq» — butun vaqt uchun: muassasa xodimga hozir qancha qarzdor. Minus — ishlab topganidan ko‘p berilgan (avans). Har bir berilgan pul darhol «Ish haqi» moddasi bo‘yicha xarajatlarga yoziladi."
+
+msgid "Аванс"
+msgstr "Avans"
+
+msgid "Введите сумму больше нуля."
+msgstr "Noldan katta summa kiriting."
+
+msgid "Взять из кассы (изъятие в смене)"
+msgstr "Kassadan olish (smenadan chiqim)"
+
+msgid "Вид"
+msgstr "Turi"
+
+msgid "Выберите: выплата или аванс."
+msgstr "Tanlang: to‘lov yoki avans."
+
+msgid "Выдано"
+msgstr "Berildi"
+
+msgid "Выдано больше, чем заработано (аванс)"
+msgstr "Ishlab topganidan ko‘p berilgan (avans)"
+
+msgid "Выдать"
+msgstr "Berish"
+
+msgid "Выдачи за период"
+msgstr "Davr uchun berilgan pullar"
+
+msgid "Выплата"
+msgstr "To‘lov"
+
+msgid "Выплата больше остатка. Если даёте деньги вперёд, выберите «Аванс»."
+msgstr "To‘lov qoldiqdan katta. Agar oldindan berayotgan bo‘lsangiz, «Avans»ni tanlang."
+
+msgid "Выплата сотруднику"
+msgstr "Xodimga to‘lov"
+
+msgid "Выплаты сотрудникам"
+msgstr "Xodimlarga to‘lovlar"
+
+msgid "За этот период выдач не было."
+msgstr "Bu davrda pul berilmagan."
+
+msgid "Заказ передан официанту %(name)s."
+msgstr "Buyurtma %(name)s ofitsiantga o‘tkazildi."
+
+msgid "Записать выдачу"
+msgstr "Berilgan pulni yozish"
+
+msgid "Из кассы"
+msgstr "Kassadan"
+
+msgid "К выплате сейчас"
+msgstr "Hozir to‘lanishi kerak"
+
+msgid "Кассовая смена не открыта: выдайте не из кассы или откройте смену."
+msgstr "Kassa smenasi ochilmagan: kassadan tashqari bering yoki smenani oching."
+
+msgid "Комментарий (необязательно)"
+msgstr "Izoh (ixtiyoriy)"
+
+msgid "Кто выдал"
+msgstr "Kim berdi"
+
+msgid "Начислено"
+msgstr "Hisoblandi"
+
+msgid "Начислено за всё время минус все выплаты и авансы"
+msgstr "Butun vaqt uchun hisoblangan minus barcha to‘lovlar va avanslar"
+
+msgid "Официанты за смену:"
+msgstr "Smena bo‘yicha ofitsiantlar:"
+
+msgid "Передать другому официанту"
+msgstr "Boshqa ofitsiantga o‘tkazish"
+
+msgid "Сейчас заказ ведёт %(name)s. Доля за заказ при оплате достанется новому официанту."
+msgstr "Hozir buyurtmani %(name)s olib boryapti. To‘lovda buyurtma ulushi yangi ofitsiantga o‘tadi."
+
+msgid "Стол передан другому официанту"
+msgstr "Stol boshqa ofitsiantga o‘tkazildi"
+
+msgid "из кассы"
+msgstr "kassadan"

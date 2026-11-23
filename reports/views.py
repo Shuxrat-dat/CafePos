@@ -392,6 +392,22 @@ def payroll(request):
             shift.closed_by = request.user
             shift.save(update_fields=["ended_at", "closed_by"])
             messages.success(request, _("Смена сотрудника закрыта."))
+        elif action == "payout":
+            from accounts import payouts
+
+            user = get_object_or_404(User, id=request.POST.get("user_id") or 0)
+            try:
+                payment = payouts.pay(
+                    user, request.POST.get("amount"), request.POST.get("kind"), request.user,
+                    from_cash=request.POST.get("from_cash") == "1", comment=request.POST.get("comment", ""),
+                )
+            except payouts.PayoutError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, _("%(kind)s %(sum)s сум: %(name)s.") % {
+                    "kind": payment.get_kind_display(), "sum": f"{payment.amount:,.0f}".replace(",", " "),
+                    "name": user.get_full_name() or user.username,
+                })
         elif action == "to_expense":
             user = get_object_or_404(User, id=request.POST.get("user_id") or 0)
             row = next((r for r in payroll_rows(date_from, date_to) if r["user"].id == user.id), None)
@@ -412,13 +428,26 @@ def payroll(request):
     recorded = set(
         Expense.objects.filter(category=Expense.Category.SALARY).values_list("comment", flat=True)
     )
+    from accounts import payouts
+    from accounts.models import SalaryPayment
+    from pos.services import get_current_shift
+
+    start, end = _bounds(date_from, date_to)
     for row in rows:
         row["recorded"] = _payroll_comment(row["user"], date_from, date_to) in recorded
+        row["paid"] = payouts.paid_total(row["user"], start, end)
+        row["balance"] = payouts.balance(row["user"])
     month_start = today.replace(day=1)
+    history = SalaryPayment.objects.filter(created_at__gte=start, created_at__lt=end).select_related("user", "created_by")
     prev_month_end = month_start - timedelta(days=1)
     return render(request, "reports/payroll.html", {
         "rows": rows,
         "total": sum((r["total"] for r in rows), Decimal(0)),
+        "paid_sum": sum((r["paid"] for r in rows), Decimal(0)),
+        "balance_sum": sum((r["balance"] for r in rows), Decimal(0)),
+        "history": history,
+        "cash_open": get_current_shift() is not None,
+        "kinds": SalaryPayment.Kind.choices,
         "open_shifts": WorkShift.objects.filter(ended_at=None).select_related("user"),
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),

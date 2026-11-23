@@ -34,6 +34,8 @@ class AuditLog(models.Model):
         TERMINAL = "terminal", _("Терминал: добавлен или отключён")
         TERMINAL_LOGIN = "terminal_login", _("Вход по PIN на терминале")
         TERMINAL_PIN_LOCKED = "terminal_pin_locked", _("PIN для терминала заблокирован")
+        WAITER_CHANGE = "waiter_change", _("Стол передан другому официанту")
+        SALARY_PAYOUT = "salary_payout", _("Выплата сотруднику")
 
     created_at = models.DateTimeField(_("Время"), auto_now_add=True, db_index=True)
     user = models.ForeignKey(

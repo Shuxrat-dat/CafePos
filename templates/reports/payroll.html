@@ -48,7 +48,9 @@
           <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'За часы' %}</th>
           <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Продажи' %}</th>
           <th class="table-head px-4 py-3 text-right hidden md:table-cell">{% translate 'Процент' %}</th>
-          <th class="table-head px-4 py-3 text-right">{% translate 'К выплате' %}</th>
+          <th class="table-head px-4 py-3 text-right">{% translate 'Начислено' %}</th>
+          <th class="table-head px-4 py-3 text-right hidden sm:table-cell">{% translate 'Выдано' %}</th>
+          <th class="table-head px-4 py-3 text-right" title="{% translate 'Начислено за всё время минус все выплаты и авансы' %}">{% translate 'Остаток' %}</th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -64,28 +66,70 @@
             <td class="px-4 py-2.5 text-right tabular-nums hidden md:table-cell">{{ r.sales|money }}</td>
             <td class="px-4 py-2.5 text-right tabular-nums hidden md:table-cell">{{ r.by_sales|money }}</td>
             <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap">{{ r.total|money }}</td>
+            <td class="px-4 py-2.5 text-right tabular-nums whitespace-nowrap hidden sm:table-cell">{{ r.paid|money }}</td>
+            <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap {% if r.balance < 0 %}text-red-700{% elif r.balance > 0 %}text-emerald-700{% endif %}" data-balance="{{ r.user.id }}">{{ r.balance|money }}</td>
             <td class="px-4 py-2.5 text-right whitespace-nowrap">
-              {% if r.recorded %}
-                <span class="badge bg-emerald-50 text-emerald-700">{% translate 'В расходах' %}</span>
-              {% elif r.total > 0 %}
-                <form method="post">{% csrf_token %}
-                  <input type="hidden" name="action" value="to_expense"><input type="hidden" name="user_id" value="{{ r.user.id }}">
+              {% if r.recorded %}<span class="badge bg-emerald-50 text-emerald-700 mr-1">{% translate 'В расходах' %}</span>{% endif %}
+              <details class="relative inline-block text-left">
+                <summary class="list-none btn btn-sm btn-primary cursor-pointer">{% icon "wallet" 14 %}{% translate 'Выдать' %}</summary>
+                <div class="fixed inset-0 z-[60] bg-black/40" onclick="this.closest('details').open=false"></div>
+                <form method="post" class="fixed z-[61] inset-x-4 top-[15vh] mx-auto max-w-sm card p-5 space-y-3 shadow-pop whitespace-normal">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="payout"><input type="hidden" name="user_id" value="{{ r.user.id }}">
                   <input type="hidden" name="from" value="{{ date_from }}"><input type="hidden" name="to" value="{{ date_to }}">
-                  <button class="btn btn-sm btn-secondary">{% translate 'В расходы' %}</button>
+                  <div class="flex items-center justify-between gap-2">
+                    <div>
+                      <div class="font-bold text-lg">{{ r.user.get_full_name|default:r.user.username }}</div>
+                      <div class="text-sm text-muted">{% translate 'Остаток' %}: <b class="{% if r.balance < 0 %}text-red-700{% else %}text-emerald-700{% endif %}">{{ r.balance|money }}</b></div>
+                    </div>
+                    <button type="button" class="icon-btn" onclick="this.closest('details').open=false" aria-label="{% translate 'Закрыть' %}">{% icon "x" 18 %}</button>
+                  </div>
+                  <div class="seg">
+                    {% for value, label in kinds %}
+                      <label class="seg-item cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card"><input type="radio" name="kind" value="{{ value }}" class="sr-only" {% if value == 'payout' and r.balance > 0 or value == 'advance' and r.balance <= 0 %}checked{% endif %}>{{ label }}</label>
+                    {% endfor %}
+                  </div>
+                  <div>
+                    <label class="label" for="pay-{{ r.user.id }}">{% translate 'Сумма (сум)' %}</label>
+                    <input id="pay-{{ r.user.id }}" name="amount" class="input text-right tabular-nums" inputmode="numeric" data-pad value="{% if r.balance > 0 %}{{ r.balance|floatformat:0 }}{% endif %}" required>
+                  </div>
+                  <input name="comment" maxlength="200" class="input" placeholder="{% translate 'Комментарий (необязательно)' %}">
+                  {% if cash_open %}
+                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="from_cash" value="1" checked class="w-4 h-4 accent-brand">{% translate 'Взять из кассы (изъятие в смене)' %}</label>
+                  {% endif %}
+                  <button class="btn btn-primary w-full">{% translate 'Записать выдачу' %}</button>
                 </form>
-              {% endif %}
+              </details>
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="7">{% translate 'Начислять пока нечего' as t1 %}{% translate 'Задайте ставки в карточках сотрудников, а сотрудники пусть отмечают начало и конец смены.' as t2 %}{% include "components/empty.html" with icon="clock" title=t1 text=t2 %}</td></tr>
+          <tr><td colspan="9">{% translate 'Начислять пока нечего' as t1 %}{% translate 'Задайте ставки в карточках сотрудников, а сотрудники пусть отмечают начало и конец смены.' as t2 %}{% include "components/empty.html" with icon="clock" title=t1 text=t2 %}</td></tr>
         {% endfor %}
       </tbody>
       {% if rows %}
         <tfoot class="border-t border-line bg-slate-50">
-          <tr><td class="px-4 py-3 font-semibold">{% translate 'Итого' %}</td><td class="px-4 py-3"></td><td class="hidden md:table-cell" colspan="3"></td><td class="px-4 py-3 text-right font-extrabold tabular-nums">{{ total|money }}</td><td></td></tr>
+          <tr><td class="px-4 py-3 font-semibold">{% translate 'Итого' %}</td><td class="px-4 py-3"></td><td class="hidden md:table-cell" colspan="3"></td><td class="px-4 py-3 text-right font-extrabold tabular-nums">{{ total|money }}</td><td class="px-4 py-3 text-right tabular-nums hidden sm:table-cell">{{ paid_sum|money }}</td><td class="px-4 py-3 text-right font-extrabold tabular-nums">{{ balance_sum|money }}</td><td></td></tr>
         </tfoot>
       {% endif %}
     </table>
   </div>
+</div>
+<p class="text-xs text-muted mt-2">{% translate '«Начислено» и «Выдано» — за выбранный период. «Остаток» — за всё время: сколько заведение должно сотруднику сейчас. Минус — выдано больше, чем заработано (аванс). Каждая выдача сразу попадает в расходы, статья «Зарплата».' %}</p>
+
+<div class="card overflow-hidden mt-4">
+  <h2 class="section-title px-4 pt-4 pb-2">{% translate 'Выдачи за период' %}</h2>
+  <ul class="divide-y divide-line text-sm">
+    {% for p in history %}
+      <li class="px-4 py-2.5 flex items-center justify-between gap-3">
+        <span class="min-w-0">
+          <b>{{ p.user.get_full_name|default:p.user.username }}</b> · {{ p.get_kind_display }}{% if p.from_cash %} · {% translate 'из кассы' %}{% endif %}
+          <span class="block text-xs text-muted">{{ p.created_at|date:"d.m.Y H:i" }} · {{ p.created_by.get_full_name|default:p.created_by.username }}{% if p.comment %} · {{ p.comment }}{% endif %}</span>
+        </span>
+        <span class="font-bold tabular-nums whitespace-nowrap">{{ p.amount|money }}</span>
+      </li>
+    {% empty %}
+      <li class="px-4 py-4 text-muted">{% translate 'За этот период выдач не было.' %}</li>
+    {% endfor %}
+  </ul>
 </div>
 {% endblock %}

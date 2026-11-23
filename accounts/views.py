@@ -149,6 +149,11 @@ def my_earnings(request):
     orders = list(earnings.paid_orders(user, min(starts.values())))
     summary = {key: earnings.summarize(o for o in orders if o.closed_at >= start) for key, start in starts.items()}
     shown = [o for o in orders if o.closed_at >= starts[period]]
+    from . import payouts
+    from .models import SalaryPayment
+
     return render(request, "accounts/earnings.html", {
         "summary": summary, "period": period, "orders": shown, "percent": user.sales_percent,
+        "balance": payouts.balance(user),
+        "payments": SalaryPayment.objects.filter(user=user)[:10],
     })

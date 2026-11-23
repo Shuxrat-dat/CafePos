@@ -45,7 +45,7 @@
           {% endif %}
         </div>
         {% else %}
-        <div data-table="{{ table.number }}" data-state="{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}"
+        <div data-table="{{ table.number }}" data-state="{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}" data-waiter="{{ order.waiter_id|default:'' }}"
              class="group relative card h-[140px] p-3.5 flex flex-col overflow-hidden transition-colors {% if not table.locked %}hover:border-slate-400{% endif %}">
           <span class="absolute inset-x-0 top-0 h-1 {% if table.locked %}bg-slate-200{% elif table.state == 'free' %}bg-emerald-500{% elif table.state == 'busy' %}bg-brand{% elif table.state == 'bill' %}bg-orange-500{% else %}bg-slate-400{% endif %}"></span>
 

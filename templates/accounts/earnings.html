@@ -29,6 +29,20 @@
   {% endwith %}
 </div>
 
+<div class="card p-4 mb-5 flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <div class="text-sm text-muted">{% if balance < 0 %}{% translate 'Выдано больше, чем заработано (аванс)' %}{% else %}{% translate 'К выплате сейчас' %}{% endif %}</div>
+    <div class="text-2xl font-bold tabular-nums {% if balance < 0 %}text-red-700{% else %}text-emerald-700{% endif %}" data-balance>{{ balance|money }}</div>
+  </div>
+  {% if payments %}
+    <ul class="text-sm space-y-1 min-w-[220px]">
+      {% for p in payments|slice:":3" %}
+        <li class="flex justify-between gap-3"><span class="text-muted">{{ p.created_at|date:"d.m" }} · {{ p.get_kind_display }}</span><span class="font-semibold tabular-nums">−{{ p.amount|money }}</span></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+
 <section class="card p-0 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-[#FAF6EF] text-muted text-left">

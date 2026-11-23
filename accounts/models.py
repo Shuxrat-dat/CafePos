@@ -110,6 +110,35 @@ class WorkShift(models.Model):
         return max(0.0, (b - a).total_seconds() / 3600)
 
 
+class SalaryPayment(models.Model):
+    """Выдача денег сотруднику: выплата заработанного или аванс. Остаток = начислено − все выдачи.
+    Каждая выдача сразу записывается в расходы (статья «Зарплата»); если деньги взяты из кассы —
+    ещё и изъятием в открытой кассовой смене, чтобы наличные сходились."""
+
+    class Kind(models.TextChoices):
+        PAYOUT = "payout", _("Выплата")
+        ADVANCE = "advance", _("Аванс")
+
+    user = models.ForeignKey(User, verbose_name=_("Сотрудник"), on_delete=models.PROTECT, related_name="salary_payments")
+    kind = models.CharField(_("Вид"), max_length=10, choices=Kind.choices, default=Kind.PAYOUT)
+    amount = models.DecimalField(_("Сумма (сум)"), max_digits=12, decimal_places=0)
+    comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    from_cash = models.BooleanField(_("Из кассы"), default=False)
+    cash_movement = models.ForeignKey("pos.CashMovement", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    expense = models.ForeignKey("reports.Expense", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_by = models.ForeignKey(User, verbose_name=_("Кто выдал"), null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(_("Когда"), default=timezone.now, db_index=True)
+
+    class Meta:
+        verbose_name = _("Выплата сотруднику")
+        verbose_name_plural = _("Выплаты сотрудникам")
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.user} · {self.get_kind_display()} · {self.amount}"
+
+
 class Terminal(models.Model):
     """Общее устройство в зале (моноблок). На нём официанты входят по плиткам и короткому PIN.
     Устройство узнаётся по долгоживущему cookie; в базе лежит только хеш его ключа."""

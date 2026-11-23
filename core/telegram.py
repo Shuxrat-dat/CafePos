@@ -187,6 +187,33 @@ def _shift_profit(shift):
     return shift.total_revenue - cost
 
 
+def _waiters_block(shift):
+    """Кто сколько заработал за смену и сколько ему осталось выплатить. Сбой расчёта сообщение не ломает."""
+    try:
+        from accounts import payouts
+        from pos.models import Order
+
+        rows = {}
+        orders = shift.orders.filter(status=Order.Status.PAID).select_related("waiter").prefetch_related("items__modifiers")
+        for order in orders:
+            row = rows.setdefault(order.waiter_id, {"user": order.waiter, "n": 0, "earned": 0})
+            row["n"] += 1
+            row["earned"] += order.earned_by_waiter
+        rows = [r for r in rows.values() if r["earned"]]
+        if not rows:
+            return []
+        lines = ["", "👥 " + _("Официанты за смену:")]
+        for r in sorted(rows, key=lambda r: -r["earned"]):
+            lines.append(_("%(name)s: %(n)s заказов, заработал %(sum)s, к выплате всего %(left)s") % {
+                "name": _person(r["user"]), "n": r["n"], "sum": money(r["earned"]),
+                "left": money(payouts.balance(r["user"])),
+            })
+        return lines
+    except Exception:
+        log.exception("Telegram: блок официантов не собран")
+        return []
+
+
 def notify_shift_closed(shift):
     try:
         cafe = CafeSettings.get()
@@ -212,6 +239,7 @@ def notify_shift_closed(shift):
                 lines.append("✅ " + _("Касса сошлась"))
             if shift.closing_comment:
                 lines.append(_("Комментарий: %(text)s") % {"text": shift.closing_comment})
+            lines += _waiters_block(shift)
         return send("\n".join(lines), "shift")
     except Exception:
         log.exception("Telegram: сообщение о смене не собрано")
