@@ -67,11 +67,12 @@
           <div class="grid {% if user.simple_floor %}wdgrid{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]{% endif %}">
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
-                <button type="button" data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
+                <button type="button" data-dish data-dish-pk="{{ dish.id }}" data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
                   {% if dish.modifiers.all or dish.sold_by_weight %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
-                  class="{% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
+                  class="relative {% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
+                  <span data-dish-badge class="hidden absolute top-1.5 right-1.5 z-10 min-w-[28px] h-7 px-2 rounded-full bg-brand text-white text-sm font-extrabold tabular-nums items-center justify-center shadow-pop ring-2 ring-white pointer-events-none"></span>
                   {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[clamp(64px,7vw,104px)]" size=28 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
                   <span class="{% if user.simple_floor %}p-2.5{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-2">
                     <span class="{% if user.simple_floor %}text-[14px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
@@ -146,6 +147,26 @@
       });
       document.getElementById('no-results').classList.toggle('hidden', any);
     }
+    // Число порций прямо на карточке блюда: считаем по строкам корзины и обновляем после каждого действия с ней
+    function syncBadges() {
+      var counts = {};
+      document.querySelectorAll('#order-panel [data-line-dish]').forEach(function (li) {
+        var id = li.dataset.lineDish;
+        counts[id] = (counts[id] || 0) + (parseInt(li.dataset.lineQty, 10) || 0);
+      });
+      document.querySelectorAll('[data-dish-pk]').forEach(function (card) {
+        var n = counts[card.dataset.dishPk] || 0;
+        var badge = card.querySelector('[data-dish-badge]');
+        if (!badge) return;
+        badge.textContent = n;
+        badge.classList.toggle('hidden', n === 0);
+        badge.classList.toggle('inline-flex', n > 0);
+      });
+    }
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+      if (e.target.id === 'order-panel') syncBadges();
+    });
+    syncBadges();
     search.addEventListener('input', apply);
     chips.addEventListener('click', function (e) {
       var b = e.target.closest('[data-cat]');
