@@ -138,3 +138,12 @@ class QuickPrecheckTests(TestCase):
         response = self.client.post(self.url, HTTP_HX_REQUEST="true")
         self.assertEqual(response["HX-Redirect"], f"/orders/{self.order.id}/precheck/")
         self.assertFalse(PrintJob.objects.exists())
+
+    def test_from_order_list_returns_only_a_toast(self):
+        from printing.models import Printer, PrintJob
+
+        Printer.objects.create(name="Касса", host="192.168.1.50")
+        response = self.client.post(self.url, {"list": "1"}, HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 204)
+        self.assertIn("toast", response["HX-Trigger"])
+        self.assertEqual(PrintJob.objects.filter(order=self.order, kind="precheck").count(), 1)

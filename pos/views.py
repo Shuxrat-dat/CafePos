@@ -990,6 +990,8 @@ def request_bill(request, order_id):
             message, kind = _("Отправлено на принтер."), "success"
         else:
             message, kind = _("Задание в очереди, но программа печати не на связи. Чек напечатается, когда она запустится."), "warning"
+        if is_htmx and request.POST.get("list") == "1":
+            return toast(HttpResponse(status=204), message, kind)  # из списка заказов: только сообщение, экран не меняется
         if is_htmx:
             return _panel(request, order, message, kind)
         getattr(messages, kind)(request, message)

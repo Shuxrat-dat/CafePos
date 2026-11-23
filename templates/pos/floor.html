@@ -131,10 +131,10 @@
                 </a>
                 {% elif o.ready_to_pay %}
                 {# Официант оплату не принимает: печатает гостю пречек, оплату примет кассир #}
-                <a href="{% url 'precheck' order_id=o.id %}" target="_blank" class="flex-1 h-9 rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                <button type="button" hx-post="{% url 'request_bill' order_id=o.id %}" hx-vals='{"list": "1"}' hx-swap="none" class="flex-1 h-9 rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
                   {% icon "printer" 16 %}
                   <span>{% translate 'Пречек' %}</span>
-                </a>
+                </button>
                 {% elif o.stage_action == 'wait' %}
                 {# Блюда на кухне: нажимать нечего, ждём повара #}
                 <span class="flex-1 h-9 rounded-xl bg-[#E1EAF3] text-[#2F5F8A] font-bold text-xs flex items-center justify-center gap-1.5">
@@ -348,10 +348,10 @@
 
         {# Кнопки: Печать чека / Оплата #}
         <div class="flex items-center gap-2">
-          <a href="{% url 'precheck' order_id=selected_order.id %}" target="_blank" class="flex-1 min-h-[42px] rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
+          <button type="button" hx-post="{% url 'request_bill' order_id=selected_order.id %}" hx-vals='{"list": "1"}' hx-swap="none" class="flex-1 min-h-[42px] rounded-xl bg-white border border-line hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
             {% icon "printer" 16 %}
             <span>{% translate 'Печать пречека' %}</span>
-          </a>
+          </button>
           {% if user.can_take_payment %}
           <a href="{% url 'pay' order_id=selected_order.id %}" class="flex-1 min-h-[42px] rounded-xl bg-brand hover:bg-brand-600 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
             {% icon "credit-card" 16 %}
