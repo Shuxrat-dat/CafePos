@@ -28,7 +28,13 @@ class GlobalSearchTests(TestCase):
         self.assertContains(self.client.get(self.url, {"q": str(self.order.id)}), f"#{self.order.id}")
         self.assertContains(self.client.get(self.url, {"q": "7"}), reverse("order_detail", args=[self.order.id]))
 
-    def test_waiter_does_not_see_foreign_orders(self):
+    def test_waiter_finds_open_order_of_another_waiter(self):
+        self.client.force_login(self.w2)
+        response = self.client.get(self.url, {"q": str(self.order.id)})
+        self.assertContains(response, f"#{self.order.id}")
+
+    def test_waiter_does_not_see_foreign_closed_orders(self):
+        Order.objects.filter(id=self.order.id).update(status=Order.Status.PAID)
         self.client.force_login(self.w2)
         response = self.client.get(self.url, {"q": str(self.order.id)})
         self.assertNotContains(response, f"#{self.order.id}")

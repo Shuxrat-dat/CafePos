@@ -53,7 +53,7 @@ class TableMapTests(TestCase):
         # Официанту компактный вид: узкий список залов вместо заголовка и сводки
         self.assertIn('id="hall-filter"', html)
         self.assertNotIn("Нажмите на стол, чтобы открыть заказ.", html)
-        for number, state in (("1", "free"), ("2", "busy"), ("3", "locked"), ("4", "reserved")):
+        for number, state in (("1", "free"), ("2", "busy"), ("3", "busy"), ("4", "reserved")):
             self.assertIn(f'data-table="{number}" data-state="{state}"', html)
         self.assertEqual(page.context["counts"]["free"], 1)
 
@@ -70,15 +70,15 @@ class TableMapTests(TestCase):
         self.assertRedirects(response, reverse("order_detail", args=[self.my_order.id]))
         self.assertEqual(Order.objects.filter(table=self.mine).count(), 1)
 
-    def test_waiter_cannot_open_another_waiters_table_but_cashier_can(self):
+    def test_any_waiter_can_open_a_table_served_by_another_waiter(self):
+        """Стол не закреплён за одним официантом: заказ открывается, а ведёт его по-прежнему тот, кто его начал."""
         self.client.force_login(self.waiter)
-        response = self.client.post(reverse("open_table", args=[self.theirs.id]), follow=True)
-        self.assertRedirects(response, reverse("table_map"))
-        self.assertContains(response, "Стол занят: заказ ведёт другой официант.")
+        page = self.client.get(reverse("table_map")).content.decode()
+        self.assertIn(reverse("open_table", args=[self.theirs.id]), page)
+        response = self.client.post(reverse("open_table", args=[self.theirs.id]))
+        self.assertRedirects(response, reverse("order_detail", args=[self.their_order.id]))
         self.their_order.refresh_from_db()
         self.assertEqual(self.their_order.waiter, self.other)
-        page = self.client.get(reverse("table_map")).content.decode()
-        self.assertNotIn(reverse("open_table", args=[self.theirs.id]), page)
         self.client.force_login(self.cashier)
         response = self.client.post(reverse("open_table", args=[self.theirs.id]))
         self.assertRedirects(response, reverse("order_detail", args=[self.their_order.id]))

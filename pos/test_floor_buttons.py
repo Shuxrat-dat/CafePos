@@ -31,18 +31,18 @@ class FloorButtonsTests(TestCase):
         mine = Order.objects.get(waiter=self.waiter)
         self.assertEqual(mine.items.count(), 1)
 
-    def test_quick_add_to_foreign_order_is_forbidden(self):
+    def test_waiter_can_add_to_order_of_another_waiter(self):
         foreign = self._order(self.other, OrderItem.Status.NEW)
         self.client.force_login(self.waiter)
         response = self.client.post(reverse("quick_add", args=[self.dish.id]), {"order_id": foreign.id})
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(foreign.items.count(), 1)
+        self.assertNotEqual(response.status_code, 403)
+        self.assertEqual(sum(i.quantity for i in foreign.items.all()), 2)
 
-    def test_floor_hides_foreign_orders_from_waiter(self):
+    def test_floor_shows_open_orders_of_other_waiters(self):
         self._order(self.other, OrderItem.Status.NEW)
         self.client.force_login(self.waiter)
         response = self.client.get(reverse("floor"))
-        self.assertEqual(len(response.context["current_orders"]), 0)
+        self.assertEqual(len(response.context["current_orders"]), 1)
 
     def test_served_order_offers_payment_instead_of_dead_stage_button(self):
         order = self._order(self.owner, OrderItem.Status.SERVED)

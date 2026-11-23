@@ -78,6 +78,12 @@ class User(AbstractUser):
         return self.is_superuser or self.role in SEE_ALL_ROLES
 
     @property
+    def can_remove_sent_items(self):
+        """Убрать из заказа блюдо, уже ушедшее на кухню. Официанту можно: каждое такое удаление пишется в журнал
+        и уходит уведомлением владельцу. Целый заказ с кухни отменяют только те, кто вправе (can_cancel_sent_orders)."""
+        return self.can_cancel_sent_orders or (not self.is_superuser and self.role == self.Role.WAITER)
+
+    @property
     def can_cancel_sent_orders(self):
         if self.is_superuser or self.role in CANCEL_SENT_ROLES:
             return True

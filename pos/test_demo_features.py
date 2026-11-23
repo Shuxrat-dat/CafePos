@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from core.models import CafeSettings
 from inventory.models import Product, RecipeItem, StockMovement
@@ -255,12 +256,15 @@ class OrdersPageTests(Base):
         response = self.client.get(reverse("orders"), {"tab": "done"})
         self.assertEqual([o.id for o in response.context["page"].object_list], [done.id])
 
-    def test_waiter_sees_only_own_orders(self):
+    def test_waiter_sees_open_orders_of_everyone_but_closed_only_own(self):
         mine = self.order((self.plov, 1), table=self.table, waiter=self.waiter)
-        self.order((self.tea, 1), table=self.table2)
+        theirs = self.order((self.tea, 1), table=self.table2)
         self.client.force_login(self.waiter)
         response = self.client.get(reverse("orders"))
-        self.assertEqual([o.id for o in response.context["page"].object_list], [mine.id])
+        self.assertEqual({o.id for o in response.context["page"].object_list}, {mine.id, theirs.id})
+        Order.objects.filter(id=theirs.id).update(status=Order.Status.PAID, closed_at=timezone.now())
+        response = self.client.get(reverse("orders"), {"tab": "done"})
+        self.assertEqual([o.id for o in response.context["page"].object_list], [])
 
     def test_search_by_number(self):
         order = self.order((self.plov, 1), table=self.table)

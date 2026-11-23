@@ -39,7 +39,8 @@ def _base_queryset(user):
         n_open=Count("items", filter=Q(items__status__in=KITCHEN_OPEN), distinct=True),
     ).select_related("table__hall", "waiter", "cashier")
     if not user.sees_all_orders:
-        qs = qs.filter(waiter=user)
+        # Свои заказы и любые открытые: стол не закреплён за одним официантом
+        qs = qs.filter(Q(waiter=user) | Q(status=Order.Status.OPEN))
     return qs
 
 
@@ -113,7 +114,7 @@ def orders(request):
 
 def _visible_order(request, order_id):
     order = get_object_or_404(Order.objects.select_related("table__hall", "waiter", "cashier", "cancelled_by"), id=order_id)
-    if not request.user.sees_all_orders and order.waiter_id != request.user.id:
+    if not request.user.sees_all_orders and order.status != Order.Status.OPEN and order.waiter_id != request.user.id:
         raise PermissionDenied
     return order
 

@@ -43,7 +43,9 @@ def _get_order(request, order_id, open_only=True):
     """Находит заказ и проверяет, что пользователь вправе с ним работать."""
     order = get_object_or_404(Order.objects.select_related("table__hall", "waiter"), id=order_id)
     user = request.user
-    if not user.sees_all_orders and order.waiter_id != user.id:
+    # Открытый заказ может править любой сотрудник зала: стол не закреплён за одним официантом.
+    # Закрытые и отменённые чужие заказы официанту не показываем.
+    if not user.sees_all_orders and order.status != Order.Status.OPEN and order.waiter_id != user.id:
         raise PermissionDenied
     if open_only and order.status != Order.Status.OPEN:
         raise Http404
@@ -249,7 +251,7 @@ def _floor_context(request):
             order = by_table.get(table.id)
             table.open_order = order
             table.guest_pending = table.id in pending_tables
-            table.locked = bool(order) and not user.sees_all_orders and order.waiter_id != user.id
+            table.locked = False  # стол не закреплён за официантом: открыть его может любой
             if order and order.awaiting_payment:
                 table.state = "bill"
             elif order:
@@ -268,7 +270,7 @@ def _floor_context(request):
     )
     counter_orders += list(paid_in_work)
     if not user.sees_all_orders:
-        counter_orders = [o for o in counter_orders if o.waiter_id == user.id]
+        counter_orders = [o for o in counter_orders if o.status == Order.Status.OPEN or o.waiter_id == user.id]
     counter_orders.sort(key=lambda o: o.created_at)
     counts["total"] = sum(counts.values())
 
@@ -281,11 +283,8 @@ def _floor_context(request):
         .prefetch_related("items__dish", "items__modifiers")
         .order_by("id")
     )
-    # Пустые черновики и чужие заказы (для ролей без полного доступа) в списке не показываем
-    current_orders = [
-        o for o in current_orders
-        if o.items.all() and (user.sees_all_orders or o.waiter_id == user.id)
-    ]
+    # Пустые черновики в списке не показываем
+    current_orders = [o for o in current_orders if o.items.all()]
     now = timezone.now()
     marks_ready = _can_mark_ready(user)
     for o in current_orders:
@@ -468,12 +467,12 @@ def global_search(request):
             cond |= Q(id=int(q.lstrip("#")))
         found = Order.objects.filter(cond).select_related("table", "waiter").order_by("-created_at")
         if not user.sees_all_orders:
-            found = found.filter(waiter=user)
+            found = found.filter(Q(waiter=user) | Q(status=Order.Status.OPEN))
         orders = list(found[:8])
         busy = {o.table_id: o for o in _open_orders().exclude(table=None)}
         for table in Table.objects.select_related("hall").filter(number__icontains=q)[:6]:
             table.open_order = busy.get(table.id)
-            table.locked = bool(table.open_order) and not user.sees_all_orders and table.open_order.waiter_id != user.id
+            table.locked = False
             tables.append(table)
     return render(request, "pos/_search_results.html", {"q": q, "orders": orders, "tables": tables})
 
@@ -538,9 +537,6 @@ def open_table(request, table_id):
         # заказ переходит к тому, кто нажал на стол
         order.waiter = request.user
         order.save(update_fields=["waiter"])
-    elif not request.user.sees_all_orders and order.waiter_id != request.user.id:
-        messages.error(request, _("Стол занят: заказ ведёт другой официант."))
-        return redirect("table_map")
     if table.is_reserved:
         # Гость по брони пришёл: бронь снимается, стол становится занятым
         table.reserved_for, table.reserved_at = "", None
@@ -765,7 +761,7 @@ def remove_item(request, order_id, item_id):
     error = _pin_error(request)
     if error:
         return _remove_form(request, order, item, error)
-    if item.status != OrderItem.Status.NEW and not request.user.can_cancel_sent_orders:
+    if item.status != OrderItem.Status.NEW and not request.user.can_remove_sent_items:
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
     if item.status != OrderItem.Status.NEW:
         audit.record(request.user, audit.A.ITEM_REMOVE, order=order, amount=item.line_total,
@@ -1341,8 +1337,6 @@ def move_items(request, order_id):
     order = _get_order(request, order_id)
     items = list(order.items.select_related("dish").prefetch_related("modifiers"))
     targets = Order.objects.filter(status=Order.Status.OPEN).exclude(id=order.id).select_related("table__hall", "waiter")
-    if not request.user.sees_all_orders:
-        targets = targets.filter(waiter=request.user)
     targets = [t for t in targets.order_by("table__hall__id", "table__number", "id") if t.items.exists()]
     busy = _busy_table_ids()
     free_tables = [t for t in Table.objects.select_related("hall").order_by("hall__id", "number") if t.id not in busy]

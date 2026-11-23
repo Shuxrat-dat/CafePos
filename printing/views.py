@@ -134,7 +134,7 @@ def print_order(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     precheck = request.POST.get("kind") == "precheck"
     if precheck:
-        if order.status != Order.Status.OPEN or not (request.user.sees_all_orders or order.waiter_id == request.user.id):
+        if order.status != Order.Status.OPEN:
             raise PermissionDenied
     elif not request.user.can_take_payment or order.status != Order.Status.PAID:
         raise PermissionDenied
@@ -156,7 +156,7 @@ def print_order(request, order_id):
 def order_print_status(request, order_id):
     """Состояние печати по заказу для экрана чека: обновляется само, показывает ошибку принтера."""
     order = get_object_or_404(Order, id=order_id)
-    if not (request.user.sees_all_orders or order.waiter_id == request.user.id or request.user.can_take_payment):
+    if not (request.user.sees_all_orders or order.waiter_id == request.user.id or order.status == Order.Status.OPEN):
         raise PermissionDenied
     jobs = list(order.print_jobs.select_related("printer").order_by("-id")[:6])
     return render(request, "pos/_print_status.html", {

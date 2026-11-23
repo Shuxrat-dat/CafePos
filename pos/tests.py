@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from core.models import AuditLog
 from menu.models import Category, Dish
 
 from .models import Hall, Order, OrderItem, Table
@@ -160,11 +161,44 @@ class PermissionTests(TestCase):
                     response = self.client.get(reverse("order_detail", args=[order.id]))
                     self.assertEqual(response.status_code, 200)
 
-                def test_waiter_cannot_open_foreign_order(self):
+                def test_waiter_can_open_open_order_of_another_waiter(self):
+                    """Стол не закреплён за официантом: открытый заказ коллеги можно открыть и дополнить."""
                     order = self._make_order(OrderItem.Status.NEW)
                     self.client.force_login(self.waiter2)
                     response = self.client.get(reverse("order_detail", args=[order.id]))
+                    self.assertEqual(response.status_code, 200)
+
+                def test_waiter_cannot_open_paid_order_of_another_waiter(self):
+                    order = self._make_order(OrderItem.Status.NEW)
+                    Order.objects.filter(id=order.id).update(status=Order.Status.PAID)
+                    self.client.force_login(self.waiter2)
+                    response = self.client.get(reverse("order_view", args=[order.id]))
                     self.assertEqual(response.status_code, 403)
+
+                def test_waiter_removes_dish_already_sent_to_kitchen(self):
+                    """Официант исправляет заказ: убирает и блюдо, ушедшее на кухню. Это пишется в журнал."""
+                    order = self._make_order(OrderItem.Status.QUEUED)
+                    item = order.items.get()
+                    self.client.force_login(self.waiter2)  # чужой стол, заказ ведёт коллега
+                    self.client.post(reverse("remove_item", args=[order.id, item.id]))
+                    self.assertFalse(order.items.exists())
+                    self.assertTrue(AuditLog.objects.filter(action="item_remove", order_id=order.id).exists())
+
+                def test_waiter_edits_own_new_item_and_removes_it(self):
+                    order = self._make_order(OrderItem.Status.NEW)
+                    item = order.items.get()
+                    self.client.force_login(self.waiter1)
+                    self.client.post(reverse("change_qty", args=[order.id, item.id]), {"delta": "1"})
+                    item.refresh_from_db()
+                    self.assertEqual(item.quantity, 2)
+                    self.client.post(reverse("remove_item", args=[order.id, item.id]))
+                    self.assertFalse(order.items.exists())
+
+                def test_waiter_still_cannot_cancel_order_sent_to_kitchen(self):
+                    order = self._make_order(OrderItem.Status.QUEUED)
+                    self.assertFalse(self.waiter1.can_cancel_sent_orders)
+                    self.assertTrue(self.waiter1.can_remove_sent_items)
+                    self.assertFalse(self.cook.can_remove_sent_items)
 
                 def test_cashier_opens_any_order(self):
                     order = self._make_order(OrderItem.Status.NEW)

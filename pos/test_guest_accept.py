@@ -71,11 +71,12 @@ class GuestAcceptTests(TestCase):
         self.guest.refresh_from_db()
         self.assertEqual(self.guest.status, GuestOrder.Status.REJECTED)
 
-    def test_other_waiter_cannot_accept(self):
+    def test_other_waiter_can_accept(self):
+        """Стол не закреплён за официантом: гостевой заказ может принять любой."""
         self.client.force_login(self.waiter2)
-        self.assertEqual(self._accept().status_code, 403)
+        self.assertEqual(self._accept().status_code, 200)
         self.guest.refresh_from_db()
-        self.assertEqual(self.guest.status, GuestOrder.Status.PENDING)
+        self.assertNotEqual(self.guest.status, GuestOrder.Status.PENDING)
 
     def test_guest_of_other_table_is_404(self):
         foreign = GuestOrder.objects.create(table=self.other_table)
