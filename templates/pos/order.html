@@ -72,7 +72,11 @@
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
                   class="relative {% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
-                  <span data-dish-badge class="hidden absolute bottom-2 right-2 z-10 min-w-[28px] h-7 px-2 rounded-full bg-brand text-white text-sm font-extrabold tabular-nums items-center justify-center shadow-pop ring-2 ring-white pointer-events-none"></span>
+                  <span data-dish-badge class="hidden absolute bottom-1.5 right-1.5 z-10 h-9 rounded-full bg-brand text-white text-base font-extrabold tabular-nums items-center gap-0.5 px-0.5 shadow-pop ring-2 ring-white select-none">
+                    <span data-step="-" role="button" aria-label="{% translate 'Уменьшить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">−</span>
+                    <span data-badge-n class="min-w-[18px] text-center"></span>
+                    <span data-step="+" role="button" aria-label="{% translate 'Увеличить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">+</span>
+                  </span>
                   {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[clamp(64px,7vw,104px)]" size=28 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
                   <span class="{% if user.simple_floor %}p-2.5{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-2">
                     <span class="{% if user.simple_floor %}text-[14px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
@@ -158,11 +162,32 @@
         var n = counts[card.dataset.dishPk] || 0;
         var badge = card.querySelector('[data-dish-badge]');
         if (!badge) return;
-        badge.textContent = n;
+        badge.querySelector('[data-badge-n]').textContent = n;
         badge.classList.toggle('hidden', n === 0);
         badge.classList.toggle('inline-flex', n > 0);
       });
     }
+    // «+» и «−» прямо на карточке: не нужно искать блюдо в корзине справа
+    document.getElementById('dish-list').addEventListener('click', function (e) {
+      var step = e.target.closest('[data-step]');
+      if (!step) return;
+      var card = step.closest('[data-dish-pk]');
+      if (step.dataset.step === '+') {
+        // Простое блюдо добавляем сразу; для блюда с вариантами или весом пусть сработает сама карточка (окно выбора)
+        if (card.hasAttribute('hx-post')) {
+          e.stopPropagation();
+          htmx.ajax('POST', card.getAttribute('hx-post'), { target: '#order-panel', swap: 'innerHTML' });
+        }
+        return;
+      }
+      e.stopPropagation();
+      var lines = Array.prototype.slice.call(document.querySelectorAll('#order-panel [data-line-dish="' + card.dataset.dishPk + '"]'));
+      if (!lines.length) return;
+      var fresh = lines.filter(function (l) { return l.dataset.lineStatus === 'new'; });
+      var line = fresh.length ? fresh[fresh.length - 1] : lines[lines.length - 1];
+      if (!fresh.length && !confirm('{% translate "Блюдо уже на кухне. Убрать порцию?" %}')) return;
+      htmx.ajax('POST', line.dataset.lineUrl, { target: '#order-panel', swap: 'innerHTML', values: { delta: '-1' } });
+    }, true);
     document.body.addEventListener('htmx:afterSwap', function (e) {
       if (e.target.id === 'order-panel') syncBadges();
     });

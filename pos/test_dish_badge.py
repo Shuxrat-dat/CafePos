@@ -22,12 +22,18 @@ class DishCardBadgeTests(TestCase):
         response = self.client.get(f"/orders/{self.order.id}/")
         self.assertContains(response, f'data-dish-pk="{self.dish.id}"')
         self.assertContains(response, "data-dish-badge")
-        self.assertContains(response, f'data-line-dish="{self.dish.id}" data-line-qty="3"')
+        self.assertContains(response, f'data-line-dish="{self.dish.id}"')
+        self.assertContains(response, 'data-line-qty="3"')
+        self.assertContains(response, 'data-line-status="new"')
+        self.assertContains(response, f"/orders/{self.order.id}/item/")  # адрес для «−» на карточке
+        self.assertContains(response, 'data-step="+"')
+        self.assertContains(response, 'data-step="-"')
 
     def test_panel_refresh_keeps_line_data(self):
         self.order.items.create(dish=self.dish, quantity=2, price=self.dish.price)
         response = self.client.get(f"/orders/{self.order.id}/panel/")
-        self.assertContains(response, f'data-line-dish="{self.dish.id}" data-line-qty="2"')
+        self.assertContains(response, f'data-line-dish="{self.dish.id}"')
+        self.assertContains(response, 'data-line-qty="2"')
 
 
 class SetQuantityTests(TestCase):
