@@ -1,10 +1,11 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
@@ -67,6 +68,10 @@ class LoginView(auth_views.LoginView):
     """Обычный вход. На устройстве-терминале сразу показываем плитки, пароль — по ссылке «Войти паролем»."""
 
     authentication_form = LoginForm
+
+    def get_default_redirect_url(self):
+        user = self.request.user
+        return resolve_url(user.home_url_name if user.is_authenticated else settings.LOGIN_REDIRECT_URL)
 
     def get(self, request, *args, **kwargs):
         if terminal.current(request) and not request.user.is_authenticated and not request.GET.get("password"):

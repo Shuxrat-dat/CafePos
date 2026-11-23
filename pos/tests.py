@@ -216,6 +216,20 @@ class PermissionTests(TestCase):
                     self.client.post(url, {"delta": "-1"})  # последняя порция: блюдо убирается совсем
                     self.assertFalse(order.items.filter(id=sent.id).exists())
 
+                def test_waiter_lands_on_tables_not_on_orders(self):
+                    """Официанту домашняя страница «Столы»: после входа и по стрелке «назад» из заказа."""
+                    response = self.client.post(reverse("login"), {"username": "w1", "password": "pass12345"})
+                    self.assertRedirects(response, reverse("table_map"), fetch_redirect_response=False)
+                    order = self._make_order(OrderItem.Status.NEW)
+                    page = self.client.get(reverse("order_detail", args=[order.id])).content.decode()
+                    self.assertIn(f'href="{reverse("table_map")}" class="icon-btn shrink-0"', page)
+                    self.assertEqual(self.waiter1.home_url_name, "table_map")
+                    self.assertEqual(self.cashier.home_url_name, "floor")
+
+                def test_cashier_still_lands_on_orders_after_login(self):
+                    response = self.client.post(reverse("login"), {"username": "c1", "password": "pass12345"})
+                    self.assertRedirects(response, reverse("floor"), fetch_redirect_response=False)
+
                 def test_waiter_still_cannot_cancel_order_sent_to_kitchen(self):
                     order = self._make_order(OrderItem.Status.QUEUED)
                     self.assertFalse(self.waiter1.can_cancel_sent_orders)

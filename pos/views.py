@@ -638,7 +638,7 @@ def order_panel(request, order_id):
     order = _get_order(request, order_id, open_only=False)
     if order.status != Order.Status.OPEN:
         # Заказ закрыт или отменён на другом устройстве: уводим страницу на план зала
-        return HttpResponse(headers={"HX-Redirect": reverse("floor")})
+        return HttpResponse(headers={"HX-Redirect": reverse(request.user.home_url_name)})
     return _panel(request, order)
 
 
@@ -958,8 +958,8 @@ def cancel_order(request, order_id):
     telegram.notify_order_cancelled(order, request.user)
     messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.id})
     if htmx:
-        return HttpResponse(headers={"HX-Redirect": reverse("floor")})
-    return redirect("floor")
+        return HttpResponse(headers={"HX-Redirect": reverse(request.user.home_url_name)})
+    return redirect(request.user.home_url_name)
 
 
 @login_required

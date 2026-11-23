@@ -35,7 +35,7 @@
   <section class="min-w-0 {% if user.simple_floor %}sm:grid sm:grid-cols-[116px_minmax(0,1fr)] sm:gap-x-3 sm:items-start{% endif %}">
     <div class="sticky top-14 z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-0 pb-3{% endif %}">
       <div class="flex items-center gap-2 {% if not user.simple_floor %}mb-3{% endif %}">
-        <a href="{% url 'floor' %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
+        <a href="{% url user.home_url_name %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
         <div class="relative flex-1">
           <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
           <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">

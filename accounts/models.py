@@ -70,6 +70,11 @@ class User(AbstractUser):
         return not self.is_superuser and self.role == self.Role.WAITER
 
     @property
+    def home_url_name(self):
+        """Куда вести после входа и «Назад»: официанту схема столов, остальным экран заказов."""
+        return "table_map" if self.simple_floor else "floor"
+
+    @property
     def can_take_payment(self):
         return self.is_superuser or self.role in PAYMENT_ROLES
 
