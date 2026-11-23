@@ -60,8 +60,10 @@ def queue_kitchen(order, item_ids):
         return []
     addition = order.items.exclude(id__in=item_ids).exclude(sent_at=None).exists()
     jobs = []
-    for printer in _active().filter(prints_kitchen=True).prefetch_related("categories"):
-        mine = [item for item in items if printer.takes_dish(item.dish)]
+    printers = list(_active().filter(prints_kitchen=True).prefetch_related("categories", "dishes"))
+    claimed = {d.id for p in printers for d in p.dishes.all()}  # блюда, закреплённые за конкретными принтерами
+    for printer in printers:
+        mine = [item for item in items if printer.takes_dish(item.dish, claimed)]
         if mine:
             title = _("Кухня №%(n)s") % {"n": order.id}
             jobs += _queue(printer, PrintJob.Kind.KITCHEN, title, documents.kitchen(order, mine, printer, addition), order)

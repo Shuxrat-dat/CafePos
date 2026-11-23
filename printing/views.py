@@ -46,7 +46,7 @@ def manage_printers(request):
             else:
                 messages.warning(request, _("Программа печати не на связи, проверить принтеры нельзя. Запустите её на компьютере в кафе."))
         return redirect("manage_printers")
-    printers = list(Printer.objects.prefetch_related("categories"))
+    printers = list(Printer.objects.prefetch_related("categories", "dishes"))
     for printer in printers:
         printer.recent = printer.last_job
     context = {

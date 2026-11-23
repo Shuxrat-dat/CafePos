@@ -4,8 +4,8 @@ import re
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from core.forms import StyledModelForm
-from menu.models import Category
+from core.forms import StyledModelForm, localized_name
+from menu.models import Category, Dish
 
 from .models import Printer
 
@@ -17,13 +17,16 @@ class PrinterForm(StyledModelForm):
         model = Printer
         fields = [
             "name", "connection", "host", "port", "windows_name", "prints_receipts", "auto_receipt",
-            "prints_kitchen", "categories", "copies", "line_width", "encoding", "codepage", "cut_paper", "is_active",
+            "prints_kitchen", "categories", "dishes", "copies", "line_width", "encoding", "codepage", "cut_paper", "is_active",
         ]
-        widgets = {"categories": forms.CheckboxSelectMultiple}
+        widgets = {"categories": forms.CheckboxSelectMultiple, "dishes": forms.CheckboxSelectMultiple}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["categories"].queryset = Category.objects.filter(is_active=True)
+        self.fields["dishes"].queryset = Dish.objects.select_related("category").order_by(
+            "category__sort_order", "category__name", "sort_order", "name")
+        self.fields["dishes"].label_from_instance = localized_name
         self.fields["host"].widget.attrs.update({"placeholder": "192.168.1.200", "inputmode": "decimal"})
 
     def clean_host(self):

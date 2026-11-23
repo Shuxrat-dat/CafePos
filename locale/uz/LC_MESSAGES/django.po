@@ -5154,3 +5154,15 @@ msgstr "Tushum (Click):"
 
 msgid "Убедитесь, что оплата через Click пришла, затем подтвердите."
 msgstr "Click orqali to‘lov kelganiga ishonch hosil qiling, keyin tasdiqlang."
+
+msgid "Блюд пока нет."
+msgstr "Hozircha taomlar yo‘q."
+
+msgid "Блюдо, отмеченное здесь, печатается только на этом принтере, даже если его категория отмечена у другого. Так самса из категории «Второе» уходит на принтер самсы, а остальное — на кухню."
+msgstr "Bu yerda belgilangan taom faqat shu printerda chop etiladi, hatto uning kategoriyasi boshqa printerda belgilangan bo‘lsa ham. Shunday qilib «Ikkinchi» kategoriyasidagi somsa somsa printeriga, qolganlari oshxonaga boradi."
+
+msgid "Найти блюдо"
+msgstr "Taom qidirish"
+
+msgid "Отдельные блюда для этого принтера"
+msgstr "Shu printer uchun alohida taomlar"

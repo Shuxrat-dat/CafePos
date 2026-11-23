@@ -38,6 +38,19 @@
           {% endfor %}
         </div>
       </div>
+      <details class="pt-3" {% if form.dishes.value %}open{% endif %}>
+        <summary class="label cursor-pointer">{{ form.dishes.label }}{% if form.dishes.value %} · {{ form.dishes.value|length }}{% endif %}</summary>
+        <p class="text-xs text-muted mb-2">{{ form.dishes.help_text }}</p>
+        <input type="search" id="dish-filter" class="input mb-2" placeholder="{% translate 'Найти блюдо' %}" autocomplete="off">
+        <div id="dish-list" class="max-h-80 overflow-y-auto rounded-xl border border-line px-3 py-1">
+          {% for choice in form.dishes %}
+            {% ifchanged choice.instance.category_id %}<p class="text-xs font-bold uppercase tracking-wide text-muted pt-3 pb-1" data-group>{{ choice.instance.category|tr }}</p>{% endifchanged %}
+            <label class="flex items-center gap-3 py-1.5 cursor-pointer" data-dish="{{ choice.choice_label|lower }}">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+          {% empty %}
+            <p class="text-sm text-muted py-2">{% translate 'Блюд пока нет.' %}</p>
+          {% endfor %}
+        </div>
+      </details>
     </section>
   </div>
 
@@ -75,6 +88,18 @@
     }
     select.addEventListener('change', apply);
     apply();
+    var filter = document.getElementById('dish-filter');
+    if (filter) filter.addEventListener('input', function () {
+      var q = filter.value.trim().toLowerCase();
+      document.querySelectorAll('#dish-list [data-dish]').forEach(function (row) {
+        row.classList.toggle('hidden', q !== '' && row.dataset.dish.indexOf(q) === -1);
+      });
+      document.querySelectorAll('#dish-list [data-group]').forEach(function (head) {
+        var next = head.nextElementSibling, any = false;
+        while (next && !next.hasAttribute('data-group')) { if (!next.classList.contains('hidden')) any = true; next = next.nextElementSibling; }
+        head.classList.toggle('hidden', !any);
+      });
+    });
   })();
 </script>
 {% endblock %}

@@ -103,6 +103,59 @@ class PrintFlowTests(TestCase):
             pos_services.send_to_kitchen(self.order)
         self.assertIn("Плов", text_of(PrintJob.objects.get(printer=self.bar)))
 
+    def send(self, *dishes):
+        for dish in dishes:
+            OrderItem.objects.create(order=self.order, dish=dish, quantity=1)
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+
+    def make_somsa(self):
+        """Самса лежит в категории «Горячее», но печатается на своём принтере."""
+        somsa = Dish.objects.create(category=self.hot, name="Самса", price=12000)
+        printer = Printer.objects.create(name="Самса", host="192.168.1.54", prints_receipts=False, prints_kitchen=True)
+        printer.dishes.set([somsa])
+        return somsa, printer
+
+    def test_dish_pinned_to_printer_goes_only_there(self):
+        somsa, somsa_printer = self.make_somsa()
+        self.send(self.plov, somsa)
+        self.assertIn("Самса", text_of(PrintJob.objects.get(printer=somsa_printer)))
+        self.assertNotIn("Плов", text_of(PrintJob.objects.get(printer=somsa_printer)))
+        kitchen = text_of(PrintJob.objects.get(printer=self.kitchen))
+        self.assertIn("Плов", kitchen)
+        self.assertNotIn("Самса", kitchen)  # категория «Горячее» у кухни есть, но самса закреплена за другим принтером
+
+    def test_printer_with_only_pinned_dishes_ignores_the_rest(self):
+        somsa, somsa_printer = self.make_somsa()
+        self.send(self.plov, self.tea)
+        self.assertFalse(PrintJob.objects.filter(printer=somsa_printer).exists())
+
+    def test_catch_all_printer_does_not_take_pinned_dishes(self):
+        somsa, somsa_printer = self.make_somsa()
+        self.bar.categories.clear()  # бар без категорий получает всё, кроме закреплённого за другими
+        self.send(self.plov, somsa)
+        bar = text_of(PrintJob.objects.get(printer=self.bar))
+        self.assertIn("Плов", bar)
+        self.assertNotIn("Самса", bar)
+
+    def test_inactive_pinned_printer_falls_back_to_category(self):
+        somsa, somsa_printer = self.make_somsa()
+        Printer.objects.filter(pk=somsa_printer.pk).update(is_active=False)
+        self.send(somsa)
+        self.assertIn("Самса", text_of(PrintJob.objects.get(printer=self.kitchen)))
+
+    def test_printer_form_saves_pinned_dishes(self):
+        somsa, somsa_printer = self.make_somsa()
+        owner = User.objects.create_user(username="own", password="pass12345", role="owner")
+        self.client.force_login(owner)
+        url = reverse("printer_edit", args=[somsa_printer.id])
+        self.assertIn("Самса", self.client.get(url).content.decode())
+        data = {"name": "Самса", "connection": "network", "host": "192.168.1.54", "port": "9100", "prints_kitchen": "on",
+                "copies": "1", "line_width": "48", "encoding": "cp866", "codepage": "17", "is_active": "on",
+                "dishes": [str(somsa.id), str(self.plov.id)], "action": "save"}
+        self.client.post(url, data)
+        self.assertEqual({d.id for d in somsa_printer.dishes.all()}, {somsa.id, self.plov.id})
+
     def test_receipt_is_printed_after_payment(self):
         OrderItem.objects.create(order=self.order, dish=self.plov, quantity=2, status=OrderItem.Status.SERVED)
         manual = Printer.objects.create(name="Второй", host="192.168.1.53", auto_receipt=False)

@@ -43,6 +43,11 @@ class Printer(models.Model):
         Category, verbose_name=_("Категории блюд для этого принтера"), blank=True,
         help_text=_("Сюда уходят только блюда отмеченных категорий. Ничего не отмечено — все блюда."),
     )
+    dishes = models.ManyToManyField(
+        "menu.Dish", verbose_name=_("Отдельные блюда для этого принтера"), blank=True, related_name="printers",
+        help_text=_("Блюдо, отмеченное здесь, печатается только на этом принтере, даже если его категория отмечена у другого. "
+                    "Так самса из категории «Второе» уходит на принтер самсы, а остальное — на кухню."),
+    )
     copies = models.PositiveSmallIntegerField(_("Копий"), default=1)
     line_width = models.PositiveSmallIntegerField(
         _("Символов в строке"), default=48,
@@ -76,10 +81,17 @@ class Printer(models.Model):
             return f"{self.host}:{self.port}"
         return self.windows_name
 
-    def takes_dish(self, dish):
-        """Кухонный принтер без отмеченных категорий получает все блюда."""
+    def takes_dish(self, dish, claimed=frozenset()):
+        """Какие блюда идут на этот кухонный принтер.
+        Блюдо, отмеченное хотя бы у одного принтера (claimed — их id), печатается только там, где отмечено.
+        Остальные — по категориям. Принтер, у которого не отмечено ни категорий, ни блюд, получает все неотмеченные."""
+        own = {d.id for d in self.dishes.all()}
+        if dish.id in own:
+            return True
+        if dish.id in claimed:
+            return False
         ids = {c.id for c in self.categories.all()}
-        return not ids or dish.category_id in ids
+        return not ids and not own or dish.category_id in ids
 
     @property
     def last_job(self):
