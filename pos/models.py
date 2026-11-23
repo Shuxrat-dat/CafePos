@@ -131,15 +131,23 @@ class CashShift(models.Model):
 
     @property
     def card_sales(self):
+        """Оплаты картой. Click хранится в тех же безналичных суммах платежа, но считается отдельно."""
         from django.db.models import Sum
-        val = self.payments.filter(is_refund=False).aggregate(total=Sum("card_amount"))["total"]
+        payments = self.payments.filter(is_refund=False).exclude(payment_method=Order.PaymentMethod.CLICK)
+        val = payments.aggregate(total=Sum("card_amount"))["total"]
         if val is None:
             val = sum((o.card_paid for o in self.orders.filter(status=Order.Status.PAID)), Decimal(0))
         return val or Decimal(0)
 
     @property
+    def click_sales(self):
+        from django.db.models import Sum
+        payments = self.payments.filter(is_refund=False, payment_method=Order.PaymentMethod.CLICK)
+        return payments.aggregate(total=Sum("card_amount"))["total"] or Decimal(0)
+
+    @property
     def total_revenue(self):
-        return self.cash_sales + self.card_sales
+        return self.cash_sales + self.card_sales + self.click_sales
 
     @property
     def cash_refunds(self):
@@ -219,6 +227,7 @@ class Order(models.Model):
     class PaymentMethod(models.TextChoices):
         CASH = "cash", _("Наличные")
         CARD = "card", _("Карта")
+        CLICK = "click", "Click"
         MIXED = "mixed", _("Смешанная")
         DEBT = "debt", _("В долг")
 
@@ -385,6 +394,10 @@ class Order(models.Model):
         if self.payment_method == self.PaymentMethod.MIXED:
             return self.card_amount or Decimal(0)
         return Decimal(0)
+
+    @property
+    def click_paid(self):
+        return self.amount_due if self.payment_method == self.PaymentMethod.CLICK else Decimal(0)
 
     @property
     def change(self):

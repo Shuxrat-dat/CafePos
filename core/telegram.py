@@ -224,7 +224,8 @@ def notify_shift_closed(shift):
                 _("Кассир: %(name)s") % {"name": _person(shift.cashier)},
                 _("Выручка: %(sum)s") % {"sum": money(shift.total_revenue)},
                 "   " + _("наличные %(cash)s, карта %(card)s") % {
-                    "cash": money(shift.cash_sales), "card": money(shift.card_sales)},
+                    "cash": money(shift.cash_sales), "card": money(shift.card_sales)}
+                + (", Click " + money(shift.click_sales) if shift.click_sales else ""),
                 _("Заказов: %(n)s") % {"n": shift.orders.count()},
                 _("В кассе должно быть: %(sum)s") % {"sum": money(shift.expected_cash)},
                 _("По факту: %(sum)s") % {"sum": money(shift.actual_cash or 0)},

@@ -115,12 +115,12 @@
     <h2 class="section-title mb-3">{% translate 'Способы оплаты' %}</h2>
     {% if methods %}
       <div class="flex h-3 rounded-full overflow-hidden bg-slate-100 mb-4">
-        {% for m in methods %}<div class="{% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% else %}bg-orange-400{% endif %}" style="width: {{ m.pct }}%"></div>{% endfor %}
+        {% for m in methods %}<div class="{% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% elif m.key == 'click' %}bg-sky-500{% else %}bg-orange-400{% endif %}" style="width: {{ m.pct }}%"></div>{% endfor %}
       </div>
       <ul class="space-y-2.5 text-sm">
         {% for m in methods %}
           <li class="flex items-center justify-between gap-2">
-            <span class="flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full {% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% else %}bg-orange-400{% endif %}"></i>{{ m.label }} <span class="text-muted">· {{ m.count }}</span></span>
+            <span class="flex items-center gap-2"><i class="w-2.5 h-2.5 rounded-full {% if m.key == 'cash' %}bg-emerald-500{% elif m.key == 'card' %}bg-brand{% elif m.key == 'click' %}bg-sky-500{% else %}bg-orange-400{% endif %}"></i>{{ m.label }} <span class="text-muted">· {{ m.count }}</span></span>
             <span class="font-semibold tabular-nums">{{ m.sum|money }} <span class="text-muted font-normal">{{ m.pct }}%</span></span>
           </li>
         {% endfor %}
@@ -128,6 +128,7 @@
       <div class="mt-4 pt-3 border-t border-line grid grid-cols-2 gap-3 text-sm">
         <div><div class="text-muted">{% translate 'Наличными в кассе' %}</div><div class="font-bold tabular-nums">{{ cash_total|money }}</div></div>
         <div><div class="text-muted">{% translate 'По картам' %}</div><div class="font-bold tabular-nums">{{ card_total|money }}</div></div>
+        {% if click_total %}<div><div class="text-muted">Click</div><div class="font-bold tabular-nums">{{ click_total|money }}</div></div>{% endif %}
       </div>
     {% else %}
       <p class="text-sm text-muted">{% translate 'Нет данных за период' %}</p>

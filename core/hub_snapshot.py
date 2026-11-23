@@ -58,7 +58,7 @@ def build_snapshot(now=None):
         row["revenue"] += _num(total)
         row["orders"] += 1
         row["cash"] += _num(order.cash_amount)
-        row["card"] += _num(order.card_paid)
+        row["card"] += _num(order.card_paid + order.click_paid)  # безнал: карта и Click
         if local_day < week_start:
             continue
         for item in order.items.all():

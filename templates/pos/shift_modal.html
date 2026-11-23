@@ -42,6 +42,12 @@
           <span>{% translate 'Выручка (карты):' %}</span>
           <span class="font-bold text-blue-600">{{ shift.card_sales|money }}</span>
         </div>
+        {% if shift.click_sales %}
+          <div class="flex justify-between text-stone-500">
+            <span>{% translate 'Выручка (Click):' %}</span>
+            <span class="font-bold text-sky-600">{{ shift.click_sales|money }}</span>
+          </div>
+        {% endif %}
         {% if shift.cash_refunds %}
           <div class="flex justify-between text-stone-500">
             <span>{% translate 'Возвраты (наличные):' %}</span>

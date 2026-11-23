@@ -186,7 +186,7 @@ def check_payment(due, method, received_raw, card_raw, allowed):
     if method not in allowed:
         raise PaymentError(_("Выберите способ оплаты."))
     received = parse_money(received_raw)
-    if method in (Order.PaymentMethod.CARD, Order.PaymentMethod.DEBT):
+    if method in (Order.PaymentMethod.CARD, Order.PaymentMethod.CLICK, Order.PaymentMethod.DEBT):
         return None, None
     if method == Order.PaymentMethod.CASH:
         received = due if received is None else received
@@ -397,7 +397,8 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             cash_amount = collect
             card_amount = Decimal(0)
             change = (received - collect) if received is not None else Decimal(0)
-        elif method == Order.PaymentMethod.CARD:
+        elif method in (Order.PaymentMethod.CARD, Order.PaymentMethod.CLICK):
+            # Click — безнал, как карта: в кассу не поступает. В отчётах смены он считается отдельно
             cash_amount = Decimal(0)
             card_amount = collect
             change = Decimal(0)
@@ -468,7 +469,7 @@ def refund_order(order, user, reason, return_to_stock=True):
             raise PaymentError(_("Укажите причину возврата."))
 
         cash_refund = locked.cash_amount
-        card_refund = locked.card_paid
+        card_refund = locked.card_paid + locked.click_paid
 
         Payment.objects.create(
             order=locked,

@@ -91,11 +91,11 @@
       </div>
     {% endif %}
 
-    <div class="seg mt-4" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
+    <div class="seg mt-4 flex-wrap" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
       {% for m in methods %}
-        <label class="seg-item cursor-pointer min-h-[48px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+        <label class="seg-item px-1 gap-1 cursor-pointer min-h-[48px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
           <input type="radio" name="method" value="{{ m }}" class="sr-only" {% if m == method %}checked{% endif %}>
-          {% if m == 'cash' %}{% icon "banknote" 18 %}{% translate 'Наличные' %}{% elif m == 'card' %}{% icon "credit-card" 18 %}{% translate 'Карта' %}{% elif m == 'debt' %}{% icon "user" 18 %}{% translate 'В долг' %}{% else %}{% icon "wallet" 18 %}{% translate 'Смешанная' %}{% endif %}
+          {% if m == 'cash' %}{% icon "banknote" 18 %}{% translate 'Наличные' %}{% elif m == 'card' %}{% icon "credit-card" 18 %}{% translate 'Карта' %}{% elif m == 'click' %}{% icon "smartphone" 18 %}Click{% elif m == 'debt' %}{% icon "user" 18 %}{% translate 'В долг' %}{% else %}{% icon "wallet" 18 %}{% translate 'Смешанная' %}{% endif %}
         </label>
       {% endfor %}
     </div>
@@ -115,6 +115,9 @@
       </div>
       <div data-show="card" class="rounded-xl bg-slate-50 border border-line p-4 text-sm text-slate-600 flex gap-2">
         {% icon "credit-card" 18 %}{% translate 'Проведите оплату на терминале, затем подтвердите.' %}
+      </div>
+      <div data-show="click" class="rounded-xl bg-sky-50 border border-sky-200 p-4 text-sm text-sky-900 flex gap-2">
+        {% icon "smartphone" 18 %}{% translate 'Убедитесь, что оплата через Click пришла, затем подтвердите.' %}
       </div>
       {% if 'debt' in methods %}
       <div data-show="debt" class="space-y-3">
@@ -183,7 +186,7 @@
       var d = due();
       document.getElementById('due').textContent = fmt(d);
       var card = m === 'mixed' ? parse(document.getElementById('card').value) : 0;
-      var noCash = m === 'card' || m === 'debt';
+      var noCash = m === 'card' || m === 'click' || m === 'debt';
       var cashDue = noCash ? 0 : d - card;
       var receivedRaw = document.getElementById('received').value;
       var received = receivedRaw.trim() === '' ? cashDue : parse(receivedRaw);

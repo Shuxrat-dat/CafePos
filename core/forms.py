@@ -56,7 +56,7 @@ class CafeSettingsForm(StyledModelForm):
         model = CafeSettings
         fields = [
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
-            "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_mixed", "accept_debt", "kitchen_warn_minutes",
+            "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_click", "accept_mixed", "accept_debt", "kitchen_warn_minutes",
             "loyalty_percent", "cashier_max_discount", "guest_auto_send",
             "booking_enabled", "booking_open", "booking_close", "booking_max_guests", "booking_days_ahead",
         ]
@@ -67,7 +67,7 @@ class CafeSettingsForm(StyledModelForm):
 
     def clean(self):
         data = super().clean()
-        if not (data.get("accept_cash") or data.get("accept_card") or data.get("accept_mixed")):
+        if not (data.get("accept_cash") or data.get("accept_card") or data.get("accept_click") or data.get("accept_mixed")):
             raise forms.ValidationError(_("Оставьте хотя бы один способ оплаты."))
         return data
 

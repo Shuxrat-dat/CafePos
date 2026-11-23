@@ -88,7 +88,7 @@ def dashboard(request):
     by_waiter = defaultdict(lambda: {"orders": 0, "revenue": Decimal(0)})
     dishes = defaultdict(lambda: {"qty": 0, "revenue": Decimal(0)})
     categories = defaultdict(lambda: {"qty": 0, "sum": Decimal(0)})
-    cash_total = card_total = Decimal(0)
+    cash_total = card_total = click_total = Decimal(0)
     single_day = days == 1
     buckets = defaultdict(lambda: {"sum": Decimal(0), "count": 0})
 
@@ -106,6 +106,7 @@ def dashboard(request):
         by_type[order.order_type]["sum"] += total
         cash_total += order.cash_amount
         card_total += order.card_paid
+        click_total += order.click_paid
         waiter = by_waiter[order.waiter.get_full_name() or order.waiter.username]
         waiter["orders"] += 1
         waiter["revenue"] += total
@@ -240,6 +241,7 @@ def dashboard(request):
         "net_pct": round(net_profit / revenue * 100) if revenue else 0,
         "cash_total": cash_total,
         "card_total": card_total,
+        "click_total": click_total,
         "methods": _share(
             [{"label": method_labels.get(k, k), "key": k, **v} for k, v in sorted(by_method.items(), key=lambda x: -x[1]["sum"])],
             revenue,

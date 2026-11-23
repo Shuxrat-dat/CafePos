@@ -5148,3 +5148,9 @@ msgstr "Stol boshqa ofitsiantga o‘tkazildi"
 
 msgid "из кассы"
 msgstr "kassadan"
+
+msgid "Выручка (Click):"
+msgstr "Tushum (Click):"
+
+msgid "Убедитесь, что оплата через Click пришла, затем подтвердите."
+msgstr "Click orqali to‘lov kelganiga ishonch hosil qiling, keyin tasdiqlang."
