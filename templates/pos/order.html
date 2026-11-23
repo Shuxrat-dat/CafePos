@@ -72,7 +72,7 @@
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML"
                   class="relative {% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
-                  <span data-dish-badge class="hidden absolute bottom-1.5 right-1.5 z-10 h-9 rounded-full bg-brand text-white text-base font-extrabold tabular-nums items-center gap-0.5 px-0.5 shadow-pop ring-2 ring-white select-none">
+                  <span data-dish-badge class="hidden absolute {% if not user.simple_floor %}top-[30px]{% endif %} right-1.5 z-10 h-9 rounded-full bg-brand text-white text-base font-extrabold tabular-nums items-center gap-0.5 px-0.5 shadow-pop ring-2 ring-white select-none"{% if user.simple_floor %} style="top:calc(clamp(64px,7vw,104px) - 42px)"{% endif %}>
                     <span data-step="-" role="button" aria-label="{% translate 'Уменьшить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">−</span>
                     <span data-badge-n class="min-w-[18px] text-center"></span>
                     <span data-step="+" role="button" aria-label="{% translate 'Увеличить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">+</span>
