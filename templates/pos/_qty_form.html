@@ -6,8 +6,9 @@
 <form hx-post="{% url 'set_qty' order.id item.id %}" hx-target="#order-panel" hx-swap="innerHTML"
       hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
       class="space-y-4">
-  <input id="qty-input" name="quantity" type="number" min="1" max="{{ max_qty }}" value="{{ item.quantity }}" inputmode="numeric" pattern="[0-9]*"
-         required autofocus onfocus="this.select()" class="input w-full text-center text-3xl font-extrabold tabular-nums h-16">
+  <input id="qty-input" name="quantity" value="{{ item.quantity }}" inputmode="none" autocomplete="off" maxlength="2"
+         required autofocus onfocus="this.select()" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)"
+         aria-label="{% translate 'Количество' %}" class="input w-full text-center text-3xl font-extrabold tabular-nums h-16">
   <div class="grid grid-cols-5 gap-2">
     <button type="button" class="btn btn-secondary" onclick="qtySet(5)">5</button>
     <button type="button" class="btn btn-secondary" onclick="qtySet(10)">10</button>
@@ -15,6 +16,7 @@
     <button type="button" class="btn btn-secondary" onclick="qtySet(20)">20</button>
     <button type="button" class="btn btn-secondary" onclick="qtySet(30)">30</button>
   </div>
+  {% include "components/numpad.html" with target="qty-input" no_comma=True no_zeros=True %}
   <div class="flex gap-2 pt-1">
     <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
     <button class="btn btn-primary btn-lg flex-1">{% translate 'Сохранить' %}</button>

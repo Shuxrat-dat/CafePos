@@ -7,9 +7,13 @@
   <button type="button" data-key="clear" class="min-h-[54px] rounded-xl border border-line bg-[#FAF6EF] text-lg font-bold text-red-700 active:bg-stone-200">C</button>
   {% for k in "789" %}<button type="button" data-key="{{ k }}" class="min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">{{ k }}</button>{% endfor %}
   {% if no_comma %}<span aria-hidden="true"></span>{% else %}<button type="button" data-key="," class="min-h-[54px] rounded-xl border border-line bg-[#FAF6EF] text-2xl font-bold active:bg-stone-200" aria-label="{% translate 'Запятая' %}">,</button>{% endif %}
+  {% if no_zeros %}
+  <button type="button" data-key="0" class="col-span-4 min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">0</button>
+  {% else %}
   <button type="button" data-key="00" class="min-h-[54px] rounded-xl border border-line bg-white text-xl font-bold active:bg-stone-100">00</button>
   <button type="button" data-key="0" class="col-span-2 min-h-[54px] rounded-xl border border-line bg-white text-2xl font-bold active:bg-stone-100 active:scale-[.97] transition">0</button>
   <button type="button" data-key="000" class="min-h-[54px] rounded-xl border border-line bg-white text-xl font-bold active:bg-stone-100">000</button>
+  {% endif %}
 </div>
 <script>
   (function () {

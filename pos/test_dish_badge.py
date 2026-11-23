@@ -46,6 +46,11 @@ class SetQuantityTests(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, 'name="quantity"')
         self.assertContains(response, 'value="1"')
+        # Цифровая панель без запятой и без «00»/«000»
+        self.assertContains(response, 'data-numpad="qty-input"')
+        self.assertNotContains(response, 'data-key=","')
+        self.assertNotContains(response, 'data-key="00"')
+        self.assertNotContains(response, 'data-key="000"')
 
     def test_sets_new_item_quantity(self):
         self.client.post(self.url, {"quantity": "20"})
