@@ -34,6 +34,15 @@ class Hall(models.Model):
         return self.name
 
 
+TEXT_TABLE_KEY = 1_000_000  # столы с названием вместо номера («VIP», «T1») идут после нумерованных
+
+
+def table_sort_key(number):
+    """Порядок столов как у людей: 1, 2, … 10, 11, а не 1, 10, 11, 2 (так сортирует текст)."""
+    number = (number or "").strip()
+    return int(number) if number.isdigit() and len(number) < 7 else TEXT_TABLE_KEY
+
+
 class Table(models.Model):
     hall = models.ForeignKey(Hall, verbose_name=_("Зал"), on_delete=models.CASCADE, related_name="tables")
     number = models.CharField(_("Номер или название"), max_length=20)
@@ -45,15 +54,23 @@ class Table(models.Model):
                                        help_text=_("0 — обычный стол. Время считается от открытия заказа и добавляется к счёту."))
     billing_step_minutes = models.PositiveSmallIntegerField(_("Шаг расчёта, мин"), default=30,
                                                             help_text=_("Начатый шаг оплачивается полностью: при шаге 30 минут 40 минут считаются как 60."))
+    sort_key = models.PositiveIntegerField(default=TEXT_TABLE_KEY, editable=False, db_index=True)
 
     class Meta:
         verbose_name = "Стол"
         verbose_name_plural = "Столы"
         unique_together = ("hall", "number")
-        ordering = ["hall", "number"]
+        ordering = ["hall", "sort_key", "number"]
 
     def __str__(self):
         return f"{self.hall.name}, стол {self.number}"
+
+    def save(self, *args, **kwargs):
+        self.sort_key = table_sort_key(self.number)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "number" in update_fields:
+            kwargs["update_fields"] = {*update_fields, "sort_key"}
+        super().save(*args, **kwargs)
 
     @property
     def is_reserved(self):

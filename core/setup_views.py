@@ -75,7 +75,7 @@ def setup_wizard(request):
                     hall = next((h for h in Hall.objects.all() if h.name.lower() == name.lower()), None) \
                         or Hall.objects.create(name=name, sort_order=Hall.objects.count())
                     existing = set(hall.tables.values_list("number", flat=True))
-                    new = [Table(hall=hall, number=str(n), seats=int(seats))
+                    new = [Table(hall=hall, number=str(n), seats=int(seats), sort_key=n)
                            for n in range(1, int(count) + 1) if str(n) not in existing]
                     Table.objects.bulk_create(new)
                 messages.success(request, _("Зал «%(h)s»: добавлено столов — %(n)s.") % {"h": name, "n": len(new)})

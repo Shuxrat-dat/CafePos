@@ -10,7 +10,7 @@ import re
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from pos.models import Hall, Table
+from pos.models import Hall, Table, table_sort_key
 
 MAX_TABLES = 500
 
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 new = [n for n in numbers if n not in existing]
                 created_tables += len(new)
                 if not dry_run and new:
-                    Table.objects.bulk_create([Table(hall=hall, number=n, seats=seats) for n in new])
+                    Table.objects.bulk_create([Table(hall=hall, number=n, seats=seats, sort_key=table_sort_key(n)) for n in new])
                 self.stdout.write(f"{name}: столов {len(numbers)}, новых {len(new)}")
             if dry_run:
                 transaction.set_rollback(True)

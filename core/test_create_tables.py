@@ -43,6 +43,15 @@ class CreateTablesTests(TestCase):
         self.assertFalse(Hall.objects.exists())
         self.assertIn("Будет создано: залов 4, столов 55", out)
 
+    def test_tables_are_listed_in_number_order(self):
+        self.run_cmd("VIP:V1", "ZAL:1-13,25-27,35-37")
+        zal = Hall.objects.get(name="ZAL")
+        self.assertEqual([t.number for t in zal.tables.all()],
+                         [str(n) for n in [*range(1, 14), 25, 26, 27, 35, 36, 37]])
+        hall = Hall.objects.get(name="VIP")
+        Table.objects.create(hall=hall, number="2")  # обычное сохранение тоже ставит порядок
+        self.assertEqual([t.number for t in hall.tables.all()], ["2", "V1"])
+
     def test_word_numbers_and_errors(self):
         self.run_cmd("VIP:V1,V2")
         self.assertEqual(Table.objects.count(), 2)
