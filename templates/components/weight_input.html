@@ -6,7 +6,7 @@
   <div class="seg" role="radiogroup" aria-label="{% translate 'Как ввести' %}">
     <label class="seg-item cursor-pointer min-h-[44px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
       <input type="radio" name="weight_mode" value="weight" class="sr-only" {% if weight_mode != 'sum' %}checked{% endif %}>
-      {% if dish.measure == 'l' %}{% translate 'Объём, мл' %}{% else %}{% translate 'Вес, г' %}{% endif %}
+      {% if dish.measure == 'l' %}{% translate 'Объём, л' %}{% else %}{% translate 'Вес, кг' %}{% endif %}
     </label>
     <label class="seg-item cursor-pointer min-h-[44px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
       <input type="radio" name="weight_mode" value="sum" class="sr-only" {% if weight_mode == 'sum' %}checked{% endif %}>{% translate 'На сумму' %}
@@ -22,12 +22,14 @@
       <button type="button" class="chip tabular-nums" data-v="50">50 {% translate 'мл' %}</button>
       <button type="button" class="chip tabular-nums" data-v="100">100 {% translate 'мл' %}</button>
       <button type="button" class="chip tabular-nums" data-v="500">0,5 {% translate 'л' %}</button>
-      <button type="button" class="chip tabular-nums" data-v="1000">1 {% translate 'л' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="1">1 {% translate 'л' %}</button>
     {% else %}
       <button type="button" class="chip tabular-nums" data-v="100">100 {% translate 'г' %}</button>
       <button type="button" class="chip tabular-nums" data-v="250">250 {% translate 'г' %}</button>
       <button type="button" class="chip tabular-nums" data-v="500">500 {% translate 'г' %}</button>
-      <button type="button" class="chip tabular-nums" data-v="1000">1 {% translate 'кг' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="1">1 {% translate 'кг' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="1,5">1,5 {% translate 'кг' %}</button>
+      <button type="button" class="chip tabular-nums" data-v="2">2 {% translate 'кг' %}</button>
     {% endif %}
   </div>
   <div class="flex flex-wrap justify-center gap-2 mt-2 hidden" data-chips="sum">
@@ -37,7 +39,7 @@
     <button type="button" class="chip tabular-nums" data-v="100000">100 000</button>
   </div>
   {% include "components/numpad.html" with target=input_id|default:'item-weight' %}
-  <p class="text-xs text-muted mt-2" data-hint="weight">{% if dish.measure == 'l' %}{% translate 'В миллилитрах: 500 — это 0,5 л. Можно в литрах через запятую: 0,5.' %}{% else %}{% translate 'В граммах: 450 — это 450 г, 1030 — это 1 кг 30 г. Можно и в килограммах через запятую: 1,03.' %}{% endif %}</p>
+  <p class="text-xs text-muted mt-2" data-hint="weight">{% if dish.measure == 'l' %}{% translate 'В литрах: 1 — это 1 л, 0,5 — пол-литра. Больше 50 считается миллилитрами: 500 — это 500 мл.' %}{% else %}{% translate 'В килограммах: 1 — это 1 кг, 1,5 — полтора кг. Больше 50 считается граммами: 250 — это 250 г.' %}{% endif %}</p>
   <p class="text-xs text-muted mt-2 hidden" data-hint="sum">{% translate 'Введите сумму, на которую берёт гость: количество посчитается само.' %}</p>
 </div>
 <script>
@@ -55,7 +57,8 @@
       var raw = input.value.replace(/\s/g, '').replace(',', '.');
       if (!raw || isNaN(+raw)) return 0;
       if (mode() === 'sum') return price > 0 ? Math.round(+raw * 1000 / price) : 0;
-      return raw.indexOf('.') !== -1 ? Math.round(+raw * 1000) : Math.round(+raw);
+      // как на сервере: с запятой или до 50 включительно — килограммы (литры), иначе граммы (миллилитры)
+      return (raw.indexOf('.') !== -1 || +raw <= 50) ? Math.round(+raw * 1000) : Math.round(+raw);
     }
     function show() {
       var m = mode(), g = grams();

@@ -47,7 +47,7 @@ class WeightDishTests(TestCase):
         self.assertEqual(self.order.items.get().weight_grams, 1030)
 
     def test_wrong_weight_keeps_form_open_with_error(self):
-        for raw in ("", "abc", "5", "60000"):
+        for raw in ("", "abc", "0,005", "60000"):
             response = self.add_fish(raw)
             self.assertEqual(response["HX-Retarget"], "#modal")
             self.assertContains(response, "Вес")

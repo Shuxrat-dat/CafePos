@@ -5187,3 +5187,27 @@ msgstr "Sotildi: %(n)s dona · taomlar: %(k)s"
 
 msgid "Введите количество цифрами."
 msgstr "Miqdorni raqamlar bilan kiriting."
+
+msgid "В килограммах: 1 — это 1 кг, 1,5 — полтора кг. Больше 50 считается граммами: 250 — это 250 г."
+msgstr "Kilogrammda: 1 — bu 1 kg, 1,5 — bir yarim kg. 50 dan katta son gramm hisoblanadi: 250 — bu 250 g."
+
+msgid "В литрах: 1 — это 1 л, 0,5 — пол-литра. Больше 50 считается миллилитрами: 500 — это 500 мл."
+msgstr "Litrda: 1 — bu 1 l, 0,5 — yarim litr. 50 dan katta son millilitr hisoblanadi: 500 — bu 500 ml."
+
+msgid "Вес должен быть от 10 г до 50 кг. Например: 1 или 1,5."
+msgstr "Vazn 10 g dan 50 kg gacha boʻlishi kerak. Masalan: 1 yoki 1,5."
+
+msgid "Вес, кг"
+msgstr "Vazni, kg"
+
+msgid "Объём должен быть от 10 мл до 50 л. Например: 1 или 0,5."
+msgstr "Hajm 10 ml dan 50 l gacha boʻlishi kerak. Masalan: 1 yoki 0,5."
+
+msgid "Объём, л"
+msgstr "Hajmi, l"
+
+msgid "Укажите вес в килограммах, например 1 или 1,5."
+msgstr "Vaznni kilogrammda kiriting, masalan 1 yoki 1,5."
+
+msgid "Укажите объём в литрах, например 1 или 0,5."
+msgstr "Hajmni litrda kiriting, masalan 1 yoki 0,5."

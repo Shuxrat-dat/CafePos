@@ -136,14 +136,15 @@ MAX_WEIGHT_GRAMS = 50000
 
 
 def _clean_weight(request, dish=None):
-    """Количество блюда на вес или в розлив в граммах (миллилитрах).
-    «1030» — граммы, «1,03» — килограммы; в режиме «на сумму» — сумма в сумах, из неё считаются граммы.
+    """Количество блюда на вес или в розлив; возвращает граммы (миллилитры).
+    Просто: «1» — 1 кг, «1,5» — полтора кг. Целое больше 50 — граммы: «250» — 250 г (так привычнее для мелких порций).
+    В режиме «на сумму» — сумма в сумах, из неё считаются граммы.
     Возвращает (граммы, None) или (None, текст ошибки)."""
     from decimal import ROUND_HALF_UP
 
     liters = dish is not None and dish.measure == "l"
-    hint = (_("Укажите объём в миллилитрах, например 500 или 1000.") if liters
-            else _("Укажите вес в граммах, например 450 или 1030."))
+    hint = (_("Укажите объём в литрах, например 1 или 0,5.") if liters
+            else _("Укажите вес в килограммах, например 1 или 1,5."))
     raw = request.POST.get("weight", "").strip().replace(" ", "").replace(",", ".")
     if request.POST.get("weight_mode") == "sum" and dish is not None and dish.price > 0:
         try:
@@ -160,11 +161,12 @@ def _clean_weight(request, dish=None):
             return None, hint
         if not value.is_finite():
             return None, hint
-        grams = int((value * 1000 if "." in raw else value).to_integral_value())
+        in_units = "." in raw or value <= 50  # килограммы (литры); иначе граммы (миллилитры)
+        grams = int((value * 1000 if in_units else value).to_integral_value())
     if grams < 10 or grams > MAX_WEIGHT_GRAMS:
         if liters:
-            return None, _("Объём должен быть от 10 мл до 50 л. Например: 500 или 1000.")
-        return None, _("Вес должен быть от 10 г до 50 кг. Например: 450 или 1030.")
+            return None, _("Объём должен быть от 10 мл до 50 л. Например: 1 или 0,5.")
+        return None, _("Вес должен быть от 10 г до 50 кг. Например: 1 или 1,5.")
     return grams, None
 
 

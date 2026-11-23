@@ -62,9 +62,27 @@ class UnitTests(TestCase):
         self.assertEqual(OrderItem.objects.get().weight_grams, 1500)
 
     def test_liter_limits_message(self):
-        response = self.add(self.beer, weight="5")
+        response = self.add(self.beer, weight="0,001")
         self.assertContains(response, "10 мл")
         self.assertFalse(OrderItem.objects.exists())
+
+    # ---------- простой ввод: 1 — килограмм, 1,5 — полтора ----------
+
+    def test_plain_number_is_kilograms(self):
+        for typed, grams in (("1", 1000), ("2", 2000), ("1,5", 1500), ("1.5", 1500), ("0,25", 250), ("50", 50000)):
+            OrderItem.objects.all().delete()
+            self.add(self.fish, weight=typed)
+            self.assertEqual(OrderItem.objects.get().weight_grams, grams, typed)
+
+    def test_big_number_is_still_grams(self):
+        for typed, grams in (("250", 250), ("450", 450), ("1030", 1030), ("51", 51)):
+            OrderItem.objects.all().delete()
+            self.add(self.fish, weight=typed)
+            self.assertEqual(OrderItem.objects.get().weight_grams, grams, typed)
+
+    def test_beer_plain_number_is_liters(self):
+        self.add(self.beer, weight="2")
+        self.assertEqual(OrderItem.objects.get().weight_grams, 2000)
 
     def test_old_weight_items_stay_in_kilograms(self):
         self.add(self.fish, weight="450")
@@ -99,7 +117,7 @@ class UnitTests(TestCase):
     def test_cook_bad_weight_reopens_the_window(self):
         item = self.kitchen_item()
         self.client.force_login(self.cook)
-        response = self.client.post(reverse("kitchen_item_weight", args=[item.id]), {"weight": "1"})
+        response = self.client.post(reverse("kitchen_item_weight", args=[item.id]), {"weight": "0,001"})
         self.assertEqual(response["HX-Retarget"], "#modal")
         item.refresh_from_db()
         self.assertIsNone(item.weight_grams)
