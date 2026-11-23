@@ -122,6 +122,12 @@
         {% else %}
           {% if item.by_weight %}
             <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="btn btn-sm btn-ghost">{% icon "pencil" 16 %}{% translate 'Изменить вес' %}</button>
+          {% elif user.can_remove_sent_items and not user.needs_cancel_pin %}
+            <div class="flex items-center gap-1.5">
+              <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel" hx-confirm="{% translate 'Блюдо уже на кухне. Убрать порцию?' %}" class="icon-btn w-10 h-10" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
+              <span class="w-8 text-center font-bold tabular-nums">{{ item.quantity }}</span>
+              <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="icon-btn w-10 h-10 bg-brand-50 border-brand-200 text-brand-700" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
+            </div>
           {% else %}<span></span>{% endif %}
           <div class="flex items-center gap-1">
             {% if item.status == "ready" %}

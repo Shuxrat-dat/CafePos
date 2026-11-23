@@ -5166,3 +5166,12 @@ msgstr "Taom qidirish"
 
 msgid "Отдельные блюда для этого принтера"
 msgstr "Shu printer uchun alohida taomlar"
+
+msgid "Порция добавлена. Отправьте её на кухню."
+msgstr "Porsiya qo‘shildi. Uni oshxonaga yuboring."
+
+msgid "Порция убрана."
+msgstr "Porsiya olib tashlandi."
+
+msgid "Блюдо уже на кухне. Убрать порцию?"
+msgstr "Taom allaqachon oshxonada. Porsiyani olib tashlaymizmi?"

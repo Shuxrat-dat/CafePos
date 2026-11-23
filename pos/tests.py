@@ -194,6 +194,28 @@ class PermissionTests(TestCase):
                     self.client.post(reverse("remove_item", args=[order.id, item.id]))
                     self.assertFalse(order.items.exists())
 
+                def test_waiter_changes_quantity_of_sent_dish(self):
+                    """«+» добавляет порцию новой строкой для кухни, «−» убирает порцию и пишется в журнал."""
+                    order = self._make_order(OrderItem.Status.QUEUED)
+                    sent = order.items.get()
+                    self.client.force_login(self.waiter2)
+                    url = reverse("change_qty", args=[order.id, sent.id])
+                    self.client.post(url, {"delta": "1"})
+                    self.client.post(url, {"delta": "1"})
+                    new = order.items.get(status=OrderItem.Status.NEW)
+                    self.assertEqual(new.quantity, 2)  # две порции в одной новой строке, на кухню уйдёт она
+                    sent.refresh_from_db()
+                    self.assertEqual(sent.quantity, 1)
+                    sent.quantity = 3
+                    sent.save()
+                    self.client.post(url, {"delta": "-1"})
+                    sent.refresh_from_db()
+                    self.assertEqual(sent.quantity, 2)
+                    self.assertTrue(AuditLog.objects.filter(action="item_remove", order_id=order.id).exists())
+                    self.client.post(url, {"delta": "-1"})
+                    self.client.post(url, {"delta": "-1"})  # последняя порция: блюдо убирается совсем
+                    self.assertFalse(order.items.filter(id=sent.id).exists())
+
                 def test_waiter_still_cannot_cancel_order_sent_to_kitchen(self):
                     order = self._make_order(OrderItem.Status.QUEUED)
                     self.assertFalse(self.waiter1.can_cancel_sent_orders)

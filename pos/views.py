@@ -731,11 +731,44 @@ def edit_item(request, order_id, item_id):
     )
 
 
+def _change_sent_qty(request, order, item):
+    """«−» и «+» у блюда, уже отправленного на кухню (официанту, администратору, владельцу).
+    «+» добавляет порцию новой строкой: её отправляют на кухню, и повара о ней узнают.
+    «−» убирает порцию; запись в журнал и уведомление владельцу, как при удалении блюда."""
+    user = request.user
+    if not user.can_remove_sent_items or user.needs_cancel_pin or item.by_weight:
+        return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
+    if request.POST.get("delta") == "1":
+        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment)
+        if same:
+            same.quantity = min(same.quantity + 1, 99)
+            same.save()
+        else:
+            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=1, comment=item.comment)
+            new.modifiers.set(item.modifiers.all())
+        _order_changed(order)
+        return _panel(request, order, _("Порция добавлена. Отправьте её на кухню."))
+    if item.quantity <= 1:
+        return remove_item(request, order.id, item.id)
+    was = item.quantity
+    item.quantity = 1
+    removed = item.line_total  # цена одной порции (с добавками)
+    audit.record(user, audit.A.ITEM_REMOVE, order=order, amount=removed,
+                 detail=f"{item.dish.name} −1 ({was} → {was - 1})")
+    telegram.notify_item_removed(order, item, user)
+    item.quantity = was - 1
+    item.save()
+    _order_changed(order)
+    return _panel(request, order, _("Порция убрана."))
+
+
 @login_required
 @require_POST
 def change_qty(request, order_id, item_id):
     order = _get_order(request, order_id)
-    item = get_object_or_404(OrderItem, id=item_id, order=order, status=OrderItem.Status.NEW)
+    item = get_object_or_404(OrderItem, id=item_id, order=order)
+    if item.status != OrderItem.Status.NEW:
+        return _change_sent_qty(request, order, item)
     if item.by_weight and request.POST.get("delta") == "1":
         # Вторую порцию на вес добавляют отдельным взвешиванием
         return _panel(request, order)
