@@ -139,6 +139,10 @@ class CafeSettings(models.Model):
         _("Заказы по QR сразу на кухню"), default=True,
         help_text=_("Заказ гостя со стола сразу попадает в работу и на кухню. Выключено — его сначала подтверждает официант."),
     )
+    cashier_sees_reports = models.BooleanField(
+        _("Показывать кассиру отчёты"), default=False,
+        help_text=_("Кассир видит раздел «Отчёты» целиком: выручку, блюда, расходы, зарплату. Менять там он ничего не может."),
+    )
     tg_discount_percent = models.PositiveSmallIntegerField(
         _("Скидка считается крупной от, %"), default=20,
         validators=[MinValueValidator(1), MaxValueValidator(100)],

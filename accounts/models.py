@@ -83,6 +83,19 @@ class User(AbstractUser):
         return self.is_superuser or self.role in SEE_ALL_ROLES
 
     @property
+    def can_see_reports(self):
+        """Отчёты видят владелец и администратор; кассир, если владелец включил галочку в настройках."""
+        from .permissions import REPORT_ROLES
+
+        if self.is_superuser or self.role in REPORT_ROLES:
+            return True
+        if self.role == self.Role.CASHIER:
+            from core.models import CafeSettings
+
+            return CafeSettings.get().cashier_sees_reports
+        return False
+
+    @property
     def can_remove_sent_items(self):
         """Убрать из заказа блюдо, уже ушедшее на кухню. Официанту можно: каждое такое удаление пишется в журнал
         и уходит уведомлением владельцу. Целый заказ с кухни отменяют только те, кто вправе (can_cancel_sent_orders)."""

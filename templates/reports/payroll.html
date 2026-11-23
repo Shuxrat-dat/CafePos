@@ -27,11 +27,13 @@
       {% for s in open_shifts %}
         <li class="py-2 flex items-center justify-between gap-3">
           <span><b>{{ s.user.get_full_name|default:s.user.username }}</b> · {% blocktranslate trimmed with t=s.started_at|date:"d.m H:i" %}на смене с {{ t }}{% endblocktranslate %}</span>
+          {% if can_edit %}
           <form method="post" onsubmit="return confirm('{% translate "Закрыть смену сотрудника сейчас?" as t %}{{ t|escapejs }}')">{% csrf_token %}
             <input type="hidden" name="action" value="close_shift"><input type="hidden" name="shift_id" value="{{ s.id }}">
             <input type="hidden" name="from" value="{{ date_from }}"><input type="hidden" name="to" value="{{ date_to }}">
             <button class="btn btn-sm btn-secondary">{% translate 'Закрыть смену' %}</button>
           </form>
+          {% endif %}
         </li>
       {% endfor %}
     </ul>
@@ -58,7 +60,7 @@
         {% for r in rows %}
           <tr>
             <td class="px-4 py-2.5">
-              <a href="{% url 'staff_edit' r.user.id %}" class="font-semibold hover:text-brand">{{ r.user.get_full_name|default:r.user.username }}</a>
+              {% if can_edit %}<a href="{% url 'staff_edit' r.user.id %}" class="font-semibold hover:text-brand">{{ r.user.get_full_name|default:r.user.username }}</a>{% else %}<span class="font-semibold">{{ r.user.get_full_name|default:r.user.username }}</span>{% endif %}
               <div class="text-xs text-muted">{{ r.user.get_role_display }}{% if r.user.hourly_rate %} · {{ r.user.hourly_rate|money }}/{% translate 'ч' %}{% endif %}{% if r.user.sales_percent %} · {{ r.user.sales_percent|num }}%{% endif %}{% if r.open %} · <span class="text-emerald-700 font-semibold">{% translate 'на смене' %}</span>{% endif %}</div>
             </td>
             <td class="px-4 py-2.5 text-right tabular-nums">{{ r.hours|floatformat:1 }}</td>
@@ -70,6 +72,7 @@
             <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap {% if r.balance < 0 %}text-red-700{% elif r.balance > 0 %}text-emerald-700{% endif %}" data-balance="{{ r.user.id }}">{{ r.balance|money }}</td>
             <td class="px-4 py-2.5 text-right whitespace-nowrap">
               {% if r.recorded %}<span class="badge bg-emerald-50 text-emerald-700 mr-1">{% translate 'В расходах' %}</span>{% endif %}
+              {% if can_edit %}
               <details class="relative inline-block text-left">
                 <summary class="list-none btn btn-sm btn-primary cursor-pointer">{% icon "wallet" 14 %}{% translate 'Выдать' %}</summary>
                 <div class="fixed inset-0 z-[60] bg-black/40" onclick="this.closest('details').open=false"></div>
@@ -100,6 +103,7 @@
                   <button class="btn btn-primary w-full">{% translate 'Записать выдачу' %}</button>
                 </form>
               </details>
+              {% endif %}
             </td>
           </tr>
         {% empty %}

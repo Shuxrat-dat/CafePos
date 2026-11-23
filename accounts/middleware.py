@@ -23,6 +23,8 @@ class RoleAccessMiddleware:
         user = request.user
         path = request.path
         if user.is_authenticated and not user.is_superuser and not path.startswith(OPEN_PREFIXES):
+            if path.startswith("/reports/") and user.can_see_reports:
+                return self.get_response(request)  # кассиру отчёты открыты галочкой в настройках
             if user.role not in self._allowed_roles(path):
                 if path == "/" and user.role == "cook":
                     return redirect("kitchen_board")

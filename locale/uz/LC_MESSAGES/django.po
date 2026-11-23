@@ -5175,3 +5175,12 @@ msgstr "Porsiya olib tashlandi."
 
 msgid "Блюдо уже на кухне. Убрать порцию?"
 msgstr "Taom allaqachon oshxonada. Porsiyani olib tashlaymizmi?"
+
+msgid "Кассир видит раздел «Отчёты» целиком: выручку, блюда, расходы, зарплату. Менять там он ничего не может."
+msgstr "Kassir «Hisobotlar» bo‘limini to‘liq ko‘radi: tushum, taomlar, xarajatlar, ish haqi. U yerda hech narsani o‘zgartira olmaydi."
+
+msgid "Показывать кассиру отчёты"
+msgstr "Kassirga hisobotlarni ko‘rsatish"
+
+msgid "Продано %(n)s шт. · блюд: %(k)s"
+msgstr "Sotildi: %(n)s dona · taomlar: %(k)s"

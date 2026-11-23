@@ -104,7 +104,11 @@ def _nav(request):
             continue
         if name == "juma_board" and not juma_on:
             continue
-        if has_role(user, roles):
+        if name == "reports":
+            allowed = user.can_see_reports
+        else:
+            allowed = has_role(user, roles)
+        if allowed:
             res.append({
                 "url": reverse(name),
                 "label": label,

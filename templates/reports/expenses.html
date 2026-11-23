@@ -53,10 +53,12 @@
               <td class="px-4 py-2.5 text-muted hidden sm:table-cell">{{ e.comment|default:"—" }}{% if e.created_by %} · {{ e.created_by.first_name|default:e.created_by.username }}{% endif %}</td>
               <td class="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap">{{ e.amount|money }}</td>
               <td class="px-2 py-2.5 text-right">
+                {% if can_edit %}
                 <form method="post" action="{% url 'expense_delete' e.id %}" onsubmit="return confirm('{% translate "Удалить этот расход?" as t %}{{ t|escapejs }}')">{% csrf_token %}
                   <input type="hidden" name="next" value="{{ request.get_full_path }}">
                   <button class="icon-btn w-9 h-9 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 16 %}</button>
                 </form>
+                {% endif %}
               </td>
             </tr>
           {% empty %}
@@ -67,11 +69,13 @@
     </div>
   </div>
 
+  {% if can_edit %}
   <form method="post" class="card p-5 space-y-4 lg:sticky lg:top-20">
     {% csrf_token %}
     <h2 class="section-title">{% translate 'Новый расход' %}</h2>
     {% for field in form %}{% include "components/field.html" %}{% endfor %}
     <button class="btn btn-primary w-full">{% icon "plus" 17 %}{% translate 'Добавить' %}</button>
   </form>
+  {% endif %}
 </div>
 {% endblock %}

@@ -138,8 +138,11 @@
 
 <div class="grid lg:grid-cols-2 2xl:grid-cols-3 gap-4 mb-4">
   <section class="card p-5">
-    <h2 class="section-title mb-3">{% translate 'Популярные блюда' %}</h2>
-    <ol class="space-y-2 text-sm">
+    <div class="flex items-baseline justify-between gap-2 mb-3">
+      <h2 class="section-title">{% translate 'Популярные блюда' %}</h2>
+      {% if top_dishes %}<span class="text-xs text-muted">{% blocktranslate trimmed with n=dishes_total_qty k=top_dishes|length %}Продано {{ n }} шт. · блюд: {{ k }}{% endblocktranslate %}</span>{% endif %}
+    </div>
+    <ol class="space-y-2 text-sm max-h-[28rem] overflow-y-auto pr-1">
       {% for d in top_dishes %}
         <li class="flex items-center gap-3">
           <span class="w-6 text-muted tabular-nums">{{ forloop.counter }}</span>
@@ -270,22 +273,6 @@
     </ul>
   </section>
 
-  <section class="card p-5">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="section-title">{% translate 'Мало на складе' %}</h2>
-      <a href="{% url 'stock' %}?low=1" class="text-sm text-brand font-medium hover:underline">{% translate 'Склад' %}</a>
-    </div>
-    <ul class="space-y-1 text-sm">
-      {% for p in low_stock %}
-        <li class="flex justify-between items-center gap-2 py-1 {% if p.stock < 0 %}bg-red-50 rounded-lg px-2{% endif %}">
-          <span>{{ p|tr }}{% if p.stock < 0 %} <span class="badge bg-red-100 text-red-700">{% translate 'в минусе' %}</span>{% endif %}</span>
-          <span class="font-semibold text-red-600 tabular-nums whitespace-nowrap">{{ p.stock|qty }} {{ p.get_unit_display }}</span>
-        </li>
-      {% empty %}
-        <li class="text-muted">{% translate 'Всё в норме' %}</li>
-      {% endfor %}
-    </ul>
-  </section>
 </div>
 
 {# ---------- Маржа по блюдам ---------- #}

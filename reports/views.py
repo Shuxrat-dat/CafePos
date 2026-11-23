@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -21,7 +22,28 @@ from . import insights
 from .forms import ExpenseForm
 from .models import Expense
 
-reports_only = role_required(REPORT_ROLES)
+reports_manage = role_required(REPORT_ROLES)  # менять данные отчётов (расходы, зарплата) может только владелец/админ
+
+
+def reports_only(view):
+    """Смотреть отчёты: владелец, администратор и кассир (если владелец включил галочку)."""
+    from functools import wraps
+
+    from django.contrib.auth.decorators import login_required
+    from django.core.exceptions import PermissionDenied
+
+    @login_required
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.can_see_reports:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+
+    return wrapper
+
+
+def _can_edit(user):
+    return user.is_superuser or user.role in REPORT_ROLES
 
 MAX_DAYS = 366
 
@@ -254,9 +276,12 @@ def dashboard(request):
             sorted(({"obj": obj, **data} for obj, data in categories.items()), key=lambda r: -r["sum"]),
             sum((c["sum"] for c in categories.values()), Decimal(0)),
         ),
+        "can_edit": _can_edit(request.user),
+        # Все проданные за период блюда: больше всего продано — сверху
         "top_dishes": sorted(
-            ({"obj": obj, **data} for obj, data in dishes.items()), key=lambda r: r["qty"], reverse=True
-        )[:10],
+            ({"obj": obj, **data} for obj, data in dishes.items()), key=lambda r: (-r["qty"], -r["revenue"])
+        ),
+        "dishes_total_qty": sum(d["qty"] for d in dishes.values()),
         "waiters": sorted(
             ({"name": name, **data} for name, data in by_waiter.items()), key=lambda r: r["revenue"], reverse=True
         ),
@@ -265,7 +290,6 @@ def dashboard(request):
         "recent": list(reversed(orders))[:8],
         "cancelled_count": len(cancelled),
         "cancelled_sum": sum((o.subtotal for o in cancelled), Decimal(0)),
-        "low_stock": Product.objects.filter(stock__lte=F("min_stock")).order_by("stock"),
         "shifts": CashShift.objects.filter(opened_at__gte=start, opened_at__lt=end).select_related("cashier").order_by("-opened_at")[:10],
     }
     return render(request, "reports/dashboard.html", context)
@@ -283,6 +307,9 @@ def expenses(request):
     date_to = _parse(request.GET.get("to"), today)
     if date_to < date_from:
         date_from, date_to = date_to, date_from
+    can_edit = _can_edit(request.user)
+    if request.method == "POST" and not can_edit:
+        raise PermissionDenied
     form = ExpenseForm(request.POST or None, initial={"date": today})
     if request.method == "POST" and form.is_valid():
         expense = form.save(commit=False)
@@ -302,6 +329,7 @@ def expenses(request):
     month_start = today.replace(day=1)
     prev_month_end = month_start - timedelta(days=1)
     return render(request, "reports/expenses.html", {
+        "can_edit": can_edit,
         "form": form,
         "rows": rows,
         "total": total,
@@ -316,7 +344,7 @@ def expenses(request):
     })
 
 
-@reports_only
+@reports_manage
 @require_POST
 def expense_delete(request, expense_id):
     get_object_or_404(Expense, id=expense_id).delete()
@@ -387,6 +415,8 @@ def payroll(request):
     back = f"{request.path}?from={date_from.isoformat()}&to={date_to.isoformat()}"
 
     if request.method == "POST":
+        if not _can_edit(request.user):
+            raise PermissionDenied
         action = request.POST.get("action")
         if action == "close_shift":
             shift = get_object_or_404(WorkShift, id=request.POST.get("shift_id") or 0, ended_at=None)
@@ -443,6 +473,7 @@ def payroll(request):
     history = SalaryPayment.objects.filter(created_at__gte=start, created_at__lt=end).select_related("user", "created_by")
     prev_month_end = month_start - timedelta(days=1)
     return render(request, "reports/payroll.html", {
+        "can_edit": _can_edit(request.user),
         "rows": rows,
         "total": sum((r["total"] for r in rows), Decimal(0)),
         "paid_sum": sum((r["paid"] for r in rows), Decimal(0)),

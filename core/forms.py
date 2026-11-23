@@ -57,7 +57,7 @@ class CafeSettingsForm(StyledModelForm):
         fields = [
             "name", "logo", "address", "phone", "default_language", "service_percent", "vat_percent",
             "receipt_header", "receipt_footer", "accept_cash", "accept_card", "accept_click", "accept_mixed", "accept_debt", "kitchen_warn_minutes",
-            "loyalty_percent", "cashier_max_discount", "guest_auto_send",
+            "loyalty_percent", "cashier_max_discount", "cashier_sees_reports", "guest_auto_send",
             "booking_enabled", "booking_open", "booking_close", "booking_max_guests", "booking_days_ahead",
         ]
         widgets = {
