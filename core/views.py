@@ -236,6 +236,19 @@ def table_delete(request, table_id):
 
 
 @manager_only
+def hall_edit(request, hall_id):
+    hall = get_object_or_404(Hall, id=hall_id)
+    form = HallForm(request.POST or None, instance=hall)
+    if request.method == "POST":
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Зал сохранён."))
+            return redirect("manage_tables")
+        messages.error(request, _("Проверьте поля формы."))
+    return render(request, "manage/hall_form.html", {"form": form, "hall": hall})
+
+
+@manager_only
 @require_POST
 def hall_delete(request, hall_id):
     hall = get_object_or_404(Hall, id=hall_id)

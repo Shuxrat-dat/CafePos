@@ -123,7 +123,7 @@ class TelegramSettingsForm(StyledModelForm):
 class HallForm(StyledModelForm):
     class Meta:
         model = Hall
-        fields = ["name", "name_uz", "sort_order"]
+        fields = ["name", "name_uz", "sort_order", "service_percent"]
 
 
 class TableForm(StyledModelForm):

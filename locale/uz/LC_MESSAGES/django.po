@@ -4881,3 +4881,15 @@ msgstr "Raqamlar paneli: oʻchirilgan"
 
 msgid "Панель цифр на экране"
 msgstr "Ekrandagi raqamlar paneli"
+
+msgid "Пусто — брать общую ставку из настроек заведения. 0 — в этом зале не начислять."
+msgstr "Boʻsh — muassasa sozlamalaridagi umumiy stavka olinadi. 0 — bu zalda hisoblanmaydi."
+
+msgid "Зал сохранён."
+msgstr "Zal saqlandi."
+
+msgid "общая ставка"
+msgstr "umumiy stavka"
+
+msgid "Изменить зал"
+msgstr "Zalni tahrirlash"

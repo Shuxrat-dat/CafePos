@@ -82,6 +82,7 @@ def dashboard(request):
     revenue = Decimal(0)
     discounts = Decimal(0)
     service = Decimal(0)
+    service_by_rate = defaultdict(Decimal)  # фактически применённая ставка -> сумма обслуживания
     by_method = defaultdict(lambda: {"count": 0, "sum": Decimal(0)})
     by_type = defaultdict(lambda: {"count": 0, "sum": Decimal(0)})
     by_waiter = defaultdict(lambda: {"orders": 0, "revenue": Decimal(0)})
@@ -97,6 +98,8 @@ def dashboard(request):
         revenue += total
         discounts += totals["discount"]
         service += totals["service"]
+        if totals["service"]:
+            service_by_rate[order.service_percent.normalize()] += totals["service"]
         by_method[order.payment_method]["count"] += 1
         by_method[order.payment_method]["sum"] += total
         by_type[order.order_type]["count"] += 1
@@ -227,6 +230,7 @@ def dashboard(request):
         "avg_change": _change(avg_check, prev_avg),
         "discounts": discounts,
         "service": service,
+        "service_by_rate": sorted(service_by_rate.items()),
         "cost": cost,
         "margin": margin,
         "margin_pct": round(margin / revenue * 100) if revenue else 0,
@@ -443,21 +447,25 @@ def export_xlsx(request):
     method_labels = dict(Order.PaymentMethod.choices)
 
     order_rows = [[_("№"), _("Закрыт"), _("Тип"), _("Стол"), _("Официант"), _("Кассир"), _("Оплата"),
-                   _("Подытог"), _("Скидка"), _("Обслуживание"), _("Итого")]]
+                   _("Подытог"), _("Скидка"), _("Обслуживание, %"), _("Обслуживание"), _("Итого")]]
     dishes = defaultdict(lambda: {"qty": 0, "sum": Decimal(0)})
     revenue = discounts = service = Decimal(0)
+    service_by_rate = defaultdict(Decimal)
     for order in orders:
         totals = order.totals
         revenue += totals["total"]
         discounts += totals["discount"]
         service += totals["service"]
+        if totals["service"]:
+            service_by_rate[order.service_percent.normalize()] += totals["service"]
         order_rows.append([
             order.id, timezone.localtime(order.closed_at), type_labels.get(order.order_type, order.order_type),
             order.table.number if order.table_id else "",
             order.waiter.get_full_name() or order.waiter.username,
             (order.cashier.get_full_name() or order.cashier.username) if order.cashier_id else "",
             method_labels.get(order.payment_method, order.payment_method),
-            totals["subtotal"], totals["discount"], totals["service"], totals["total"],
+            totals["subtotal"], totals["discount"], order.service_percent.normalize() if totals["service"] else "",
+            totals["service"], totals["total"],
         ])
         for item in order.items.all():
             row = dishes[(localized_name(item.dish), localized_name(item.dish.category))]
@@ -478,6 +486,7 @@ def export_xlsx(request):
         [_("Средний чек"), round(revenue / len(orders)) if orders else 0],
         [_("Скидки"), discounts],
         [_("Обслуживание"), service],
+        *[[_("Обслуживание %(p)s%%") % {"p": f"{rate:f}"}, amount] for rate, amount in sorted(service_by_rate.items())],
         [_("Расходы"), expenses_total],
         [_("Выручка минус расходы"), revenue - expenses_total],
     ]

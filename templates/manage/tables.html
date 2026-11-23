@@ -36,7 +36,9 @@
           <div>
             <h2 class="section-title">{{ hall.name }}{% if hall.name_uz %} <span class="text-muted font-normal">/ {{ hall.name_uz }}</span>{% endif %}</h2>
             <p class="text-xs text-muted mt-0.5">
-              {{ hall.n }} {% translate 'столов' %} · {{ hall.stats.seats }} {% translate 'мест' %}
+              {{ hall.n }} {% translate 'столов' %} · {{ hall.stats.seats }} {% translate 'мест' %} ·
+              {% translate 'Обслуживание' %}: {% if hall.service_percent is None %}{% translate 'общая ставка' %}{% else %}{{ hall.service_percent|num }}%{% endif %}
+              · <a href="{% url 'hall_edit' hall.id %}" class="text-brand font-semibold">{% translate 'Изменить зал' %}</a>
             </p>
           </div>
           <div class="flex items-center gap-3 text-[11px] font-semibold text-stone-500">

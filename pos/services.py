@@ -37,21 +37,26 @@ def parse_money(raw):
 
 # ---------- создание заказа ----------
 
-def service_percent_for(order_type):
-    """Обслуживание (сервисный сбор) начисляется только в зале."""
-    return CafeSettings.get().service_percent if order_type == Order.OrderType.DINE_IN else Decimal(0)
+def service_percent_for(order_type, table=None):
+    """Обслуживание (сервисный сбор) начисляется только в зале: по ставке зала стола,
+    а если у зала она не задана — по общей ставке заведения."""
+    if order_type != Order.OrderType.DINE_IN:
+        return Decimal(0)
+    if table is not None and table.hall.service_percent is not None:
+        return table.hall.service_percent
+    return CafeSettings.get().service_percent
 
 
 def create_order(user, order_type, table=None):
     return Order.objects.create(
-        order_type=order_type, table=table, waiter=user, service_percent=service_percent_for(order_type)
+        order_type=order_type, table=table, waiter=user, service_percent=service_percent_for(order_type, table)
     )
 
 
 def set_order_type(order, order_type, table=None):
     order.order_type = order_type
     order.table = table if order_type == Order.OrderType.DINE_IN else None
-    order.service_percent = service_percent_for(order_type)
+    order.service_percent = service_percent_for(order_type, order.table)
     if order_type != Order.OrderType.DELIVERY:
         order.delivery_address = ""
     order.save(update_fields=["order_type", "table", "service_percent", "delivery_address"])

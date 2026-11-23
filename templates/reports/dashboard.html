@@ -165,7 +165,8 @@
       {% endfor %}
     </ul>
     {% if discounts or service %}
-      <p class="text-xs text-muted mt-4">{% blocktranslate trimmed with d=discounts|money s=service|money %}Суммы по позициям до скидок. Скидки за период: {{ d }}, обслуживание: {{ s }}.{% endblocktranslate %}</p>
+      <p class="text-xs text-muted mt-4">{% blocktranslate trimmed with d=discounts|money s=service|money %}Суммы по позициям до скидок. Скидки за период: {{ d }}, обслуживание: {{ s }}.{% endblocktranslate %}
+        {% if service_by_rate|length > 1 %}({% for rate, amount in service_by_rate %}{{ rate|num }}%: {{ amount|money }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}</p>
     {% endif %}
   </section>
 

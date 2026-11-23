@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -18,6 +19,11 @@ class Hall(models.Model):
     name = models.CharField(_("Название"), max_length=100)
     name_uz = models.CharField(_("Название (узб.)"), max_length=100, blank=True)
     sort_order = models.PositiveIntegerField(_("Порядок"), default=0)
+    service_percent = models.DecimalField(
+        _("Обслуживание, %"), max_digits=5, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(30)],
+        help_text=_("Пусто — брать общую ставку из настроек заведения. 0 — в этом зале не начислять."),
+    )
 
     class Meta:
         verbose_name = "Зал"
