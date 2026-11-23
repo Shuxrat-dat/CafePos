@@ -969,13 +969,38 @@ def discount_form(request, order_id):
 @login_required
 @require_POST
 def request_bill(request, order_id):
-    """Пречек: гость попросил счёт. Стол переходит в статус «ожидает оплаты»."""
+    """Пречек: гость попросил счёт. Стол переходит в статус «ожидает оплаты».
+    Если принтер для чеков один, пречек сразу уходит на него, а официант остаётся в заказе: так быстрее.
+    Нет принтера или их несколько — открывается страница пречека (печать через браузер или выбор принтера)."""
     order = _get_order(request, order_id)
+    is_htmx = bool(request.headers.get("HX-Request"))
     if not order.items.exists():
-        return redirect("order_detail", order_id=order.id)
+        return _panel(request, order) if is_htmx else redirect("order_detail", order_id=order.id)
     order.bill_requested_at = timezone.now()
     order.save(update_fields=["bill_requested_at"])
-    return redirect("precheck", order_id=order.id)
+
+    printers = list(receipt_printers())
+    if len(printers) == 1:
+        from printing import services as print_services
+        from printing.models import PrintAgent
+
+        print_services.queue_receipt(order, printer=printers[0], precheck=True)
+        order = _get_order(request, order_id)  # печать оставляет на заказе подставленный список позиций: берём чистый объект
+        if PrintAgent.get().is_online:
+            message, kind = _("Отправлено на принтер."), "success"
+        else:
+            message, kind = _("Задание в очереди, но программа печати не на связи. Чек напечатается, когда она запустится."), "warning"
+        if is_htmx:
+            return _panel(request, order, message, kind)
+        getattr(messages, kind)(request, message)
+        return redirect("order_detail", order_id=order.id)
+
+    url = reverse("precheck", args=[order.id])
+    if is_htmx:
+        response = HttpResponse(status=204)
+        response["HX-Redirect"] = url
+        return response
+    return redirect(url)
 
 
 @login_required

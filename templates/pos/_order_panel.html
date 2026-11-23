@@ -181,7 +181,7 @@
       {% if send_first and order.is_dine_in or send_first and not user.can_take_payment %}
         <button hx-post="{% url 'send_to_kitchen' order.id %}" hx-target="#order-panel" class="btn btn-primary btn-lg w-full">{% icon "send" 18 %}{% translate 'Отправить на кухню' %}</button>
         <div class="grid {% if user.can_take_payment %}grid-cols-2{% endif %} gap-2">
-          <form method="post" action="{% url 'request_bill' order.id %}">{% csrf_token %}
+          <form method="post" action="{% url 'request_bill' order.id %}" hx-post="{% url 'request_bill' order.id %}" hx-target="#order-panel" hx-swap="innerHTML">{% csrf_token %}
             <button class="btn btn-secondary w-full">{% icon "printer" 17 %}{% translate 'Пречек' %}</button></form>
           {% if user.can_take_payment %}<a href="{% url 'pay' order.id %}" class="btn btn-secondary">{% icon "wallet" 17 %}{% translate 'Оплатить' %}</a>{% endif %}
         </div>
@@ -195,7 +195,7 @@
             <button hx-post="{% url 'send_to_kitchen' order.id %}" hx-target="#order-panel" class="btn btn-secondary w-full">{% icon "send" 17 %}{% translate 'На кухню без оплаты' %}</button>
           {% endif %}
           {% if order.is_dine_in %}
-            <form method="post" action="{% url 'request_bill' order.id %}">{% csrf_token %}
+            <form method="post" action="{% url 'request_bill' order.id %}" hx-post="{% url 'request_bill' order.id %}" hx-target="#order-panel" hx-swap="innerHTML">{% csrf_token %}
               <button class="btn btn-secondary w-full">{% icon "printer" 17 %}{% translate 'Пречек' %}</button></form>
           {% endif %}
         </div>

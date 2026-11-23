@@ -93,3 +93,48 @@ class SetQuantityTests(TestCase):
         self.item.refresh_from_db()
         self.assertEqual(self.item.quantity, 4)
         self.assertTrue(AuditLog.objects.filter(order_id=self.order.id).exists())
+
+
+class QuickPrecheckTests(TestCase):
+    """«Пречек»: один принтер для чеков — печатаем сразу и остаёмся в заказе; иначе открываем страницу пречека."""
+
+    def setUp(self):
+        from menu.models import Category, Dish
+
+        self.waiter = User.objects.create_user(username="ofi_bill", password="pass12345", role="waiter")
+        self.client.force_login(self.waiter)
+        dish = Dish.objects.create(category=Category.objects.create(name="Еда"), name="Плов", price=45000)
+        self.order = Order.objects.create(waiter=self.waiter, order_type="takeaway")
+        self.order.items.create(dish=dish, quantity=1, price=dish.price)
+        self.url = f"/orders/{self.order.id}/bill/"
+
+    def test_no_printer_opens_precheck_page(self):
+        response = self.client.post(self.url)
+        self.assertRedirects(response, f"/orders/{self.order.id}/precheck/", fetch_redirect_response=False)
+
+    def test_one_printer_prints_at_once_and_stays_on_order(self):
+        from printing.models import Printer, PrintJob
+
+        Printer.objects.create(name="Касса", host="192.168.1.50")
+        response = self.client.post(self.url, HTTP_HX_REQUEST="true")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("HX-Redirect", response.headers)
+        self.assertEqual(PrintJob.objects.filter(order=self.order, kind="precheck").count(), 1)
+        self.order.refresh_from_db()
+        self.assertIsNotNone(self.order.bill_requested_at)
+
+    def test_one_printer_without_htmx_goes_back_to_order(self):
+        from printing.models import Printer
+
+        Printer.objects.create(name="Касса", host="192.168.1.50")
+        response = self.client.post(self.url)
+        self.assertRedirects(response, f"/orders/{self.order.id}/", fetch_redirect_response=False)
+
+    def test_two_printers_let_the_waiter_choose_on_the_page(self):
+        from printing.models import Printer, PrintJob
+
+        Printer.objects.create(name="Касса", host="192.168.1.50")
+        Printer.objects.create(name="Бар", host="192.168.1.52")
+        response = self.client.post(self.url, HTTP_HX_REQUEST="true")
+        self.assertEqual(response["HX-Redirect"], f"/orders/{self.order.id}/precheck/")
+        self.assertFalse(PrintJob.objects.exists())
