@@ -94,7 +94,5 @@
     render();
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
-    if (!seen() && window.matchMedia('(min-width: 768px)').matches) setTimeout(window.startTour, 600);
-  });
+  // Экскурсия сама не запускается: она мешала сотрудникам. Её можно вызвать кнопкой «?» в шапке.
 })();
