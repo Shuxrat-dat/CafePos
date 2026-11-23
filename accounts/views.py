@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from core import audit
@@ -79,15 +80,19 @@ def _tile_users():
     )
 
 
+@never_cache  # иначе браузер по «Назад» покажет старую копию с открытым окном PIN и заблокированными кнопками
 def terminal_home(request, error="", selected=None, status=200):
     device = terminal.current(request)
     if device is None:
         return render(request, "accounts/terminal_off.html", status=403 if request.method == "POST" else 200)
+    if request.method == "GET" and request.user.is_authenticated and terminal.is_terminal_session(request):
+        return redirect("table_map")  # официант ещё внутри (вернулся «Назад»): выйти можно только замком
     return render(request, "accounts/terminal.html", {
         "device": device, "staff": _tile_users(), "error": error, "selected": selected,
     }, status=status)
 
 
+@never_cache
 @require_POST
 def terminal_login(request):
     device = terminal.current(request)

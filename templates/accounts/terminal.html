@@ -41,7 +41,7 @@
 
 {# Окно ввода PIN #}
 <div id="pin-modal" class="{% if not selected %}hidden{% endif %} fixed inset-0 z-[80] bg-black/40 grid place-items-center p-4">
-  <form method="post" action="{% url 'terminal_login' %}" class="w-full max-w-xs bg-white rounded-2xl shadow-pop p-5" autocomplete="off">
+  <form method="post" action="{% url 'terminal_login' %}" id="pin-form" class="w-full max-w-xs bg-white rounded-2xl shadow-pop p-5" autocomplete="off">
     {% csrf_token %}
     <input type="hidden" name="user_id" id="pin-user" value="{{ selected.id|default:'' }}">
     <input type="hidden" name="pin" id="pin-value">
@@ -66,7 +66,25 @@
 <script>
   (function () {
     var modal = document.getElementById('pin-modal'), value = document.getElementById('pin-value');
-    var dots = document.getElementById('pin-dots'), pin = '';
+    var dots = document.getElementById('pin-dots'), pin = '', idleTimer = null;
+    var form = document.getElementById('pin-form');
+    // После неверного PIN адрес — /terminal/login/: обновление страницы не должно отправлять PIN ещё раз
+    if (location.pathname !== '{% url "terminal_home" %}') history.replaceState(null, '', '{% url "terminal_home" %}');
+    function enableButtons() { form.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }
+    function closeModal() {
+      modal.classList.add('hidden');
+      pin = ''; draw(); enableButtons();
+      clearTimeout(idleTimer);
+    }
+    // Окно PIN само закрывается, если 30 секунд ничего не нажимали: экран не «застревает»
+    function touchIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(closeModal, 30000);
+    }
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+    modal.addEventListener('pointerdown', touchIdle);
+    // Страница вернулась из кэша браузера («Назад» или свайп): начинаем с чистого экрана
+    window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
     function draw() {
       dots.innerHTML = '';
       for (var i = 0; i < Math.max(4, pin.length); i++) {
@@ -83,10 +101,11 @@
       document.getElementById('pin-name').textContent = b.dataset.name;
       var err = modal.querySelector('.alert-error');
       if (err) err.remove();
-      pin = ''; draw();
+      pin = ''; draw(); enableButtons();
       modal.classList.remove('hidden');
+      touchIdle();
     });
-    document.getElementById('pin-close').addEventListener('click', function () { modal.classList.add('hidden'); });
+    document.getElementById('pin-close').addEventListener('click', closeModal);
     document.getElementById('pin-pad').addEventListener('click', function (e) {
       var b = e.target.closest('[data-key]');
       if (!b) return;
@@ -100,9 +119,11 @@
       if (modal.classList.contains('hidden')) return;
       if (/^\d$/.test(e.key) && pin.length < 6) { pin += e.key; draw(); }
       else if (e.key === 'Backspace') { pin = pin.slice(0, -1); draw(); }
-      else if (e.key === 'Escape') modal.classList.add('hidden');
+      else if (e.key === 'Escape') closeModal();
+      touchIdle();
     });
     draw();
+    if (!modal.classList.contains('hidden')) touchIdle();
     function tick() {
       var d = new Date();
       document.getElementById('term-clock').textContent = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);

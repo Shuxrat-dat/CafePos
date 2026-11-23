@@ -94,6 +94,23 @@ class TerminalLoginTests(TerminalBase):
         self.assertRedirects(response, reverse("terminal_home"))
         self.assertNotIn("_auth_user_id", self.client.session)
 
+    def test_tiles_page_is_never_cached(self):
+        self.make_terminal()
+        self.assertIn("no-store", self.client.get(reverse("terminal_home"))["Cache-Control"])
+        self.assertIn("no-store", self.pin_login(self.shoh, "0000")["Cache-Control"])
+
+    def test_back_to_tiles_while_logged_in_returns_to_tables(self):
+        self.make_terminal()
+        self.pin_login(self.shoh, "4826")
+        self.assertRedirects(self.client.get(reverse("terminal_home")), reverse("table_map"), fetch_redirect_response=False)
+
+    def test_tiles_after_lock_have_closed_pin_window(self):
+        self.make_terminal()
+        self.pin_login(self.shoh, "4826")
+        self.client.post(reverse("terminal_lock"))
+        html = self.client.get(reverse("terminal_home")).content.decode()
+        self.assertIn('id="pin-modal" class="hidden', html)
+
     def test_password_login_on_phone_has_no_lock_timer(self):
         self.client.force_login(self.shoh)
         self.assertNotIn('id="terminal-lock"', self.client.get(reverse("table_map")).content.decode())
