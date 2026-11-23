@@ -4,14 +4,18 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path, re_path
 from django.views.static import serve
 
-from accounts.forms import LoginForm
+from accounts import urls as accounts_urls
+from accounts import views as accounts_views
 from core import pwa as core_pwa
 from core import views as core_views
 from printing import urls as printing_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("login/", auth_views.LoginView.as_view(authentication_form=LoginForm), name="login"),
+    path("login/", accounts_views.LoginView.as_view(), name="login"),
+    # Общий моноблок в зале: плитки официантов, вход по PIN, блокировка
+    path("terminal/", include(accounts_urls.terminal_patterns)),
+    path("manage/terminals/", include(accounts_urls.manage_patterns)),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("lang/", core_views.set_language, name="set_language"),
     path("ping/", core_views.ping, name="ping"),

@@ -4893,3 +4893,162 @@ msgstr "umumiy stavka"
 
 msgid "Изменить зал"
 msgstr "Zalni tahrirlash"
+
+msgid "%(n)s заказов на %(b)s"
+msgstr "%(n)s ta buyurtma, %(b)s"
+
+msgid "4–6 цифр. С ним официант входит на моноблоке, нажав на своё имя. Пусто — не менять."
+msgstr "4–6 raqam. Ofitsiant monoblokda o‘z ismini bosib, shu bilan kiradi. Bo‘sh — o‘zgartirilmaydi."
+
+msgid "PIN для терминала"
+msgstr "Terminal uchun PIN"
+
+msgid "PIN для терминала бывает только у официантов."
+msgstr "Terminal uchun PIN faqat ofitsiantlarda bo‘ladi."
+
+msgid "PIN для терминала заблокирован"
+msgstr "Terminal PIN bloklandi"
+
+msgid "PIN задан"
+msgstr "PIN o‘rnatilgan"
+
+msgid "PIN официантов"
+msgstr "Ofitsiantlar PIN"
+
+msgid "PIN слишком простой. Придумайте другой."
+msgstr "PIN juda oddiy. Boshqasini o‘ylab toping."
+
+msgid "PIN — от 4 до 6 цифр."
+msgstr "PIN — 4 dan 6 gacha raqam."
+
+msgid "Ваш процент: %(p)s%% от суммы блюд оплаченных заказов (без обслуживания)."
+msgstr "Sizning foizingiz: to‘langan buyurtmalardagi taomlar summasidan %(p)s%% (xizmat haqisiz)."
+
+msgid "Введите PIN"
+msgstr "PIN kiriting"
+
+msgid "Войти логином и паролем"
+msgstr "Login va parol bilan kirish"
+
+msgid "Все терминалы"
+msgstr "Barcha terminallar"
+
+msgid "Вход на терминале (моноблок)"
+msgstr "Terminalda kirish (monoblok)"
+
+msgid "Вход по PIN на терминале"
+msgstr "Terminalda PIN bilan kirish"
+
+msgid "Вход по PIN работает только на моноблоке в зале. Чтобы сделать устройство терминалом, владелец или администратор входит на нём и открывает «Настройки → Терминалы»."
+msgstr "PIN bilan kirish faqat zaldagi monoblokda ishlaydi. Qurilmani terminal qilish uchun egasi yoki administrator unda kirib, «Sozlamalar → Terminallar» bo‘limini ochadi."
+
+msgid "Выберите себя в списке."
+msgstr "Ro‘yxatdan o‘zingizni tanlang."
+
+msgid "Для этого сотрудника вход по PIN не настроен. Обратитесь к администратору."
+msgstr "Bu xodim uchun PIN bilan kirish sozlanmagan. Administratorga murojaat qiling."
+
+msgid "Добавлен терминал «%(n)s»"
+msgstr "«%(n)s» terminali qo‘shildi"
+
+msgid "Заблокирован на %(m)s мин. после неверных PIN"
+msgstr "Noto‘g‘ri PIN sababli %(m)s daqiqaga bloklandi"
+
+msgid "Заблокировать терминал"
+msgstr "Terminalni qulflash"
+
+msgid "Заработок официанта"
+msgstr "Ofitsiant daromadi"
+
+msgid "Мой заработок"
+msgstr "Mening daromadim"
+
+msgid "Моя доля"
+msgstr "Mening ulushim"
+
+msgid "Нажмите на своё имя"
+msgstr "O‘z ismingizni bosing"
+
+msgid "Например, 3 — официант получает 3% от суммы блюд своих оплаченных заказов (без обслуживания)."
+msgstr "Masalan, 3 — ofitsiant o‘z to‘langan buyurtmalaridagi taomlar summasidan 3% oladi (xizmat haqisiz)."
+
+msgid "Например, Моноблок у бара"
+msgstr "Masalan, bar yonidagi monoblok"
+
+msgid "Неверный PIN. Осталось попыток: %(n)s."
+msgstr "PIN noto‘g‘ri. Qolgan urinishlar: %(n)s."
+
+msgid "Ни у одного официанта нет PIN для терминала. Администратор задаёт его в «Настройки → Сотрудники»."
+msgstr "Hech bir ofitsiantda terminal uchun PIN yo‘q. Administrator uni «Sozlamalar → Xodimlar» bo‘limida o‘rnatadi."
+
+msgid "Отключить терминал? Вход по PIN на нём перестанет работать."
+msgstr "Terminal o‘chirilsinmi? Unda PIN bilan kirish ishlamay qoladi."
+
+msgid "Отключён терминал «%(n)s»"
+msgstr "«%(n)s» terminali o‘chirildi"
+
+msgid "Откройте эту страницу на моноблоке в зале и нажмите кнопку. На нём официанты будут входить, нажав на своё имя и введя PIN. На других устройствах вход по PIN не работает."
+msgstr "Bu sahifani zaldagi monoblokda oching va tugmani bosing. Unda ofitsiantlar o‘z ismini bosib, PIN kiritib kiradi. Boshqa qurilmalarda PIN bilan kirish ishlamaydi."
+
+msgid "Официантов пока нет."
+msgstr "Hozircha ofitsiantlar yo‘q."
+
+msgid "Последний раз"
+msgstr "Oxirgi marta"
+
+msgid "Процент официанта"
+msgstr "Ofitsiant foizi"
+
+msgid "Работает"
+msgstr "Ishlaydi"
+
+msgid "Сделать это устройство терминалом"
+msgstr "Bu qurilmani terminal qilish"
+
+msgid "Слишком много неверных попыток. Вход по PIN закрыт на %(m)s мин."
+msgstr "Noto‘g‘ri urinishlar juda ko‘p. PIN bilan kirish %(m)s daqiqaga yopildi."
+
+msgid "Сумма блюд"
+msgstr "Taomlar summasi"
+
+msgid "Терминал"
+msgstr "Terminal"
+
+msgid "Терминал «%(n)s» отключён."
+msgstr "«%(n)s» terminali o‘chirildi."
+
+msgid "Терминал: добавлен или отключён"
+msgstr "Terminal: qo‘shildi yoki o‘chirildi"
+
+msgid "Терминалов пока нет."
+msgstr "Hozircha terminallar yo‘q."
+
+msgid "Терминалы"
+msgstr "Terminallar"
+
+msgid "Только для официантов. Терминалы добавляются в «Настройки → Терминалы»."
+msgstr "Faqat ofitsiantlar uchun. Terminallar «Sozlamalar → Terminallar» bo‘limida qo‘shiladi."
+
+msgid "Убрать PIN для терминала"
+msgstr "Terminal PIN ni olib tashlash"
+
+msgid "Эта неделя"
+msgstr "Shu hafta"
+
+msgid "Это устройство"
+msgstr "Bu qurilma"
+
+msgid "Это устройство не терминал"
+msgstr "Bu qurilma terminal emas"
+
+msgid "Это устройство теперь терминал «%(n)s». Выйдите — появятся плитки сотрудников."
+msgstr "Bu qurilma endi «%(n)s» terminali. Chiqing — xodimlar ro‘yxati paydo bo‘ladi."
+
+msgid "Это устройство — терминал «%(n)s». После выхода на нём появятся плитки официантов."
+msgstr "Bu qurilma — «%(n)s» terminali. Chiqqandan keyin unda ofitsiantlar ro‘yxati paydo bo‘ladi."
+
+msgid "нет PIN"
+msgstr "PIN yo‘q"
+
+msgid "это устройство"
+msgstr "bu qurilma"

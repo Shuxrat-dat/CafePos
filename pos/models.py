@@ -236,6 +236,10 @@ class Order(models.Model):
     discount_value = models.DecimalField(_("Размер скидки"), max_digits=12, decimal_places=2, default=0)
     discount_reason = models.CharField(_("Причина скидки"), max_length=100, blank=True)
     service_percent = models.DecimalField(_("Обслуживание, %"), max_digits=5, decimal_places=2, default=0)
+    # Доля официанта фиксируется при оплате: процент и сумма. Смена процента потом старые дни не пересчитывает.
+    # Считается от суммы блюд после скидки, без обслуживания. Пусто — заказ оплачен до появления этих полей.
+    waiter_percent = models.DecimalField(_("Процент официанта"), max_digits=5, decimal_places=2, null=True, blank=True)
+    waiter_earning = models.DecimalField(_("Заработок официанта"), max_digits=12, decimal_places=0, null=True, blank=True)
 
     payment_method = models.CharField(_("Способ оплаты"), max_length=10, choices=PaymentMethod.choices, blank=True)
     cash_received = models.DecimalField(_("Получено наличными"), max_digits=12, decimal_places=0, null=True, blank=True)
@@ -326,6 +330,27 @@ class Order(models.Model):
     def amount_due(self):
         """Сколько гость платит сейчас: итог минус депозит, внесённый при брони."""
         return max(Decimal(0), self.total - (self.deposit_applied or 0))
+
+    @property
+    def waiter_base(self):
+        """От чего считается процент официанта: блюда (и аренда) после скидки, без обслуживания.
+        Счёт 560 000 + 10% обслуживания: официант с 3% получает 16 800 из этих 56 000."""
+        totals = self.totals
+        return totals["subtotal"] - totals["discount"]
+
+    def fix_waiter_earning(self):
+        """Записывает процент и сумму официанта на момент оплаты. Вызывается из pay_order."""
+        percent = self.waiter.sales_percent or Decimal(0)
+        self.waiter_percent = percent
+        self.waiter_earning = round_sum(self.waiter_base * percent / 100) if percent else Decimal(0)
+
+    @property
+    def earned_by_waiter(self):
+        """Заработок официанта по этому заказу. Для заказов, оплаченных до фиксации, — по текущему проценту."""
+        if self.waiter_earning is not None:
+            return self.waiter_earning
+        percent = self.waiter.sales_percent or Decimal(0)
+        return round_sum(self.waiter_base * percent / 100) if percent else Decimal(0)
 
     @property
     def cash_amount(self):

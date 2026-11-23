@@ -154,6 +154,13 @@ def cafe(request):
         # Открытая смена по табелю: кнопка показывает «Закончить смену» и с какого времени человек работает
         context["work_shift"] = WorkShift.objects.filter(user=user, ended_at=None).first()
         context["can_new_order"] = has_role(user, SERVICE_ROLES)
+        from accounts import earnings, terminal
+
+        # Терминал (моноблок): кнопка «замок» и автоблокировка через IDLE_SECONDS без касаний
+        if terminal.is_terminal_session(request):
+            context["terminal_idle_seconds"] = terminal.IDLE_SECONDS
+        if user.simple_floor:
+            context["earned_today"] = earnings.today_earned(user)
         from pos.services import get_current_shift
         context["current_shift"] = get_current_shift()
     return context

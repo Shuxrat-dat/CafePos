@@ -25,6 +25,15 @@
     </div>
     <p class="text-xs text-muted">{% translate 'Часы берутся из табеля: сотрудник нажимает «Начать смену» и «Закончить смену». Расчёт в «Отчёты → Зарплата».' %}</p>
   </div>
+  <div class="rounded-xl bg-[#FAF6EF] border border-line p-3.5 space-y-3" data-pin-box>
+    <div class="text-sm font-semibold flex items-center gap-2">{% icon "lock" 16 %}{% translate 'Вход на терминале (моноблок)' %}
+      {% if target.has_login_pin %}<span class="badge bg-emerald-100 text-emerald-800">{% translate 'Задан' %}</span>{% elif target %}<span class="badge bg-amber-100 text-amber-900">{% translate 'Не задан' %}</span>{% endif %}
+      {% if target.login_pin_is_locked %}<span class="badge bg-red-100 text-red-800">{% translate 'Заблокирован' %}</span>{% endif %}
+    </div>
+    {% include "components/field.html" with field=form.login_pin %}
+    {% if target.has_login_pin %}{% include "components/field.html" with field=form.clear_login_pin %}{% endif %}
+    <p class="text-xs text-muted">{% translate 'Только для официантов. Терминалы добавляются в «Настройки → Терминалы».' %}</p>
+  </div>
   {% if target and target.needs_cancel_pin %}
     <div class="rounded-xl bg-[#FAF6EF] border border-line p-3.5 space-y-1">
       <div class="text-sm font-semibold flex items-center gap-2">{% icon "lock" 16 %}{% translate 'Пароль отмены' %}

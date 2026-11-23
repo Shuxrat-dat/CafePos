@@ -166,6 +166,12 @@ class StaffForm(StyledModelForm):
         label=_("Пароль"), required=False, widget=forms.PasswordInput(render_value=False),
         help_text=_("Для нового сотрудника обязателен. Для существующего — оставьте пустым, чтобы не менять."),
     )
+    login_pin = forms.CharField(
+        label=_("PIN для терминала"), required=False, max_length=6,
+        widget=forms.PasswordInput(render_value=False, attrs={"inputmode": "numeric", "autocomplete": "new-password"}),
+        help_text=_("4–6 цифр. С ним официант входит на моноблоке, нажав на своё имя. Пусто — не менять."),
+    )
+    clear_login_pin = forms.BooleanField(label=_("Убрать PIN для терминала"), required=False)
 
     class Meta:
         model = User
@@ -234,6 +240,24 @@ class StaffForm(StyledModelForm):
         if code == "password_too_similar":
             return _("Пароль слишком похож на имя или логин.")
         return error.message % (error.params or {}) if error.params else error.message
+
+    def clean_login_pin(self):
+        from accounts import terminal
+
+        pin = (self.cleaned_data.get("login_pin") or "").strip()
+        if pin:
+            reason = terminal.weak_reason(pin)
+            if reason:
+                raise forms.ValidationError(reason)
+        return pin
+
+    def clean(self):
+        data = super().clean()
+        from accounts.permissions import PIN_LOGIN_ROLES
+
+        if data.get("login_pin") and data.get("role") not in PIN_LOGIN_ROLES:
+            self.add_error("login_pin", _("PIN для терминала бывает только у официантов."))
+        return data
 
     def clean_is_active(self):
         active = self.cleaned_data.get("is_active")

@@ -23,8 +23,28 @@ class User(AbstractUser):
     hourly_rate = models.DecimalField(_("Ставка в час (сум)"), max_digits=12, decimal_places=0, default=0)
     sales_percent = models.DecimalField(
         _("Процент от продаж"), max_digits=5, decimal_places=2, default=0,
-        help_text=_("Например, 5 — официант получает 5% от суммы своих оплаченных заказов."),
+        help_text=_("Например, 3 — официант получает 3% от суммы блюд своих оплаченных заказов (без обслуживания)."),
     )
+    # PIN для входа на общем терминале (моноблоке). Задаёт владелец или администратор, хранится только хеш.
+    # Работает только на устройствах, которые владелец сделал терминалом. См. accounts/terminal.py
+    login_pin_hash = models.CharField("Хеш PIN для терминала", max_length=128, blank=True)
+    login_pin_failures = models.PositiveSmallIntegerField("Неверных PIN подряд", default=0)
+    login_pin_locked_until = models.DateTimeField("PIN заблокирован до", null=True, blank=True)
+
+    @property
+    def can_use_terminal(self):
+        """Входить по PIN на терминале могут только официанты. Владелец и администратор — только паролем."""
+        from .permissions import PIN_LOGIN_ROLES
+
+        return not self.is_superuser and self.role in PIN_LOGIN_ROLES
+
+    @property
+    def has_login_pin(self):
+        return bool(self.login_pin_hash)
+
+    @property
+    def login_pin_is_locked(self):
+        return bool(self.login_pin_locked_until) and self.login_pin_locked_until > timezone.now()
 
     @property
     def needs_cancel_pin(self):
@@ -88,3 +108,23 @@ class WorkShift(models.Model):
         finish = self.ended_at or now or timezone.now()
         a, b = max(self.started_at, start), min(finish, end)
         return max(0.0, (b - a).total_seconds() / 3600)
+
+
+class Terminal(models.Model):
+    """Общее устройство в зале (моноблок). На нём официанты входят по плиткам и короткому PIN.
+    Устройство узнаётся по долгоживущему cookie; в базе лежит только хеш его ключа."""
+
+    name = models.CharField(_("Название"), max_length=60)
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    is_active = models.BooleanField(_("Работает"), default=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(_("Создан"), auto_now_add=True)
+    last_seen_at = models.DateTimeField(_("Последний раз"), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Терминал")
+        verbose_name_plural = _("Терминалы")
+        ordering = ["name", "id"]
+
+    def __str__(self):
+        return self.name

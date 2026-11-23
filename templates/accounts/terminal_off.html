@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Терминал' %}{% endblock %}
+{% block main_class %}px-4 py-10 w-full{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto card p-6 space-y-3">
+  <h1 class="text-xl font-bold flex items-center gap-2">{% icon "lock" 20 %}{% translate 'Это устройство не терминал' %}</h1>
+  <p class="text-sm text-muted">{% translate 'Вход по PIN работает только на моноблоке в зале. Чтобы сделать устройство терминалом, владелец или администратор входит на нём и открывает «Настройки → Терминалы».' %}</p>
+  <a href="{% url 'login' %}?password=1" class="btn btn-primary w-full">{% translate 'Войти логином и паролем' %}</a>
+</div>
+{% endblock %}

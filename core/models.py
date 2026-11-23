@@ -31,6 +31,9 @@ class AuditLog(models.Model):
         MENU_IMPORT = "menu_import", _("Импорт меню")
         CANCEL_PIN_SET = "cancel_pin_set", _("Пароль отмены: задан, изменён или сброшен")
         CANCEL_PIN_LOCKED = "cancel_pin_locked", _("Пароль отмены заблокирован")
+        TERMINAL = "terminal", _("Терминал: добавлен или отключён")
+        TERMINAL_LOGIN = "terminal_login", _("Вход по PIN на терминале")
+        TERMINAL_PIN_LOCKED = "terminal_pin_locked", _("PIN для терминала заблокирован")
 
     created_at = models.DateTimeField(_("Время"), auto_now_add=True, db_index=True)
     user = models.ForeignKey(

@@ -108,6 +108,14 @@
       {% endif %}{% endfor %}
     </nav>
     <div class="flex-1"></div>
+    <a href="{% url 'my_earnings' %}" class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold shrink-0 tabular-nums" title="{% translate 'Мой заработок' %}">
+      {% icon "wallet" 16 %}<span class="hidden sm:inline font-medium">{% translate 'Сегодня' %}:</span> {{ earned_today|money }}
+    </a>
+    {% if terminal_idle_seconds %}
+      <form method="post" action="{% url 'terminal_lock' %}" id="terminal-lock" class="m-0 shrink-0">{% csrf_token %}
+        <button class="grid place-items-center w-10 h-10 rounded-xl bg-red-50 text-red-700 border border-red-200" title="{% translate 'Заблокировать терминал' %}" aria-label="{% translate 'Заблокировать терминал' %}">{% icon "lock" 18 %}</button>
+      </form>
+    {% endif %}
     <div class="relative hidden md:block w-52">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">{% icon "search" 16 %}</span>
       <input id="global-pos-search" name="q" type="search" autocomplete="off" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
@@ -482,6 +490,20 @@
   window.TOUR_KEY = 'cafepos_tour_{{ user.id }}';
 </script>
 <script src="{% static 'js/tour.js' %}"></script>
+{% endif %}
+{% if terminal_idle_seconds %}
+<script>
+  // Терминал: без касаний экран сам возвращается к плиткам сотрудников, чтобы за чужим аккаунтом не работали
+  (function () {
+    var limit = {{ terminal_idle_seconds }} * 1000, last = Date.now();
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(function (name) {
+      document.addEventListener(name, function () { last = Date.now(); }, { passive: true, capture: true });
+    });
+    setInterval(function () {
+      if (Date.now() - last >= limit) { var f = document.getElementById('terminal-lock'); if (f) f.submit(); }
+    }, 5000);
+  })();
+</script>
 {% endif %}
 {% block scripts %}{% endblock %}
 </body>

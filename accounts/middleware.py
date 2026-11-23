@@ -8,7 +8,8 @@ from .permissions import KITCHEN_ROLES, MANAGE_ROLES, PAYMENT_ROLES, REPORT_ROLE
 PAY_RE = re.compile(r"^/orders/\d+/(pay|receipt)/$")
 OPEN_PREFIXES = ("/admin/", "/login/", "/logout/", "/static/", "/media/", "/menu/", "/lang/", "/demo/", "/ping/",
                  "/manifest.webmanifest", "/sw.js", "/offline/",
-                 "/account/clock/")  # табель нужен всем ролям, в том числе повару
+                 "/account/clock/",  # табель нужен всем ролям, в том числе повару
+                 "/terminal/")  # плитки и вход по PIN: на терминале может оставаться вошедший сотрудник любой роли
 
 
 class RoleAccessMiddleware:

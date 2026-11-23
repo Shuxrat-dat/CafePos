@@ -338,9 +338,12 @@ def payroll_rows(date_from, date_to, now=None):
         hours[s.user_id] += s.hours_within(start, end, now)
         if s.ended_at is None:
             open_now[s.user_id] = True
+    # Процент официанта — от суммы блюд после скидки, без обслуживания; сумма зафиксирована при оплате
     sales = defaultdict(Decimal)
+    earned = defaultdict(Decimal)
     for order in _paid_orders(start, end):
-        sales[order.waiter_id] += order.total
+        sales[order.waiter_id] += order.waiter_base
+        earned[order.waiter_id] += order.earned_by_waiter
     rows = []
     for user in User.objects.filter(is_active=True).order_by("first_name", "username"):
         h = round(hours.get(user.id, 0.0), 2)
@@ -348,7 +351,7 @@ def payroll_rows(date_from, date_to, now=None):
         if not (h or sold or user.hourly_rate or user.sales_percent):
             continue
         by_hours = (Decimal(str(h)) * user.hourly_rate).quantize(Decimal("1"))
-        by_sales = (sold * user.sales_percent / 100).quantize(Decimal("1"))
+        by_sales = earned.get(user.id, Decimal(0))
         rows.append({
             "user": user, "hours": h, "by_hours": by_hours, "sales": sold, "by_sales": by_sales,
             "total": by_hours + by_sales, "open": open_now.get(user.id, False),

@@ -290,6 +290,12 @@ def staff_form(request, user_id=None):
     if request.method == "POST":
         if form.is_valid():
             user = form.save()
+            from accounts import terminal
+
+            if form.cleaned_data.get("login_pin"):
+                terminal.set_pin(user, form.cleaned_data["login_pin"])
+            elif form.cleaned_data.get("clear_login_pin") or (user.has_login_pin and not user.can_use_terminal):
+                terminal.clear_pin(user)  # PIN снимается и тогда, когда сотруднику сменили роль
             if form.cleaned_data.get("reset_cancel_pin") and target is not None:
                 cancel_pin.reset_pin(user)
                 audit.record(request.user, audit.A.CANCEL_PIN_SET,

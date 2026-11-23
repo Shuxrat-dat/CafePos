@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate 'Мой заработок' %}{% endblock %}
+{% block content %}
+<h1 class="page-title mb-1">{% translate 'Мой заработок' %}</h1>
+<p class="text-sm text-muted mb-5">{% blocktranslate trimmed with p=percent|num %}Ваш процент: {{ p }}% от суммы блюд оплаченных заказов (без обслуживания).{% endblocktranslate %}</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+  {% with s=summary.today %}
+  <a href="?p=today" class="card p-4 {% if period == 'today' %}ring-2 ring-brand{% endif %}">
+    <div class="text-sm text-muted">{% translate 'Сегодня' %}</div>
+    <div class="text-2xl font-bold tabular-nums mt-1" data-earned-today>{{ s.earned|money }}</div>
+    <div class="text-xs text-muted mt-1">{% blocktranslate trimmed with n=s.count b=s.base|money %}{{ n }} заказов на {{ b }}{% endblocktranslate %}</div>
+  </a>
+  {% endwith %}
+  {% with s=summary.week %}
+  <a href="?p=week" class="card p-4 {% if period == 'week' %}ring-2 ring-brand{% endif %}">
+    <div class="text-sm text-muted">{% translate 'Эта неделя' %}</div>
+    <div class="text-2xl font-bold tabular-nums mt-1">{{ s.earned|money }}</div>
+    <div class="text-xs text-muted mt-1">{% blocktranslate trimmed with n=s.count b=s.base|money %}{{ n }} заказов на {{ b }}{% endblocktranslate %}</div>
+  </a>
+  {% endwith %}
+  {% with s=summary.month %}
+  <a href="?p=month" class="card p-4 {% if period == 'month' %}ring-2 ring-brand{% endif %}">
+    <div class="text-sm text-muted">{% translate 'Этот месяц' %}</div>
+    <div class="text-2xl font-bold tabular-nums mt-1">{{ s.earned|money }}</div>
+    <div class="text-xs text-muted mt-1">{% blocktranslate trimmed with n=s.count b=s.base|money %}{{ n }} заказов на {{ b }}{% endblocktranslate %}</div>
+  </a>
+  {% endwith %}
+</div>
+
+<section class="card p-0 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-[#FAF6EF] text-muted text-left">
+      <tr><th class="px-4 py-2.5">{% translate 'Заказ' %}</th><th class="px-4 py-2.5">{% translate 'Закрыт' %}</th><th class="px-4 py-2.5 text-right">{% translate 'Сумма блюд' %}</th><th class="px-4 py-2.5 text-right">{% translate 'Моя доля' %}</th></tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {% for o in orders %}
+        <tr>
+          <td class="px-4 py-2.5">№{{ o.id }}{% if o.table %} · {% blocktranslate trimmed with n=o.table.number %}стол {{ n }}{% endblocktranslate %}{% endif %}</td>
+          <td class="px-4 py-2.5 text-muted tabular-nums">{{ o.closed_at|date:"d.m H:i" }}</td>
+          <td class="px-4 py-2.5 text-right tabular-nums">{{ o.waiter_base|money }}</td>
+          <td class="px-4 py-2.5 text-right tabular-nums font-semibold text-emerald-700">+{{ o.earned_by_waiter|money }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="px-4 py-6 text-center text-muted">{% translate 'За этот период оплаченных заказов нет.' %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

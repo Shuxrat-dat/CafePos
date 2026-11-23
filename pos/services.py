@@ -375,6 +375,10 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             target.closed_at = timezone.now()
             target.save()
 
+        # Доля официанта фиксируется сейчас: потом смена процента старые заказы не пересчитывает
+        target.fix_waiter_earning()
+        target.save(update_fields=["waiter_percent", "waiter_earning"])
+
         # Расчёт сумм платежа
         total = target.total
         # Депозит брони уже оплачен гостем: платится только остаток. Лишний депозит возвращается
