@@ -1,0 +1,27 @@
+{% extends "components/modal.html" %}
+{% load i18n ui %}
+{% block modal_title %}{{ dish|tr }}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{% translate 'Количество' %}</p>{% endblock %}
+{% block modal_body %}
+<form hx-post="{% url 'set_qty' order.id item.id %}" hx-target="#order-panel" hx-swap="innerHTML"
+      hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
+      class="space-y-4">
+  <input id="qty-input" name="quantity" type="number" min="1" max="{{ max_qty }}" value="{{ item.quantity }}" inputmode="numeric" pattern="[0-9]*"
+         required autofocus onfocus="this.select()" class="input w-full text-center text-3xl font-extrabold tabular-nums h-16">
+  <div class="grid grid-cols-5 gap-2">
+    <button type="button" class="btn btn-secondary" onclick="qtySet(5)">5</button>
+    <button type="button" class="btn btn-secondary" onclick="qtySet(10)">10</button>
+    <button type="button" class="btn btn-secondary" onclick="qtySet(15)">15</button>
+    <button type="button" class="btn btn-secondary" onclick="qtySet(20)">20</button>
+    <button type="button" class="btn btn-secondary" onclick="qtySet(30)">30</button>
+  </div>
+  <div class="flex gap-2 pt-1">
+    <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
+    <button class="btn btn-primary btn-lg flex-1">{% translate 'Сохранить' %}</button>
+  </div>
+</form>
+<script>
+  function qtySet(n) { var i = document.getElementById('qty-input'); i.value = n; i.focus(); i.select(); }
+  setTimeout(function () { var i = document.getElementById('qty-input'); if (i) { i.focus(); i.select(); } }, 60);
+</script>
+{% endblock %}

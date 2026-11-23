@@ -785,6 +785,59 @@ def change_qty(request, order_id, item_id):
     return _panel(request, order)
 
 
+MAX_QTY = 99
+
+
+@login_required
+def set_qty(request, order_id, item_id):
+    """Ввод количества цифрами: нажали на число в корзине, ввели 20 порций сомсы.
+    Для блюда, уже ушедшего на кухню: больше — лишние порции новой строкой (их отправят на кухню),
+    меньше — порции убираются с записью в журнал и уведомлением, как кнопкой «−»."""
+    order = _get_order(request, order_id)
+    item = get_object_or_404(OrderItem, id=item_id, order=order)
+    user = request.user
+    sent = item.status != OrderItem.Status.NEW
+    if item.by_weight or (sent and (not user.can_remove_sent_items or user.needs_cancel_pin)):
+        raise Http404
+
+    if request.method != "POST":
+        return render(request, "pos/_qty_form.html", {"order": order, "item": item, "dish": item.dish,
+                                                      "max_qty": MAX_QTY})
+    try:
+        qty = int(request.POST.get("quantity", ""))
+    except ValueError:
+        return _panel(request, order, _("Введите количество цифрами."), "error")
+    qty = max(1, min(qty, MAX_QTY))
+    diff = qty - item.quantity
+    if diff == 0:
+        return _panel(request, order)
+    if not sent:
+        item.quantity = qty
+        item.save()
+        _order_changed(order)
+        return _panel(request, order, _("Позиция изменена."))
+    if diff > 0:
+        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment)
+        if same:
+            same.quantity = min(same.quantity + diff, MAX_QTY)
+            same.save()
+        else:
+            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=diff, comment=item.comment)
+            new.modifiers.set(item.modifiers.all())
+        _order_changed(order)
+        return _panel(request, order, _("Порция добавлена. Отправьте её на кухню."))
+    was, removed_n = item.quantity, -diff
+    item.quantity = removed_n
+    removed = item.line_total
+    audit.record(user, audit.A.ITEM_REMOVE, order=order, amount=removed,
+                 detail=f"{item.dish.name} −{removed_n} ({was} → {qty})")
+    telegram.notify_item_removed(order, item, user)
+    item.quantity = qty
+    item.save()
+    _order_changed(order)
+    return _panel(request, order, _("Порция убрана."))
+
+
 @login_required
 @require_POST
 def remove_item(request, order_id, item_id):

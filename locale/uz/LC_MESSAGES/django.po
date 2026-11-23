@@ -5184,3 +5184,6 @@ msgstr "Kassirga hisobotlarni ko‘rsatish"
 
 msgid "Продано %(n)s шт. · блюд: %(k)s"
 msgstr "Sotildi: %(n)s dona · taomlar: %(k)s"
+
+msgid "Введите количество цифрами."
+msgstr "Miqdorni raqamlar bilan kiriting."

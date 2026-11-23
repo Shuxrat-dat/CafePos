@@ -108,7 +108,7 @@
         {% elif item.status == "new" %}
           <div class="flex items-center gap-1.5">
             <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel" class="icon-btn w-10 h-10" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
-            <span class="w-8 text-center font-bold tabular-nums">{{ item.quantity }}</span>
+            <button hx-get="{% url 'set_qty' order.id item.id %}" hx-target="#modal" title="{% translate 'Количество' %}" class="min-w-[44px] h-10 px-2 rounded-xl border border-dashed border-line bg-white text-center font-bold tabular-nums hover:border-brand hover:bg-brand-50 transition">{{ item.quantity }}</button>
             <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="icon-btn w-10 h-10 bg-brand-50 border-brand-200 text-brand-700" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
           </div>
           <div class="flex items-center gap-1">
@@ -125,7 +125,7 @@
           {% elif user.can_remove_sent_items and not user.needs_cancel_pin %}
             <div class="flex items-center gap-1.5">
               <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "-1"}' hx-target="#order-panel" hx-confirm="{% translate 'Блюдо уже на кухне. Убрать порцию?' %}" class="icon-btn w-10 h-10" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
-              <span class="w-8 text-center font-bold tabular-nums">{{ item.quantity }}</span>
+              <button hx-get="{% url 'set_qty' order.id item.id %}" hx-target="#modal" title="{% translate 'Количество' %}" class="min-w-[44px] h-10 px-2 rounded-xl border border-dashed border-line bg-white text-center font-bold tabular-nums hover:border-brand hover:bg-brand-50 transition">{{ item.quantity }}</button>
               <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="icon-btn w-10 h-10 bg-brand-50 border-brand-200 text-brand-700" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
             </div>
           {% else %}<span></span>{% endif %}
