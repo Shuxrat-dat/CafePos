@@ -38,7 +38,7 @@ def receipt(order, printer, precheck=False):
     cafe = CafeSettings.get()
     with translation.override(cafe.default_language):
         t = _ticket(printer)
-        t.text(cafe.name, align="center", bold=True, size=SIZE_TALL)
+        t.text(cafe.name, align="center", bold=True, size=SIZE_BIG)  # название заведения крупно
         if cafe.address:
             t.text(cafe.address, align="center")
         if cafe.phone:
@@ -64,7 +64,9 @@ def receipt(order, printer, precheck=False):
 
         items = _items(order)
         order._prefetched_objects_cache = {"items": items}
-        for item in items:
+        for number, item in enumerate(items):
+            if number:
+                t.dashed()  # пунктир между блюдами
             t.pair(tr(item.dish), num(item.line_total))
             if item.by_weight:
                 detail = f"{weight(item.weight_grams, item.measure)} x {num(item.price)} / {_('л') if item.measure == 'l' else _('кг')}"
@@ -86,7 +88,7 @@ def receipt(order, printer, precheck=False):
             t.pair(label, f"-{num(totals['discount'])}")
         if totals["service"]:
             t.pair(_("Обслуживание %(p)s%%") % {"p": num(order.service_percent)}, num(totals["service"]))
-        t.pair(_("ИТОГО"), _money(totals["total"]), bold=True)
+        t.pair(_("ИТОГО"), _money(totals["total"]), bold=True, size=SIZE_BIG)  # общая сумма крупно
         if cafe.vat_percent:
             t.pair(_("в т.ч. НДС %(p)s%%") % {"p": num(cafe.vat_percent)}, num(vat_part(totals["total"], cafe.vat_percent)))
         if not precheck:

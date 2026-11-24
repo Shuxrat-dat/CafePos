@@ -56,25 +56,36 @@ class Ticket:
         self._raw(GS + b"!" + bytes([SIZE_NORMAL]) + ESC + b"E\x00" + ESC + b"a\x00")
         return self
 
-    def pair(self, left, right, bold=False):
-        """Слева название, справа сумма. Если не помещается, название переносится, сумма в последней строке."""
+    def pair(self, left, right, bold=False, size=SIZE_NORMAL):
+        """Слева название, справа сумма. Если не помещается, название переносится, сумма в последней строке.
+        size — крупный шрифт для итога: символов в строке вдвое меньше."""
         left, right = clean(left), clean(right)
-        room = self.width - len(right) - 1
+        width = self.width // 2 if size & 0xF0 else self.width
+        room = width - len(right) - 1
         lines = textwrap.wrap(left, max(room, 8)) or [""]
         self._raw(ESC + b"E" + bytes([1 if bold else 0]))
+        if size != SIZE_NORMAL:
+            self._raw(GS + b"!" + bytes([size]))
         for line in lines[:-1]:
             self._raw(self._encode(line) + b"\n")
         last = lines[-1]
-        gap = self.width - len(last) - len(right)
+        gap = width - len(last) - len(right)
         if gap < 1:
             self._raw(self._encode(last) + b"\n")
-            last, gap = "", self.width - len(right)
+            last, gap = "", width - len(right)
         self._raw(self._encode(last + " " * gap + right) + b"\n")
+        if size != SIZE_NORMAL:
+            self._raw(GS + b"!" + bytes([SIZE_NORMAL]))
         self._raw(ESC + b"E\x00")
         return self
 
     def rule(self, char="-"):
         self._raw(self._encode(char * self.width) + b"\n")
+        return self
+
+    def dashed(self):
+        """Пунктирная линия «- - - -» на всю ширину: отделяет блюда друг от друга."""
+        self._raw(self._encode(("- " * self.width)[: self.width]) + b"\n")
         return self
 
     def feed(self, lines=1):
