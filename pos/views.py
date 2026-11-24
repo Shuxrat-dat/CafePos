@@ -651,6 +651,7 @@ def order_detail(request, order_id):
         )
     )
     categories = [c for c in categories if c.pos_dishes]
+    audit.record_view(request.user, order)
     weigh = request.GET.get("weigh", "")
     context = {"categories": categories, "weigh_dish_id": int(weigh) if weigh.isdigit() else None,
                **_panel_context(request, order)}
@@ -696,6 +697,8 @@ def add_item(request, order_id, dish_id):
             return _weight_form(request, order, dish, None, error)
         item = OrderItem.objects.create(order=order, dish=dish, quantity=1, weight_grams=grams, comment=comment)
         item.modifiers.set(modifiers)
+        audit.record(request.user, audit.A.ITEM_ADD, order=order, amount=item.line_total,
+                     detail=f"{order.place_label}: {dish.name}")
         _order_changed(order)
         return _panel(request, order)
 
@@ -707,6 +710,8 @@ def add_item(request, order_id, dish_id):
     else:
         item = OrderItem.objects.create(order=order, dish=dish, quantity=qty, comment=comment)
         item.modifiers.set(modifiers)
+    audit.record(request.user, audit.A.ITEM_ADD, order=order, amount=dish.price * qty,
+                 detail=f"{order.place_label}: {qty} x {dish.name}")
     _order_changed(order)
     return _panel(request, order)
 

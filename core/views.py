@@ -81,6 +81,8 @@ def manage_audit(request):
         logs = logs.filter(action=action)
     else:
         action = ""
+        # просмотры и добавления блюд идут отдельным пунктом, чтобы не засорять общий журнал
+        logs = logs.exclude(action__in=[AuditLog.Action.ORDER_VIEW, AuditLog.Action.ITEM_ADD])
     if user_id.isdigit():
         logs = logs.filter(user_id=int(user_id))
     else:

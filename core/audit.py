@@ -41,6 +41,22 @@ def record(user, action, *, order=None, amount=None, detail=""):
         log.exception("Журнал действий: запись не сохранена")
 
 
+VIEW_REPEAT_MINUTES = 10
+
+
+def record_view(user, order):
+    """Кто открыл заказ (стол). Владельца не пишем; повторное открытие в течение 10 минут — одна запись."""
+    try:
+        if not getattr(user, "pk", None) or getattr(user, "role", "") == "owner":
+            return
+        since = timezone.now() - timedelta(minutes=VIEW_REPEAT_MINUTES)
+        if AuditLog.objects.filter(user=user, action=A.ORDER_VIEW, order_id=order.pk, created_at__gte=since).exists():
+            return
+        record(user, A.ORDER_VIEW, order=order, amount=order.totals["total"], detail=str(order.place_label))
+    except Exception:
+        log.exception("Журнал действий: просмотр заказа не записан")
+
+
 # ---------- подозрительное поведение ----------
 
 WINDOW_DAYS = 30
