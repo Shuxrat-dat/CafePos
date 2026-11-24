@@ -41,13 +41,13 @@ class FloorButtonsTests(TestCase):
     def test_floor_shows_open_orders_of_other_waiters(self):
         self._order(self.other, OrderItem.Status.NEW)
         self.client.force_login(self.waiter)
-        response = self.client.get(reverse("floor"))
+        response = self.client.get(reverse("floor"), {"tab": "takeaway"})
         self.assertEqual(len(response.context["current_orders"]), 1)
 
     def test_served_order_offers_payment_instead_of_dead_stage_button(self):
         order = self._order(self.owner, OrderItem.Status.SERVED)
         self.client.force_login(self.owner)
-        response = self.client.get(reverse("floor"))
+        response = self.client.get(reverse("floor"), {"tab": "takeaway"})
         card = response.context["current_orders"][0]
         self.assertTrue(card.ready_to_pay)
         self.assertContains(response, reverse("pay", args=[order.id]))
@@ -62,7 +62,7 @@ class FloorButtonsTests(TestCase):
         User.objects.create_user(username="cook", password="x", role="cook")
         order = self._order(self.waiter, OrderItem.Status.COOKING)
         self.client.force_login(self.waiter)
-        response = self.client.get(reverse("floor"))
+        response = self.client.get(reverse("floor"), {"tab": "takeaway"})
         self.assertEqual(response.context["current_orders"][0].stage_action, "wait")
         self.client.post(reverse("toggle_order_stage", args=[order.id]))
         self.assertEqual(order.items.get().status, OrderItem.Status.COOKING)
@@ -84,7 +84,7 @@ class FloorButtonsTests(TestCase):
         cooking = self._order(cashier, OrderItem.Status.NEW)
         to_pay = self._order(cashier, OrderItem.Status.SERVED)
         self.client.force_login(cashier)
-        response = self.client.get(reverse("floor"))
+        response = self.client.get(reverse("floor"), {"tab": "takeaway"})
         self.assertEqual([o.id for o in response.context["current_orders"]], [to_pay.id, cooking.id])
         self.assertNotContains(response, 'data-sort="time"')
         self.assertNotContains(response, "data-cat-filter")

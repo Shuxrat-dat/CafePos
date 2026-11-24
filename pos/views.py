@@ -318,10 +318,22 @@ def _floor_context(request):
         # Кассе первыми нужны заказы, которые ждут оплаты
         current_orders.sort(key=lambda o: (not getattr(o, "ready_to_pay", False), o.id))
 
+    # Три раздела: в зале, навынос, доставка. В каждом только свои заказы.
+    tab_types = [Order.OrderType.DINE_IN, Order.OrderType.TAKEAWAY, Order.OrderType.DELIVERY]
     order_id = request.GET.get("order_id")
+    wanted = next((o for o in current_orders if str(o.id) == str(order_id)), None) if order_id else None
+    active_tab = request.GET.get("tab")
+    if active_tab not in tab_types:
+        active_tab = wanted.order_type if wanted else Order.OrderType.DINE_IN  # открыли заказ — его раздел
+    floor_tabs = [
+        {"key": key, "label": label, "count": sum(1 for o in current_orders if o.order_type == key)}
+        for key, label in ((Order.OrderType.DINE_IN, _("В зале")), (Order.OrderType.TAKEAWAY, _("Навынос")),
+                           (Order.OrderType.DELIVERY, _("Доставка")))
+    ]
+    current_orders = [o for o in current_orders if o.order_type == active_tab]
     selected_order = None
-    if order_id:
-        selected_order = next((o for o in current_orders if str(o.id) == str(order_id)), None)
+    if wanted and wanted.order_type == active_tab:
+        selected_order = wanted
     if not selected_order and current_orders:
         selected_order = current_orders[0]
 
@@ -380,9 +392,19 @@ def _floor_context(request):
         "categories": categories,
         "quick_dishes": quick_dishes,
         "current_orders": current_orders,
+        "floor_tabs": floor_tabs,
+        "active_tab": active_tab,
         "selected_order": selected_order,
         "table_queue": table_queue,
     }
+
+
+def _home_url(user, order=None):
+    """Куда вернуться из заказа: официанту схема столов, остальным «Заказы» сразу в раздел этого заказа."""
+    url = reverse(user.home_url_name)
+    if order is not None and user.home_url_name == "floor":
+        url += f"?tab={order.order_type}"
+    return url
 
 
 def _can_mark_ready(user):
@@ -416,7 +438,7 @@ def toggle_order_stage(request, order_id):
         services.serve_ready(order)
     elif action == "ready":
         services.mark_items_ready(order.items.all())
-    return redirect("floor")
+    return redirect(f"{reverse('floor')}?tab={order.order_type}")  # остаёмся в своём разделе
 
 
 @login_required
@@ -640,7 +662,7 @@ def order_panel(request, order_id):
     order = _get_order(request, order_id, open_only=False)
     if order.status != Order.Status.OPEN:
         # Заказ закрыт или отменён на другом устройстве: уводим страницу на план зала
-        return HttpResponse(headers={"HX-Redirect": reverse(request.user.home_url_name)})
+        return HttpResponse(headers={"HX-Redirect": _home_url(request.user, order)})
     return _panel(request, order)
 
 
@@ -1040,8 +1062,8 @@ def cancel_order(request, order_id):
     telegram.notify_order_cancelled(order, request.user)
     messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.id})
     if htmx:
-        return HttpResponse(headers={"HX-Redirect": reverse(request.user.home_url_name)})
-    return redirect(request.user.home_url_name)
+        return HttpResponse(headers={"HX-Redirect": _home_url(request.user, order)})
+    return redirect(_home_url(request.user, order))
 
 
 @login_required

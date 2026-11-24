@@ -5211,3 +5211,6 @@ msgstr "Vaznni kilogrammda kiriting, masalan 1 yoki 1,5."
 
 msgid "Укажите объём в литрах, например 1 или 0,5."
 msgstr "Hajmni litrda kiriting, masalan 1 yoki 0,5."
+
+msgid "В этом разделе заказов пока нет"
+msgstr "Bu bo‘limda hozircha buyurtmalar yo‘q"

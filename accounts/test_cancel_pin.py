@@ -74,7 +74,7 @@ class CancelOrderTests(Base):
     def test_window_closes_by_redirect_on_success(self):
         order, _item = self.order()
         response = self.cancel(order, "7391", **HTMX)
-        self.assertEqual(response["HX-Redirect"], reverse("floor"))
+        self.assertEqual(response["HX-Redirect"], f"{reverse('floor')}?tab={order.order_type}")
 
     def test_window_asks_for_pin(self):
         order, _item = self.order()
