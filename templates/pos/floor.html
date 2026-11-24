@@ -77,7 +77,10 @@
             <div>
               {# Шапка карточки: #ID, таймер, стол, гости #}
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xl font-black text-ink tracking-tight">#{{ o.id }}</span>
+                <span class="min-w-0 flex items-baseline gap-2.5">
+                  <span class="text-xl font-black text-ink tracking-tight">#{{ o.id }}</span>
+                  <span class="text-[15px] font-bold text-brand tabular-nums whitespace-nowrap">{{ o.totals.total|money }}</span>
+                </span>
                 {% if o.status_color == 'orange' %}
                   <span class="px-2.5 py-1 rounded-full bg-[#F8EBD7] text-[#9E5F22] text-xs font-bold">{{ o.timer_display }}</span>
                 {% elif o.status_color == 'blue' %}

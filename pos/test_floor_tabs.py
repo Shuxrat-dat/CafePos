@@ -68,3 +68,11 @@ class FloorTabsTests(TestCase):
     def test_stage_button_keeps_the_section(self):
         response = self.client.post(reverse("toggle_order_stage", args=[self.deliv.id]))
         self.assertEqual(response["Location"], f'{reverse("floor")}?tab=delivery')
+
+    def test_card_shows_order_total_next_to_number(self):
+        from core.templatetags.ui import money
+
+        response = self.client.get(reverse("floor"), {"tab": "takeaway"})
+        total = money(self.take.totals["total"])
+        self.assertContains(response, f"#{self.take.id}</span>")
+        self.assertContains(response, total)
