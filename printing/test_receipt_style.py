@@ -62,3 +62,37 @@ class ReceiptStyleTests(TestCase):
         self.assertIn(b"TOTAL", line)
         self.assertIn(b"159 000", line)
         self.assertLessEqual(len(line.split(BIG)[-1]), 24)  # при двойной ширине в строке 24 символа, не 48
+
+
+class ReceiptQuantityRowTests(ReceiptStyleTests):
+    """Количество стоит в той же строке, что и название блюда, а не на второй."""
+
+    def _lines(self, data):
+        return [part.decode("cp866", errors="replace") for part in data.split(b"\n")]
+
+    def test_quantity_is_in_the_name_row(self):
+        order = Order.objects.get(pk=self.order.pk)
+        order.items.create(dish=self.plov, quantity=2, price=self.plov.price)
+        lines = self._lines(documents.receipt(Order.objects.get(pk=self.order.pk), self.printer))
+        row = next(line for line in lines if "Plov" in line)
+        self.assertIn("2 x Plov", row)
+        self.assertTrue(row.rstrip().endswith("80 000"))  # сумма строки справа, в том же ряду
+        self.assertFalse(any(line.strip().startswith("2 x 40 000") for line in lines))  # второй строки нет
+
+    def test_weight_dish_shows_weight_in_the_name_row(self):
+        fish = Dish.objects.create(category=self.plov.category, name="Fish", price=100000, sold_by_weight=True)
+        order = Order.objects.get(pk=self.order.pk)
+        order.items.create(dish=fish, quantity=1, price=fish.price, weight_grams=1500)
+        lines = self._lines(documents.receipt(Order.objects.get(pk=self.order.pk), self.printer))
+        row = next(line for line in lines if "Fish" in line)
+        self.assertRegex(row, r"Fish 1,5 .*150 000")
+
+    def test_on_screen_receipt_has_quantity_before_the_name(self):
+        from django.urls import reverse
+
+        order = Order.objects.get(pk=self.order.pk)
+        order.items.create(dish=self.plov, quantity=3, price=self.plov.price)
+        owner = User.objects.create_user(username="own_style", password="x", role="owner")
+        self.client.force_login(owner)
+        page = self.client.get(reverse("precheck", args=[order.id]))
+        self.assertContains(page, "3 × Plov")

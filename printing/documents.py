@@ -67,13 +67,18 @@ def receipt(order, printer, precheck=False):
         for number, item in enumerate(items):
             if number:
                 t.dashed()  # пунктир между блюдами
-            t.pair(tr(item.dish), num(item.line_total))
+            # Количество в одной строке с названием: «2 x Плов ... 80 000»; на вес — «Рыба 1,5 кг ... 112 500»
             if item.by_weight:
-                detail = f"{weight(item.weight_grams, item.measure)} x {num(item.price)} / {_('л') if item.measure == 'l' else _('кг')}"
+                title = f"{tr(item.dish)} {weight(item.weight_grams, item.measure)}"
+                detail = f"{num(item.price)} / {_('л') if item.measure == 'l' else _('кг')}"
             else:
-                detail = f"{item.quantity} x {num(item.unit_total)}"
+                title = f"{item.quantity} x {tr(item.dish)}"
+                detail = ""
+            t.pair(title, num(item.line_total))
             modifiers = ", ".join(tr(m) for m in item.modifiers.all())
-            t.text(f"  {detail}" + (f", {modifiers}" if modifiers else ""))
+            extra = ", ".join(part for part in (detail, modifiers) if part)
+            if extra:
+                t.text(f"  {extra}")
         t.rule()
 
         totals = order.totals
