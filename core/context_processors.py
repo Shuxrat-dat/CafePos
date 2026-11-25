@@ -166,5 +166,34 @@ def cafe(request):
         if user.simple_floor:
             context["earned_today"] = earnings.today_earned(user)
         from pos.services import get_current_shift
-        context["current_shift"] = get_current_shift()
+        context["current_shift"] = _MemoShift.wrap(get_current_shift())
     return context
+
+
+class _MemoShift:
+    """Смена для окна «Касса» в шапке: каждая сумма считается один раз за показ страницы.
+
+    Окно строится на каждой странице, а итоги смены (expected_cash и др.) складываются из тех же сумм,
+    поэтому раньше одни и те же запросы к базе повторялись по 3–6 раз. Значения и формулы те же."""
+
+    @staticmethod
+    def wrap(shift):
+        return _MemoShift(shift) if shift is not None else None
+
+    def __init__(self, shift):
+        object.__setattr__(self, "_shift", shift)
+        object.__setattr__(self, "_memo", {})
+
+    def __getattr__(self, name):
+        memo = self._memo
+        if name in memo:
+            return memo[name]
+        shift = self._shift
+        prop = getattr(type(shift), name, None)
+        # Свойство считаем от этой обёртки, чтобы внутренние обращения (cash_sales и т.д.) тоже попадали в кэш
+        value = prop.fget(self) if isinstance(prop, property) else getattr(shift, name)
+        memo[name] = value
+        return value
+
+    def __bool__(self):
+        return True

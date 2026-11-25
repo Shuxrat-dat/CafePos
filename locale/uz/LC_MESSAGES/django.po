@@ -5098,6 +5098,12 @@ msgstr "To‘lov"
 msgid "Выплата больше остатка. Если даёте деньги вперёд, выберите «Аванс»."
 msgstr "To‘lov qoldiqdan katta. Agar oldindan berayotgan bo‘lsangiz, «Avans»ni tanlang."
 
+msgid "Просмотр заказа (стола)"
+msgstr "Buyurtma (stol) ko‘rildi"
+
+msgid "Добавлено блюдо в заказ"
+msgstr "Buyurtmaga taom qo‘shildi"
+
 msgid "Выплата сотруднику"
 msgstr "Xodimga to‘lov"
 

@@ -123,6 +123,13 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            # Много терминалов опрашивают сервер одновременно. WAL: чтение не ждёт запись и наоборот,
+            # IMMEDIATE: запись встаёт в очередь, а не падает «database is locked», ожидание до 20 секунд.
+            'OPTIONS': {
+                'timeout': 20,
+                'transaction_mode': 'IMMEDIATE',
+                'init_command': 'PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA temp_store=MEMORY; PRAGMA cache_size=-32000;',
+            },
         }
     }
 
