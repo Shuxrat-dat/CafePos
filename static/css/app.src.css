@@ -1,0 +1,48 @@
+/* Исходник стилей. Готовый файл app.css собирается командой из tailwind.config.js. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer components {
+  .card { @apply bg-white border border-line/80 rounded-2xl shadow-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 min-h-[42px] px-4 rounded-xl font-semibold text-[14px] transition-colors select-none whitespace-nowrap disabled:opacity-50 disabled:pointer-events-none; }
+  .btn-lg { @apply min-h-[50px] px-5 text-base rounded-xl; }
+  .btn-sm { @apply min-h-[34px] px-3 text-xs rounded-lg; }
+  .btn-primary { @apply bg-brand text-white hover:bg-brand-600 active:bg-brand-700; }
+  .btn-dark { @apply bg-ink text-white hover:bg-black; }
+  .btn-secondary { @apply bg-white text-ink border border-line hover:bg-[#FAF6EF] active:bg-[#EFE8DC]; }
+  .btn-outline { @apply bg-white text-brand border border-brand/30 hover:bg-brand-50; }
+  .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-ink; }
+  .btn-danger { @apply bg-white text-red-700 border border-red-200 hover:bg-red-50; }
+  .btn-warn { @apply bg-[#B9722B] text-white hover:bg-[#9E5F22]; }
+  .icon-btn { @apply inline-grid place-items-center w-10 h-10 rounded-xl border border-line bg-white text-slate-600 hover:bg-slate-50 hover:text-ink active:bg-slate-100 transition-colors; }
+  .input { @apply w-full rounded-xl border border-line bg-white px-3.5 min-h-[42px] text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand; }
+  .label { @apply block text-[13px] font-medium text-stone-600 mb-1.5; }
+  .badge { @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap; }
+  .chip { @apply inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl border border-line bg-white text-sm font-medium text-stone-600 hover:text-ink hover:border-stone-300 whitespace-nowrap transition-colors; }
+  .chip-active { @apply bg-brand-50 border-brand/40 text-brand font-semibold hover:text-brand hover:border-brand/40; }
+  .page-title { @apply text-[24px] font-extrabold tracking-[-0.02em] text-ink; }
+  .page-sub { @apply text-sm text-muted mt-0.5; }
+  .section-title { @apply text-base font-semibold text-ink; }
+  .table-head { @apply text-left text-xs font-semibold uppercase tracking-wide text-muted; }
+  .alert-error { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium; }
+  .alert-warn { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 text-sm; }
+  .alert-ok { @apply flex gap-2.5 items-start px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium; }
+  .seg { @apply flex p-1 bg-[#EFE8DC] rounded-xl gap-1; }
+  .seg-item { @apply flex-1 inline-flex items-center justify-center gap-1.5 min-h-[36px] px-2 rounded-lg text-sm font-semibold text-stone-600 hover:text-ink; }
+  .seg-item-active { @apply bg-white text-ink shadow-card; }
+  .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[54px] rounded-xl text-[12px] font-medium text-stone-600 hover:bg-[#FAF6EF] hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3.5 xl:text-[14px]; }
+  .nav-link-active { @apply bg-brand text-white font-bold shadow-sm hover:bg-brand-600 hover:text-white; }
+  .wtab { @apply relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-[#EFE8DC] text-stone-700 text-sm font-semibold whitespace-nowrap hover:bg-[#E6DCCB] transition-colors; }
+  .wtab-active { @apply bg-brand text-white hover:bg-brand-600; }
+  .wtab-badge { @apply min-w-[18px] h-[18px] px-1 rounded-full bg-white text-brand text-[11px] font-bold inline-flex items-center justify-center; }
+}
+html { -webkit-tap-highlight-color: transparent; }
+body { font-feature-settings: "tnum" 1, "cv11" 1; }
+::selection { background: #EBCBA6; color: #43200E; }
+:focus-visible { outline: 2px solid #C98B45; outline-offset: 2px; }
+.htmx-request.btn, button.htmx-request { opacity: .6; pointer-events: none; }
+#progress { transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
+.htmx-request #progress, #progress.htmx-request { transform: scaleX(.7); }
+.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
+details > summary::-webkit-details-marker { display: none; }
+@media print { .no-print { display: none !important; } }
