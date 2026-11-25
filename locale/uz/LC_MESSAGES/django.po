@@ -5220,3 +5220,30 @@ msgstr "Hajmni litrda kiriting, masalan 1 yoki 0,5."
 
 msgid "В этом разделе заказов пока нет"
 msgstr "Bu bo‘limda hozircha buyurtmalar yo‘q"
+
+msgid "Весь счёт в долг: выберите «В долг»."
+msgstr "Butun hisob qarzga: «Qarzga» ni tanlang."
+
+msgid "Заказ №%(id)s: часть счёта в долг"
+msgstr "Buyurtma №%(id)s: hisobning bir qismi qarzga"
+
+msgid "Записано в долг"
+msgstr "Qarzga yozilgan"
+
+msgid "Запись в долг выключена в настройках."
+msgstr "Qarzga yozish sozlamalarda o‘chirilgan."
+
+msgid "Карта и долг вместе больше итога."
+msgstr "Karta va qarz birgalikda jami summadan katta."
+
+msgid "Карта и долг вместе больше суммы к оплате."
+msgstr "Karta va qarz birgalikda to‘lov summasidan katta."
+
+msgid "Сумма долга не может быть отрицательной."
+msgstr "Qarz summasi manfiy bo‘lishi mumkin emas."
+
+msgid "в долг"
+msgstr "qarzga"
+
+msgid "часть счёта, которую гость заплатит позже"
+msgstr "hisobning mehmon keyinroq to‘laydigan qismi"

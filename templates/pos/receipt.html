@@ -55,7 +55,7 @@
       {% if cafe.vat_percent %}<div class="flex justify-between text-slate-500"><span>{% blocktranslate trimmed with p=cafe.vat_percent|num %}в т.ч. НДС {{ p }}%{% endblocktranslate %}</span><span>{{ totals.total|vat_part:cafe.vat_percent|num }}</span></div>{% endif %}
       {% if not is_precheck %}
         <div class="flex justify-between pt-1"><span>{% translate 'Оплата' %}</span><span>{{ order.get_payment_method_display }}</span></div>
-        {% if order.payment_method == 'mixed' %}<div class="flex justify-between"><span>{% translate 'Картой' %}</span><span>{{ order.card_amount|num }}</span></div>{% endif %}
+        {% if order.payment_method == 'mixed' %}{% if order.card_amount %}<div class="flex justify-between"><span>{% translate 'Картой' %}</span><span>{{ order.card_amount|num }}</span></div>{% endif %}{% if order.debt_amount %}<div class="flex justify-between"><span>{% translate 'В долг' %}</span><span>{{ order.debt_amount|num }}</span></div>{% endif %}{% endif %}
         {% if change is not None %}
           <div class="flex justify-between"><span>{% translate 'Наличными получено' %}</span><span>{{ order.cash_received|num }}</span></div>
           <div class="flex justify-between font-bold"><span>{% translate 'Сдача' %}</span><span>{{ change|money }}</span></div>

@@ -270,6 +270,8 @@ class Order(models.Model):
     payment_method = models.CharField(_("Способ оплаты"), max_length=10, choices=PaymentMethod.choices, blank=True)
     cash_received = models.DecimalField(_("Получено наличными"), max_digits=12, decimal_places=0, null=True, blank=True)
     card_amount = models.DecimalField(_("Оплачено картой"), max_digits=12, decimal_places=0, null=True, blank=True)
+    # Часть счёта, записанная в долг при смешанной оплате (наличные + карта + долг)
+    debt_amount = models.DecimalField(_("Записано в долг"), max_digits=12, decimal_places=0, null=True, blank=True)
     cashier = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name=_("Кассир"), on_delete=models.SET_NULL,
         null=True, blank=True, related_name="cashed_orders",
@@ -384,7 +386,7 @@ class Order(models.Model):
         if self.payment_method == self.PaymentMethod.CASH:
             return self.amount_due
         if self.payment_method == self.PaymentMethod.MIXED:
-            return self.amount_due - (self.card_amount or 0)
+            return self.amount_due - (self.card_amount or 0) - (self.debt_amount or 0)
         return Decimal(0)
 
     @property

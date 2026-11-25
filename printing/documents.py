@@ -99,7 +99,10 @@ def receipt(order, printer, precheck=False):
         if not precheck:
             t.pair(_("Оплата"), str(order.get_payment_method_display()))
             if order.payment_method == "mixed":
-                t.pair(_("Картой"), num(order.card_amount))
+                if order.card_amount:
+                    t.pair(_("Картой"), num(order.card_amount))
+                if order.debt_amount:
+                    t.pair(_("В долг"), num(order.debt_amount))
             if order.change is not None:
                 t.pair(_("Наличными получено"), num(order.cash_received))
                 t.pair(_("Сдача"), _money(order.change), bold=True)

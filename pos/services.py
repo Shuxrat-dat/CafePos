@@ -181,8 +181,23 @@ def apply_discount(order, kind, raw_value, reason="", max_percent=None):
 
 # ---------- оплата ----------
 
-def check_payment(due, method, received_raw, card_raw, allowed):
-    """Проверяет ввод кассира. Возвращает (получено наличными, оплачено картой) или бросает PaymentError."""
+def parse_mixed_debt(method, debt_raw, allowed):
+    """Часть счёта «в долг» при смешанной оплате. Вне смешанной оплаты и без ввода — 0."""
+    if method != Order.PaymentMethod.MIXED:
+        return Decimal(0)
+    debt = parse_money(debt_raw)
+    if not debt:
+        return Decimal(0)
+    if debt < 0:
+        raise PaymentError(_("Сумма долга не может быть отрицательной."))
+    if Order.PaymentMethod.DEBT not in allowed:
+        raise PaymentError(_("Запись в долг выключена в настройках."))
+    return debt
+
+
+def check_payment(due, method, received_raw, card_raw, allowed, debt=Decimal(0)):
+    """Проверяет ввод кассира. Возвращает (получено наличными, оплачено картой) или бросает PaymentError.
+    debt — часть счёта, записанная в долг при смешанной оплате (наличные + карта + долг)."""
     if method not in allowed:
         raise PaymentError(_("Выберите способ оплаты."))
     received = parse_money(received_raw)
@@ -194,11 +209,22 @@ def check_payment(due, method, received_raw, card_raw, allowed):
             raise PaymentError(_("Полученная сумма меньше итога."))
         return received, None
     card = parse_money(card_raw)
-    if card is None or card <= 0:
-        raise PaymentError(_("Укажите, сколько оплачено картой."))
-    if card >= due:
-        raise PaymentError(_("Сумма по карте должна быть меньше итога. Для полной оплаты картой выберите «Карта»."))
-    cash_due = due - card
+    if debt > 0:
+        # С долгом карта необязательна: наличные, карта (если есть) и долг вместе дают весь счёт
+        card = card or Decimal(0)
+        if card < 0:
+            raise PaymentError(_("Укажите, сколько оплачено картой."))
+        if card + debt > due:
+            raise PaymentError(_("Карта и долг вместе больше итога."))
+        if card + debt == due and card == 0:
+            raise PaymentError(_("Весь счёт в долг: выберите «В долг»."))
+        cash_due = due - card - debt
+    else:
+        if card is None or card <= 0:
+            raise PaymentError(_("Укажите, сколько оплачено картой."))
+        if card >= due:
+            raise PaymentError(_("Сумма по карте должна быть меньше итога. Для полной оплаты картой выберите «Карта»."))
+        cash_due = due - card
     received = cash_due if received is None else received
     if received < cash_due:
         raise PaymentError(_("Наличных меньше, чем нужно доплатить."))
@@ -326,7 +352,7 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
     return target
 
 
-def pay_order(order, cashier, method, received, card, items=None, selected=None, idempotency_key=None):
+def pay_order(order, cashier, method, received, card, items=None, selected=None, idempotency_key=None, debt=Decimal(0)):
     """Закрывает заказ (или его часть) оплатой, регистрирует Payment в текущей смене и списывает продукты."""
     # Серверная защита от повторных списаний (идемпотентность)
     if idempotency_key:
@@ -347,7 +373,8 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             raise PaymentError(no_shift_message())
 
         debt_phone = ""
-        if method == Order.PaymentMethod.DEBT:
+        debt = Decimal(debt or 0) if method == Order.PaymentMethod.MIXED else Decimal(0)
+        if method == Order.PaymentMethod.DEBT or debt > 0:
             # В долг записываем только весь заказ и только на гостя с именем и телефоном
             from .loyalty import normalize_phone
             debt_phone = normalize_phone(locked.customer_phone)
@@ -369,6 +396,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             target.payment_method = method
             target.cash_received = received
             target.card_amount = card
+            target.debt_amount = debt or None
             target.cashier = cashier
             target.shift = shift
             target.status = Order.Status.PAID
@@ -407,7 +435,9 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             cash_amount = card_amount = change = Decimal(0)
         else:  # MIXED
             card_amount = card or Decimal(0)
-            cash_amount = collect - card_amount
+            if debt > collect - card_amount:
+                raise PaymentError(_("Карта и долг вместе больше суммы к оплате."))
+            cash_amount = collect - card_amount - debt  # долг — часть счёта, которую гость не платит сейчас
             change = (received - cash_amount) if received is not None else Decimal(0)
 
         Payment.objects.create(
@@ -428,9 +458,13 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             customer, _created = Customer.objects.select_for_update().get_or_create(
                 phone=debt_phone, defaults={"name": target.customer_name.strip()[:100]}
             )
+            if method == Order.PaymentMethod.MIXED:
+                debt_comment = _("Заказ №%(id)s: часть счёта в долг") % {"id": target.id}
+            else:
+                debt_comment = _("Заказ №%(id)s в долг") % {"id": target.id}
             DebtEntry.objects.create(
-                customer=customer, order=target, amount=collect, shift=shift, cashier=cashier,
-                comment=_("Заказ №%(id)s в долг") % {"id": target.id},
+                customer=customer, order=target, amount=debt if method == Order.PaymentMethod.MIXED else collect,
+                shift=shift, cashier=cashier, comment=debt_comment,
             )
 
         write_off_order(target)

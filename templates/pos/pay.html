@@ -105,6 +105,12 @@
         <label class="label" for="card">{% translate 'Оплачено картой' %}</label>
         <input id="card" name="card" value="{{ card }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
       </div>
+      {% if 'debt' in methods %}
+      <div data-show="mixed">
+        <label class="label" for="debt">{% translate 'В долг' %} <span class="text-muted font-normal">· {% translate 'часть счёта, которую гость заплатит позже' %}</span></label>
+        <input id="debt" name="debt" value="{{ debt_raw }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
+      </div>
+      {% endif %}
       <div data-show="cash mixed">
         <label class="label" for="received">{% translate 'Получено наличными' %} <span class="text-muted font-normal">· {% translate 'пусто — без сдачи' %}</span></label>
         <input id="received" name="received" value="{{ received }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
@@ -120,8 +126,8 @@
         {% icon "smartphone" 18 %}{% translate 'Убедитесь, что оплата через Click пришла, затем подтвердите.' %}
       </div>
       {% if 'debt' in methods %}
-      <div data-show="debt" class="space-y-3">
-        <div class="rounded-xl bg-orange-50 border border-orange-200 p-3 text-sm text-orange-900 flex gap-2">
+      <div id="debt-who" data-show="debt mixed" class="space-y-3">
+        <div data-show="debt" class="rounded-xl bg-orange-50 border border-orange-200 p-3 text-sm text-orange-900 flex gap-2">
           {% icon "alert" 18 %}{% translate 'Деньги в кассу не поступают. Сумма запишется в долг гостя, погасить его можно в разделе «Долги».' %}
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -159,6 +165,8 @@
       cardTooBig: '{% translate "Сумма по карте должна быть меньше итога." as t %}{{ t|escapejs }}',
       cardEmpty: '{% translate "Укажите сумму по карте." as t %}{{ t|escapejs }}',
       nothing: '{% translate "Выберите хотя бы одну позицию." as t %}{{ t|escapejs }}',
+      debtBig: '{% translate "Карта и долг вместе больше итога." as t %}{{ t|escapejs }}',
+      debtAll: '{% translate "Весь счёт в долг: выберите «В долг»." as t %}{{ t|escapejs }}',
       debtWho: '{% translate "Для записи в долг укажите имя и телефон гостя." as t %}{{ t|escapejs }}',
       debtSplit: '{% translate "В долг можно записать только весь заказ, без деления счёта." as t %}{{ t|escapejs }}'
     };
@@ -186,16 +194,25 @@
       var d = due();
       document.getElementById('due').textContent = fmt(d);
       var card = m === 'mixed' ? parse(document.getElementById('card').value) : 0;
+      var debtEl = document.getElementById('debt');
+      var debt = (m === 'mixed' && debtEl) ? parse(debtEl.value) : 0;
+      // Имя и телефон гостя нужны при «В долг» и при смешанной оплате с долгом
+      var who = document.getElementById('debt-who');
+      if (who && m === 'mixed') who.classList.toggle('hidden', debt <= 0);
       var noCash = m === 'card' || m === 'click' || m === 'debt';
-      var cashDue = noCash ? 0 : d - card;
+      var cashDue = noCash ? 0 : d - card - debt;
       var receivedRaw = document.getElementById('received').value;
       var received = receivedRaw.trim() === '' ? cashDue : parse(receivedRaw);
       var change = Math.max(0, received - cashDue);
       document.getElementById('change').textContent = fmt(change);
       var hint = '';
       if (split && d <= 0) hint = TXT.nothing;
-      else if (m === 'mixed' && card <= 0) hint = TXT.cardEmpty;
-      else if (m === 'mixed' && card >= d) hint = TXT.cardTooBig;
+      else if (m === 'mixed' && debt > 0 && card + debt > d) hint = TXT.debtBig;
+      else if (m === 'mixed' && debt > 0 && card === 0 && debt >= d) hint = TXT.debtAll;
+      else if (m === 'mixed' && debt > 0 && split) hint = TXT.debtSplit;
+      else if (m === 'mixed' && debt > 0 && (!document.getElementById('debt_name').value.trim() || document.getElementById('debt_phone').value.replace(/\D/g, '').length < 9)) hint = TXT.debtWho;
+      else if (m === 'mixed' && debt <= 0 && card <= 0) hint = TXT.cardEmpty;
+      else if (m === 'mixed' && debt <= 0 && card >= d) hint = TXT.cardTooBig;
       else if (!noCash && received < cashDue) hint = TXT.short;
       else if (m === 'debt' && split) hint = TXT.debtSplit;
       else if (m === 'debt' && (!document.getElementById('debt_name').value.trim() || document.getElementById('debt_phone').value.replace(/\D/g, '').length < 9)) hint = TXT.debtWho;

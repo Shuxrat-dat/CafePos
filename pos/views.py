@@ -1202,7 +1202,7 @@ def pay(request, order_id):
     error = ""
     selected = {}
     method = allowed[0]
-    received_raw = card_raw = ""
+    received_raw = card_raw = debt_raw = ""
 
     if request.method == "POST":
         split = request.POST.get("split") == "1"
@@ -1225,7 +1225,15 @@ def pay(request, order_id):
         else:
             due = split_totals(order, sum(i.unit_total * selected[i.id] for i in items if i.id in selected))["total"]
 
-        if not error and method == Order.PaymentMethod.DEBT and method in allowed:
+        debt_raw = request.POST.get("debt", "").strip()
+        debt_part = Decimal(0)
+        if not error:
+            try:
+                debt_part = services.parse_mixed_debt(method, debt_raw, allowed)
+            except services.PaymentError as exc:
+                error = str(exc)
+
+        if not error and (method == Order.PaymentMethod.DEBT or debt_part > 0) and Order.PaymentMethod.DEBT in allowed:
             # Гость, на которого пишем долг: имя и телефон сохраняем в заказе (они же попадут в чек)
             debt_name = request.POST.get("debt_name", "").strip()[:100]
             debt_phone = request.POST.get("debt_phone", "").strip()[:20]
@@ -1235,11 +1243,12 @@ def pay(request, order_id):
 
         if not error:
             try:
-                received, card = services.check_payment(due, method, received_raw, card_raw, allowed)
+                received, card = services.check_payment(due, method, received_raw, card_raw, allowed, debt=debt_part)
                 target = services.pay_order(
                     order, request.user, method, received, card,
                     selected=None if pay_all else selected,
                     idempotency_key=idempotency_key,
+                    debt=debt_part,
                 )
             except services.PaymentError as exc:
                 error = str(exc)
@@ -1265,6 +1274,7 @@ def pay(request, order_id):
             "methods": allowed,
             "received": received_raw,
             "card": card_raw,
+            "debt_raw": debt_raw,
             "quick_amounts": _quick_amounts(order.amount_due),
             "due_total": order.amount_due,
             "deposit": order.deposit_applied,
