@@ -2,11 +2,17 @@
  *   npx tailwindcss@3.4.17 -c tailwind.config.js -i static/css/app.src.css -o static/css/app.css --minify
  * Раньше стили собирал в браузере файл tailwind.js на каждой странице; теперь браузер берёт готовый app.css. */
 module.exports = {
-  content: [
-    './templates/**/*.html',
-    './{accounts,core,menu,pos,kitchen,reports,inventory,juma,printing,config}/**/*.{py,html}',
-    './static/js/tour.js',
-  ],
+  content: {
+    files: [
+      './templates/**/*.html',
+      './{accounts,core,menu,pos,kitchen,reports,inventory,juma,printing,config}/**/*.{py,html}',
+      './static/js/tour.js',
+    ],
+    // Скобки тегов Django ({% %}, {{ }}) склеивают соседний класс в один токен: заменяем скобки пробелом, текст внутри оставляем
+    transform: {
+      html: (code) => code.replace(/\{%|%\}|\{\{|\}\}/g, ' '),
+    },
+  },
   theme: {
     extend: {
       colors: {
