@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% load i18n ui %}
 {% block title %}{% translate 'Столы' %}{% endblock %}
-{% block main_class %}{% if user.simple_floor %}px-2 py-2 sm:px-3 w-full{% else %}px-4 py-4 lg:px-6 lg:py-5 w-full mx-auto{% endif %}{% endblock %}
+{% block main_class %}px-2 py-2 sm:px-3 w-full{% endblock %}
 {% block content %}
-{% if user.simple_floor %}
-{# Официант: залы слева (на телефоне лентой сверху), фильтры по состоянию, крупные адаптивные карточки #}
+{# Залы слева (на телефоне лентой сверху), фильтры по состоянию, крупные плитки столов. Один экран для официанта, кассира и владельца #}
 <div class="flex flex-col md:flex-row gap-3 md:gap-4 items-start">
-  <div id="hall-filter" class="flex md:flex-col gap-1.5 w-full md:w-[132px] lg:w-[168px] shrink-0 overflow-x-auto md:overflow-visible no-scrollbar md:sticky md:top-[72px]">
+  <div id="hall-filter" class="flex md:flex-col gap-1.5 w-full md:w-[clamp(112px,13vw,200px)] shrink-0 overflow-x-auto md:overflow-y-auto md:max-h-[calc(100vh-var(--hh)-24px)] no-scrollbar md:sticky md:top-[calc(var(--hh)+8px)]">
     <button type="button" data-hall="" class="hall-btn hall-btn-active"><span>{% translate 'Все' %}</span></button>
     {% for hall in halls %}
-      <button type="button" data-hall="{{ hall.id }}" class="hall-btn"><span class="truncate">{{ hall|tr }}</span><span class="hall-count" data-hall-count="{{ hall.id }}"></span></button>
+      <button type="button" data-hall="{{ hall.id }}" class="hall-btn"><span class="break-words max-w-full">{{ hall|tr }}</span><span class="hall-count" data-hall-count="{{ hall.id }}">0</span></button>
     {% endfor %}
   </div>
   <div class="flex-1 min-w-0 w-full">
@@ -25,98 +24,57 @@
         <input id="table-search" type="search" class="input pl-9 min-h-[40px]" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
       </div>
     </div>
+    {% if floor_waiters and not user.simple_floor %}
+      <div id="waiter-filter" class="flex flex-wrap items-center gap-2 mb-3">
+        <span class="text-sm text-muted mr-1">{% translate 'Официант' %}:</span>
+        <button type="button" data-waiter-filter="" class="chip chip-active">{% translate 'Все' %}</button>
+        {% for w in floor_waiters %}
+          <button type="button" data-waiter-filter="{{ w.user.id }}" class="chip">{{ w.user.first_name|default:w.user.username }}<span class="text-xs text-muted">{{ w.count }}</span></button>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {# Столы обновляются сами: видно, когда стол освободился или гость сделал заявку #}
     <div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_floor_grid.html" %}
     </div>
   </div>
 </div>
 <style>
-  .hall-btn { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; padding:0 14px; border-radius:14px; background:#EFE8DC; color:#57534e; font-size:14px; font-weight:700; white-space:nowrap; text-align:left; flex-shrink:0; transition:background .15s; }
-  .hall-btn:hover { background:#E6DCCB; }
+  /* Кнопки залов как в кассовом терминале: высокие, название по центру, счётчик занятых в углу */
+  .hall-btn { position:relative; display:flex; align-items:center; justify-content:center; min-width:104px; min-height:clamp(60px,10vh,96px); padding:0 clamp(8px,1vw,14px); border-radius:18px; background:#E8ECF2; color:#475569; font-size:clamp(13px,1.3vw,19px); font-weight:800; overflow-wrap:anywhere; line-height:1.15; text-align:center; text-transform:uppercase; flex-shrink:0; transition:background .15s; }
+  .hall-btn:hover { background:#DDE3EC; }
   .hall-btn-active, .hall-btn-active:hover { background:#7A3F1E; color:#fff; }
-  .hall-count { min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:#fff; color:#7A3F1E; font-size:12px; font-weight:800; display:none; align-items:center; justify-content:center; }
-  .hall-count.on { display:inline-flex; }
-  @media (min-width:768px) { .hall-btn { width:100%; } }
+  .hall-count { position:absolute; top:6px; right:8px; min-width:24px; height:24px; padding:0 6px; border-radius:999px; background:transparent; color:#94A3B8; font-size:13px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+  .hall-count.on { background:#DC2626; color:#fff; font-weight:800; box-shadow:0 2px 6px rgba(220,38,38,.35); }
+  .hall-btn-active .hall-count:not(.on) { color:rgba(255,255,255,.7); }
+  @media (min-width:768px) { .hall-btn { width:100%; min-width:0; } }
   .chip-n { min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:#EFE8DC; color:#57534e; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
   .chip-active .chip-n { background:#7A3F1E; color:#fff; }
 
-  .wgrid { display:grid; gap:clamp(8px,1.1vw,14px); grid-template-columns:repeat(auto-fill,minmax(clamp(112px,13vw,172px),1fr)); }
-  .wcard { position:relative; display:flex; flex-direction:column; justify-content:space-between; min-height:clamp(100px,11vw,136px); padding:clamp(11px,1.2vw,15px) clamp(11px,1.2vw,15px) clamp(11px,1.2vw,15px) clamp(15px,1.5vw,19px); border-radius:18px; border:1px solid #E8DFD2; background:#fff; overflow:hidden; box-shadow:0 1px 2px rgba(60,36,18,.05), 0 6px 16px -10px rgba(60,36,18,.18); transition:transform .12s, box-shadow .12s, border-color .12s; }
-  .wcard::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:#10B981; }
-  .wcard:hover { box-shadow:0 8px 22px -10px rgba(60,36,18,.35); }
+  .wgrid { display:grid; gap:clamp(4px,.45vw,8px); grid-template-columns:repeat(auto-fill,minmax(clamp(112px,13vw,200px),1fr)); }
+  .wcard { position:relative; display:flex; flex-direction:column; justify-content:space-between; min-height:clamp(100px,min(12vw,17vh),170px); padding:clamp(11px,1.2vw,15px); border-radius:18px; border:1px solid #E3E8EF; background:#F3F6FA; overflow:hidden; box-shadow:0 1px 2px rgba(60,36,18,.04); transition:transform .12s, box-shadow .12s; }
+  .wcard:hover { box-shadow:0 8px 22px -12px rgba(60,36,18,.35); }
   .wcard:active { transform:scale(.97); }
-  .wcard-num { font-size:clamp(22px,2.3vw,30px); font-weight:800; line-height:1; letter-spacing:-.02em; }
-  .wcard-total { font-size:clamp(13px,1.3vw,17px); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
-  .wcard-plus { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; background:#ECFDF5; color:#047857; }
-  .wcard-meta { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:#78716c; }
-  .wcard-pill { display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; background:#ECFDF5; color:#047857; }
-  .wcard-alert { position:absolute; right:10px; bottom:10px; display:grid; place-items:center; width:22px; height:22px; border-radius:999px; background:#DC2626; color:#fff; animation:wpulse 1.6s ease-in-out infinite; }
+  .wcard-num { font-size:clamp(22px,2.3vw,30px); font-weight:800; line-height:1; letter-spacing:-.02em; color:#1E1915; }
+  .wcard-total { font-size:clamp(13px,1.3vw,17px); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; color:#1E1915; }
+  .wcard-add { position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); display:grid; place-items:center; width:40px; height:40px; border-radius:999px; background:#E3E9F2; color:#334155; }
+  .wcard-meta { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:#57534e; }
+  .wcard-pill { display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:4px 10px; border-radius:10px; font-size:12px; font-weight:700; text-align:center; background:#DCE5F1; color:#475569; }
+  .wcard-alert { position:absolute; right:10px; top:48px; display:grid; place-items:center; width:22px; height:22px; border-radius:999px; background:#DC2626; color:#fff; animation:wpulse 1.6s ease-in-out infinite; }
   @keyframes wpulse { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.5); } 50% { box-shadow:0 0 0 7px rgba(220,38,38,0); } }
-  .wcard-busy { background:linear-gradient(160deg,#FFF9DB,#FFEFA8); border-color:#F2D45C; }
-  .wcard-busy::before { background:#E0A800; }
-  .wcard-busy .wcard-pill { background:rgba(255,255,255,.75); color:#78350F; }
+  .wcard-pay { position:absolute; right:10px; top:48px; z-index:2; display:grid; place-items:center; width:32px; height:32px; border-radius:999px; background:#EA580C; color:#fff; box-shadow:0 2px 6px rgba(234,88,12,.4); }
+  .wcard-busy { background:linear-gradient(160deg,#FFF3A6,#FFE15C); border-color:#F2D45C; }
+  .wcard-busy .wcard-pill { background:rgba(255,255,255,.72); color:#78350F; }
   .wcard-bill { background:linear-gradient(160deg,#FFEEDD,#FFD7B0); border-color:#F4A261; }
-  .wcard-bill::before { background:#EA580C; }
   .wcard-bill .wcard-pill { background:#fff; color:#9A3412; }
   .wcard-reserved { background:#EFF6FF; border-color:#BFDBFE; }
-  .wcard-reserved::before { background:#3B82F6; }
   .wcard-reserved .wcard-pill { background:#DBEAFE; color:#1D4ED8; }
   .wcard-locked { background:#F5F5F4; border-color:#E7E5E4; box-shadow:none; }
-  .wcard-locked::before { background:#D6D3D1; }
   .wcard-locked .wcard-num { color:#A8A29E; }
   .wcard-locked .wcard-pill { background:#E7E5E4; color:#78716C; }
   .wcard[data-mine="1"] { outline:2px solid rgba(122,63,30,.55); outline-offset:-2px; }
   @media (prefers-reduced-motion: reduce) { .wcard-alert { animation:none; } .wcard { transition:none; } }
 </style>
-{% else %}
-<div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-  <div>
-    <h1 class="page-title">{% translate 'Столы' %}</h1>
-    <p class="page-sub">{% translate 'Нажмите на стол, чтобы открыть заказ.' %}</p>
-  </div>
-  <div class="relative w-full sm:w-56">
-    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
-    <input id="table-search" type="search" class="input pl-10" placeholder="{% translate 'Номер стола' %}" autocomplete="off">
-  </div>
-</div>
-
-<div class="grid grid-cols-3 gap-3 mb-4">
-  <div class="card p-4">
-    <div class="text-xs text-muted font-semibold">{% translate 'Свободно' %}</div>
-    <div class="text-2xl font-black text-emerald-600 mt-1">{{ counts.free }}</div>
-  </div>
-  <div class="card p-4">
-    <div class="text-xs text-muted font-semibold">{% translate 'Занято' %}</div>
-    <div class="text-2xl font-black text-brand mt-1">{{ counts.busy|add:counts.bill }}</div>
-  </div>
-  <div class="card p-4">
-    <div class="text-xs text-muted font-semibold">{% translate 'Забронировано' %}</div>
-    <div class="text-2xl font-black text-blue-600 mt-1">{{ counts.reserved }}</div>
-  </div>
-</div>
-
-<div id="table-filter" class="flex flex-wrap gap-2 mb-4">
-  <button type="button" data-filter="all" class="chip chip-active">{% translate 'Все' %}</button>
-  <button type="button" data-filter="free" class="chip">{% translate 'Свободные' %}</button>
-  <button type="button" data-filter="busy" class="chip">{% translate 'Занятые' %}</button>
-  <button type="button" data-filter="reserved" class="chip">{% translate 'Бронь' %}</button>
-</div>
-
-{% if floor_waiters %}
-  <div id="waiter-filter" class="flex flex-wrap items-center gap-2 mb-4">
-    <span class="text-sm text-muted mr-1">{% translate 'Официант' %}:</span>
-    <button type="button" data-waiter-filter="" class="chip chip-active">{% translate 'Все' %}</button>
-    {% for w in floor_waiters %}
-      <button type="button" data-waiter-filter="{{ w.user.id }}" class="chip">{{ w.user.first_name|default:w.user.username }}<span class="text-xs text-muted">{{ w.count }}</span></button>
-    {% endfor %}
-  </div>
-{% endif %}
-
-{# Столы обновляются сами: видно, когда стол освободился или гость сделал заявку #}
-<div id="tables-grid" hx-get="{% url 'table_map' %}" hx-trigger="every 10s" hx-swap="innerHTML">
-  {% include "pos/_floor_grid.html" %}
-</div>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -133,7 +91,6 @@
       if (waiter && el.dataset.waiter !== waiter) return false;
       if (state === 'all') return true;
       if (state === 'mine') return el.dataset.mine === '1';
-      if (state === 'busy') return s === 'busy' || s === 'bill' || s === 'locked';
       return s === state;
     }
     function apply() {
@@ -167,7 +124,7 @@
         var n = 0;
         section.querySelectorAll('[data-table]').forEach(function (t) { if (t.dataset.state !== 'free') n++; });
         var badge = halls.querySelector('[data-hall-count="' + section.dataset.hallSection + '"]');
-        if (badge) { badge.textContent = n; badge.classList.toggle('on', n > 0); }
+        if (badge) { badge.textContent = n; badge.classList.toggle('on', n > 0); }  // 0 тоже виден, но серым
       });
     }
     counts();

@@ -37,10 +37,28 @@ class TableMapTests(TestCase):
             self.assertIn("table_map", self.nav(user))
         self.assertEqual(self.nav(self.waiter)["table_map"]["label"], "Столы")
 
-    def test_owner_has_no_duplicate_tables_item(self):
-        names = [i["label"] for i in self.nav(self.owner).values()]
+    def test_owner_has_tables_and_halls_setup_under_different_names(self):
+        nav = self.nav(self.owner)
+        names = [i["label"] for i in nav.values()]
         self.assertEqual(names.count("Столы"), 1)
-        self.assertNotIn("table_map", self.nav(self.owner))
+        self.assertIn("table_map", nav)
+        self.assertEqual(nav["manage_tables"]["label"], "Залы и столы")
+        # В шапке стоят главные вкладки, остальные разделы только в панели профиля
+        self.assertTrue(nav["table_map"]["primary"])
+        self.assertFalse(nav["manage_menu"]["primary"])
+
+    def test_sections_live_in_profile_drawer_not_in_a_left_sidebar(self):
+        for user in (self.waiter, self.cashier, self.owner):
+            self.client.force_login(user)
+            page = self.client.get(reverse("table_map")).content.decode()
+            self.assertIn('id="drawer-btn"', page)
+            self.assertIn('id="app-drawer"', page)
+            self.assertNotIn("nav-link", page)
+        # Отчёты и меню есть в панели профиля владельца, но не вкладками в шапке
+        drawer = page[page.index('id="app-drawer"'):]
+        self.assertIn(reverse("reports"), drawer)
+        header = page[page.index("<header"):page.index('id="app-drawer"')]
+        self.assertNotIn(f'href="{reverse("reports")}"', header)
 
     def test_cook_cannot_open_it(self):
         self.client.force_login(self.cook)

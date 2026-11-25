@@ -400,11 +400,10 @@ def _floor_context(request):
 
 
 def _home_url(user, order=None):
-    """Куда вернуться из заказа: официанту схема столов, остальным «Заказы» сразу в раздел этого заказа."""
-    url = reverse(user.home_url_name)
-    if order is not None and user.home_url_name == "floor":
-        url += f"?tab={order.order_type}"
-    return url
+    """Куда вернуться из заказа: к схеме столов; заказ навынос или на доставку у кассы живёт в «Заказах», в своём разделе."""
+    if order is not None and not user.simple_floor and order.order_type != Order.OrderType.DINE_IN:
+        return f"{reverse('floor')}?tab={order.order_type}"
+    return reverse(user.home_url_name)
 
 
 def _can_mark_ready(user):
@@ -511,7 +510,8 @@ def table_map(request):
     """Схема залов для официанта и кассира: нажал на стол, открылся его заказ (или новый, если стол свободен).
     Официант видит чужие занятые столы, но открыть их не может, кассир открывает любые."""
     context = _floor_context(request)
-    context["counter_orders"] = []  # навынос и доставка живут в «Заказах», здесь только столы
+    if request.user.simple_floor:
+        context["counter_orders"] = []  # официанту навынос и доставка видны в «Заказах», здесь только столы
     # Кассиру и администратору — фильтр «чьи это столы»: официанты, у которых сейчас есть открытые столы
     waiters = {}
     for hall in context["halls"]:

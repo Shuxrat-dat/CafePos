@@ -71,8 +71,10 @@ class User(AbstractUser):
 
     @property
     def home_url_name(self):
-        """Куда вести после входа и «Назад»: официанту схема столов, остальным экран заказов."""
-        return "table_map" if self.simple_floor else "floor"
+        """Куда вести после входа и «Назад»: всем, кто работает в зале, схема столов; повару и прочим «Заказы»."""
+        if self.simple_floor or self.is_superuser or self.role in (self.Role.OWNER, self.Role.ADMIN, self.Role.CASHIER):
+            return "table_map"
+        return "floor"
 
     @property
     def can_take_payment(self):

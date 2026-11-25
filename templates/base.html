@@ -27,232 +27,122 @@
 </head>
 <body class="bg-canvas min-h-screen text-ink antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-indicator="#progress">
 <div id="progress" class="no-print fixed top-0 inset-x-0 h-0.5 bg-brand z-[70] pointer-events-none"></div>
-{% if user.is_authenticated and user.simple_floor %}
-  {# Официант: компактная верхняя панель вместо боковой, как в кассовых терминалах #}
-  <header class="no-print sticky top-0 z-40 bg-white border-b border-line h-14 px-2 sm:px-3 flex items-center gap-2">
-    <a href="{% url 'table_map' %}" class="grid place-items-center w-10 h-10 rounded-xl bg-[#F8ECDA] text-brand shrink-0" title="{{ cafe.name }}">{% icon "coffee" 22 %}</a>
-    <nav class="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
-      {% for item in nav_items %}{% if item.name != 'orders' %}
+{% if user.is_authenticated %}
+  {# Верхняя панель для всех ролей: слева кнопка профиля (в ней все разделы), рядом главные вкладки #}
+  <header class="no-print sticky top-0 z-40 bg-white border-b border-line h-[var(--hh)] px-2 sm:px-4 flex items-center gap-2 sm:gap-3">
+    <button type="button" id="drawer-btn" onclick="openDrawer()" aria-haspopup="dialog" aria-controls="app-drawer" aria-label="{% translate 'Профиль' %}" title="{% translate 'Профиль' %}"
+            data-tour="3" data-tour-title="{% translate 'Разделы' %}" data-tour-text="{% translate 'Заказы, меню, столы, касса, склад и отчёты. Показаны только те, что доступны вашей роли.' %}"
+            class="flex items-center gap-2 hctl pl-1 pr-1 2xl:pr-3 rounded-2xl hover:bg-[#FAF6EF] shrink-0">
+      <span class="grid place-items-center hbtn rounded-full bg-[#F6E6D2] text-brand font-bold uppercase">{{ user.first_name|default:user.username|slice:":1" }}</span>
+      <span class="hidden 2xl:block text-left min-w-0 leading-tight">
+        <span class="block text-[13px] font-bold text-ink truncate max-w-[130px]">{{ user.first_name|default:user.username }}</span>
+        <span class="block text-[11px] text-muted font-medium truncate max-w-[130px]">{% if user.is_superuser %}{% translate 'Кассир / Админ' %}{% else %}{{ user.get_role_display }}{% endif %}</span>
+      </span>
+    </button>
+    <nav class="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar py-2 px-1" aria-label="{% translate 'Разделы' %}">
+      {% for item in nav_items %}{% if item.primary %}
         {% if item.post %}
           <form method="post" action="{{ item.url }}" class="m-0 shrink-0">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
-            <button class="wtab" title="{{ item.label }}">{% icon item.icon 18 %}<span class="hidden sm:inline">{{ item.label }}</span></button>
+            <button class="wtab" title="{{ item.label }}">{% icon item.icon 18 %}<span class="hidden lg:inline">{{ item.label }}</span></button>
           </form>
         {% else %}
           <a href="{{ item.url }}" class="wtab shrink-0 {% if item.active %}wtab-active{% endif %}" {% if item.active %}aria-current="page"{% endif %}>
-            {% icon item.icon 18 %}<span class="{% if not item.active %}hidden sm:inline{% endif %}">{{ item.label }}</span>
+            {% icon item.icon 18 %}<span class="{% if not item.active %}hidden lg:inline{% endif %}">{{ item.label }}</span>
             {% if item.badge %}<span class="wtab-badge">{{ item.badge }}</span>{% endif %}
           </a>
         {% endif %}
       {% endif %}{% endfor %}
     </nav>
     <div class="flex-1"></div>
-    <a href="{% url 'my_earnings' %}" class="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold shrink-0 tabular-nums" title="{% translate 'Мой заработок' %}">
+    {% if user.simple_floor %}
+    <a href="{% url 'my_earnings' %}" class="flex items-center gap-1.5 px-3 sm:px-4 hctl rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold shrink-0 tabular-nums" title="{% translate 'Мой заработок' %}">
       {% icon "wallet" 16 %}<span class="hidden sm:inline font-medium">{% translate 'Сегодня' %}:</span> {{ earned_today|money }}
     </a>
-    {% if terminal_idle_seconds %}
-      <form method="post" action="{% url 'terminal_lock' %}" id="terminal-lock" class="m-0 shrink-0">{% csrf_token %}
-        <button class="grid place-items-center w-10 h-10 rounded-xl bg-red-50 text-red-700 border border-red-200" title="{% translate 'Заблокировать терминал' %}" aria-label="{% translate 'Заблокировать терминал' %}">{% icon "lock" 18 %}</button>
-      </form>
     {% endif %}
-    <div class="relative hidden md:block w-52">
-      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">{% icon "search" 16 %}</span>
+    {% if user.is_superuser or user.role != 'cook' %}
+    <div class="relative hidden md:block w-40 lg:w-44 xl:w-56 2xl:w-72">
+      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">{% icon "search" 18 %}</span>
       <input id="global-pos-search" name="q" type="search" autocomplete="off" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
+             data-tour="1" data-tour-title="{% translate 'Поиск' %}" data-tour-text="{% translate 'Введите номер заказа, стола или имя гостя. Поиск работает на любом экране.' %}"
              hx-get="{% url 'global_search' %}" hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-swap="innerHTML" hx-indicator="#progress"
-             class="w-full bg-white border border-line rounded-xl pl-9 pr-3 min-h-[40px] text-[13px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand">
+             class="w-full bg-[#E8ECF2] border border-transparent rounded-2xl pl-10 pr-3 hctl text-[14px] text-ink placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand focus:bg-white">
       <div id="search-results" class="absolute right-0 w-[22rem] top-full mt-2 z-50"></div>
     </div>
-    <div id="conn-pill" data-state="online" class="flex items-center gap-1.5 px-2.5 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shrink-0"
+    {% endif %}
+    {% if not user.simple_floor %}
+    <button type="button" onclick="startTour()" class="hidden 2xl:grid place-items-center hbtn rounded-2xl bg-[#E8ECF2] text-slate-600 text-base font-bold shrink-0" title="{% translate 'Показать подсказки' %}" aria-label="{% translate 'Показать подсказки' %}">?</button>
+    <div class="hidden 2xl:block text-right text-xs leading-tight pr-1 shrink-0">
+      <div id="live-date" class="text-stone-500 font-medium">--</div>
+      <div id="live-time" class="text-ink font-bold text-[13px]">--:--</div>
+    </div>
+    {% endif %}
+    <button type="button" onclick="location.reload()" class="grid place-items-center hbtn rounded-2xl bg-[#E8ECF2] text-slate-600 shrink-0" title="{% translate 'Обновить' %}" aria-label="{% translate 'Обновить' %}">{% icon "refresh" 22 %}</button>
+    <div id="conn-pill" data-state="online" class="flex items-center gap-1.5 px-2.5 sm:px-3 hctl rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shrink-0"
          title="{% translate 'Касса работает по локальной сети, интернет ей не нужен. Здесь видно только связь вашего устройства с кассой.' %}"
          data-online="{% translate 'Касса на связи' %}" data-offline="{% translate 'Нет связи с кассой' %}">
       <span id="conn-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span id="conn-label" class="hidden lg:inline">{% translate 'Касса на связи' %}</span>
+      <span id="conn-label" class="hidden 2xl:inline">{% translate 'Касса на связи' %}</span>
     </div>
-    <details class="relative shrink-0">
-      <summary class="list-none cursor-pointer grid place-items-center w-10 h-10 rounded-full bg-[#F6E6D2] text-brand font-bold uppercase" aria-label="{% translate 'Профиль' %}">{{ user.first_name|default:user.username|slice:":1" }}</summary>
-      <div class="absolute right-0 mt-2 w-64 rounded-2xl bg-white shadow-pop p-3 border border-line">
-        <div class="flex flex-col items-center text-center pb-3 border-b border-line">
-          <span class="grid place-items-center w-14 h-14 rounded-full bg-[#F6E6D2] text-brand text-xl font-bold uppercase">{{ user.first_name|default:user.username|slice:":1" }}</span>
-          <span class="mt-2 font-bold text-ink">{{ user.first_name|default:user.username }}</span>
-          <span class="badge bg-blue-100 text-blue-700 mt-1">{{ user.get_role_display }}</span>
-        </div>
-        <div class="pt-2 space-y-1">
-          <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
-          <form method="post" action="{% url 'clock' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg font-semibold {% if work_shift %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100{% else %}bg-brand text-white hover:bg-brand-600{% endif %}">{% icon "clock" 18 %}{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</button>
-          </form>
-          {% for item in nav_items %}{% if item.name == 'orders' %}
-            <a href="{{ item.url }}" class="flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50">{% icon item.icon 18 %}{{ item.label }}</a>
-          {% endif %}{% endfor %}
-          <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50 text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
-          <div class="px-1">{% include "components/lang_switch.html" %}</div>
-          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-            <button class="w-full flex items-center gap-3 px-3 min-h-[42px] rounded-lg hover:bg-slate-50 text-red-700">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
-          </form>
-        </div>
-      </div>
-    </details>
-  </header>
-{% elif user.is_authenticated %}
-  {# Боковая навигация #}
-  <aside class="no-print hidden md:flex fixed inset-y-0 left-0 z-40 w-[84px] xl:w-60 flex-col bg-white border-r border-line">
-    <a href="{% url 'floor' %}" class="flex items-center justify-center xl:justify-start gap-3 h-16 px-3 xl:px-5 border-b border-line shrink-0" title="{{ cafe.name }}">
-      <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#F8ECDA] text-brand shrink-0">
-        {% icon "coffee" 22 %}
-      </span>
-      <span class="hidden xl:block min-w-0">
-        <span class="block font-bold text-[17px] leading-tight text-ink tracking-tight truncate max-w-[150px]">{{ cafe.name }}</span>
-      </span>
-    </a>
-    {% if DEMO_MODE %}
-      <div class="mx-2 xl:mx-3 mt-3 rounded-lg bg-orange-50 text-orange-800 text-[11px] xl:text-xs font-semibold px-2 py-1 text-center xl:text-left">{% translate 'Демо-режим' %}</div>
+    {% if terminal_idle_seconds %}
+      <form method="post" action="{% url 'terminal_lock' %}" id="terminal-lock" class="m-0 shrink-0">{% csrf_token %}
+        <button class="grid place-items-center hbtn rounded-2xl bg-red-50 text-red-600 border border-red-200" title="{% translate 'Заблокировать терминал' %}" aria-label="{% translate 'Заблокировать терминал' %}">{% icon "lock" 22 %}</button>
+      </form>
     {% endif %}
-    <nav data-tour="3" data-tour-title="{% translate 'Разделы' %}" data-tour-text="{% translate 'Заказы, меню, столы, касса, склад и отчёты. Показаны только те, что доступны вашей роли.' %}" class="flex-1 flex flex-col gap-1 px-2 xl:px-3 py-4 overflow-y-auto no-scrollbar" aria-label="{% translate 'Разделы' %}">
-      {% for item in nav_items %}
-        {% if item.post %}
-          <form method="post" action="{{ item.url }}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
-            <button class="nav-link {% if item.active %}nav-link-active{% endif %}" title="{% translate 'Новый заказ' %}">
-              {% icon item.icon 20 %}
-              <span class="leading-none truncate max-w-full">{{ item.label }}</span>
-              {% if item.badge %}
-                <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full {% if item.active %}bg-white text-brand{% else %}bg-brand text-white{% endif %} text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
-              {% endif %}
-            </button>
-          </form>
-        {% else %}
-          <a href="{{ item.url }}" class="nav-link {% if item.active %}nav-link-active{% endif %}" {% if item.active %}aria-current="page"{% endif %}>
-            {% icon item.icon 20 %}
-            <span class="leading-none truncate max-w-full">{{ item.label }}</span>
-            {% if item.badge %}
-              <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-full {% if item.active %}bg-white text-brand{% else %}bg-brand text-white{% endif %} text-[11px] font-bold items-center justify-center">{{ item.badge }}</span>
-            {% elif item.name == 'stock' and low_stock_count %}
-              <span class="hidden xl:flex ml-auto min-w-[20px] h-5 px-1.5 rounded-md bg-orange-100 text-orange-700 text-[11px] font-bold items-center justify-center">{{ low_stock_count }}</span>
-            {% endif %}
-          </a>
-        {% endif %}
-      {% endfor %}
-    </nav>
-    <div class="border-t border-line p-3 shrink-0">
-      <div class="bg-[#FAF6EF] border border-line rounded-2xl p-2.5 flex flex-col gap-2">
-        <div class="flex items-center gap-2.5">
-          <span class="grid place-items-center w-9 h-9 rounded-xl bg-[#F6E6D2] text-brand text-sm font-bold uppercase shrink-0">
-            {{ user.first_name|default:user.username|slice:":1" }}
-          </span>
-          <div class="hidden xl:block flex-1 min-w-0">
-            <span class="block text-[11px] text-muted leading-tight font-medium">{% if user.is_superuser %}{% translate 'Кассир / Админ' %}{% else %}{{ user.get_role_display|default:'Кассир' }}{% endif %}</span>
-            <span class="block text-[13px] font-bold text-ink truncate leading-tight">{{ user.first_name|default:user.username }}</span>
-          </div>
-        </div>
-        <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Панель цифр на экране' %}">
-          {% icon "layout-grid" 16 %}<span class="hidden xl:inline" data-numpad-mode>{% translate 'Панель цифр: авто' %}</span>
-        </button>
-        <form method="post" action="{% url 'clock' %}" class="m-0">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold {% if work_shift %}text-emerald-700 bg-emerald-50{% else %}text-stone-600{% endif %} hover:bg-white transition-colors" title="{% if work_shift %}{% translate 'Закончить смену' %}{% else %}{% translate 'Начать смену' %}{% endif %}">
-            {% icon "clock" 16 %}
-            <span class="hidden xl:inline">{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</span>
-          </button>
-        </form>
-        {% if user.can_take_payment %}
-        <button type="button" onclick="openShiftModal()" data-tour="4" data-tour-title="{% translate 'Кассовая смена и выход' %}" data-tour-text="{% translate 'Здесь открывают и закрывают смену, а кнопка «Выйти» ниже завершает вашу сессию.' %}" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-brand hover:bg-white transition-colors" title="{% translate 'Кассовая смена' %}">
-          {% icon "wallet" 16 %}
-          <span class="hidden xl:inline">{% translate 'Кассовая смена' %}</span>
-        </button>
-        {% endif %}
-        {% if user.needs_cancel_pin %}
-          <a href="{% url 'cancel_pin_settings' %}" class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold {% if user.has_cancel_pin %}text-stone-600 hover:text-brand{% else %}text-orange-700 bg-orange-50{% endif %} hover:bg-white transition-colors" title="{% translate 'Пароль отмены' %}">
-            {% icon "lock" 16 %}
-            <span class="hidden xl:inline">{% translate 'Пароль отмены' %}{% if not user.has_cancel_pin %} · {% translate 'задайте' %}{% endif %}</span>
-          </a>
-        {% endif %}
-        <button type="button" data-install-app class="hidden w-full items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-brand hover:bg-white transition-colors" title="{% translate 'Установить приложение' %}">
-          {% icon "arrow-down" 16 %}
-          <span class="hidden xl:inline">{% translate 'Установить приложение' %}</span>
-        </button>
-        <form method="post" action="{% url 'logout' %}" class="m-0">{% csrf_token %}
-          <button class="w-full flex items-center justify-center xl:justify-start gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-stone-600 hover:text-red-700 hover:bg-white transition-colors" title="{% translate 'Выйти' %}">
-            {% icon "log-out" 16 %}
-            <span class="hidden xl:inline">{% translate 'Выйти' %}</span>
-          </button>
-        </form>
-      </div>
-      <div class="mt-2 text-center">
-        {% include "components/lang_switch.html" with short=True %}
-      </div>
-    </div>
-  </aside>
+  </header>
 
-  {# Верхняя панель для телефонов #}
-  <header class="no-print md:hidden sticky top-0 z-40 bg-white border-b border-line h-14 px-4 flex items-center justify-between gap-3">
-    <a href="{% url 'floor' %}" class="flex items-center gap-2 font-semibold min-w-0">
-      <span class="grid place-items-center w-8 h-8 rounded-lg bg-brand text-white shrink-0">{% icon "utensils" 18 %}</span>
-      <span class="truncate">CafePOS</span>
-      {% if DEMO_MODE %}<span class="badge bg-orange-50 text-orange-800">{% translate 'Демо-режим' %}</span>{% endif %}
-    </a>
-    <details class="relative">
-      <summary class="list-none icon-btn cursor-pointer" aria-label="{% translate 'Разделы' %}">{% icon "layout-grid" 20 %}</summary>
-      <div class="absolute right-0 mt-2 w-64 rounded-xl bg-white shadow-pop p-2 border border-line">
+  {# Выдвижная панель слева: профиль, все разделы и личные действия #}
+  <div id="app-drawer" class="no-print hidden fixed inset-0 z-[65]" role="dialog" aria-modal="true" aria-label="{% translate 'Разделы' %}">
+    <div class="absolute inset-0 bg-ink/40" onclick="closeDrawer()"></div>
+    <div class="absolute inset-y-0 left-0 w-[310px] max-w-[88vw] bg-white shadow-pop flex flex-col">
+      <div class="flex items-center gap-3 p-4 border-b border-line shrink-0">
+        <span class="grid place-items-center w-12 h-12 rounded-full bg-[#F6E6D2] text-brand text-lg font-bold uppercase shrink-0">{{ user.first_name|default:user.username|slice:":1" }}</span>
+        <div class="min-w-0 flex-1">
+          <div class="font-bold text-ink truncate">{{ user.first_name|default:user.username }}</div>
+          <div class="text-xs text-muted font-medium truncate">{% if user.is_superuser %}{% translate 'Кассир / Админ' %}{% else %}{{ user.get_role_display }}{% endif %} · {{ cafe.name }}</div>
+          {% if DEMO_MODE %}<span class="badge bg-orange-50 text-orange-800 mt-1">{% translate 'Демо-режим' %}</span>{% endif %}
+        </div>
+        <button type="button" id="drawer-close" onclick="closeDrawer()" class="icon-btn shrink-0" aria-label="{% translate 'Закрыть' %}">{% icon "x" 20 %}</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-3 space-y-1">
         {% for item in nav_items %}
           {% if item.post %}
-            <form method="post" action="{{ item.url }}">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
-              <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50">{% icon item.icon 18 %}{{ item.label }}</button></form>
+            <form method="post" action="{{ item.url }}" class="m-0">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
+              <button class="w-full flex items-center gap-3 px-3 min-h-[46px] rounded-xl hover:bg-[#FAF6EF] text-[15px] font-semibold text-stone-700">{% icon item.icon 20 %}{{ item.label }}</button>
+            </form>
           {% else %}
-            <a href="{{ item.url }}" class="flex items-center gap-3 px-3 min-h-[44px] rounded-lg {% if item.active %}bg-brand-50 text-brand-700 font-semibold{% else %}hover:bg-slate-50{% endif %}">{% icon item.icon 18 %}{{ item.label }}</a>
+            <a href="{{ item.url }}" class="flex items-center gap-3 px-3 min-h-[46px] rounded-xl text-[15px] font-semibold {% if item.active %}bg-brand text-white{% else %}text-stone-700 hover:bg-[#FAF6EF]{% endif %}" {% if item.active %}aria-current="page"{% endif %}>
+              {% icon item.icon 20 %}<span class="flex-1 truncate">{{ item.label }}</span>
+              {% if item.badge %}<span class="min-w-[22px] h-[22px] px-1.5 rounded-full text-xs font-bold inline-flex items-center justify-center {% if item.active %}bg-white text-brand{% else %}bg-brand text-white{% endif %}">{{ item.badge }}</span>
+              {% elif item.name == 'stock' and low_stock_count %}<span class="min-w-[22px] h-[22px] px-1.5 rounded-md bg-orange-100 text-orange-700 text-xs font-bold inline-flex items-center justify-center">{{ low_stock_count }}</span>{% endif %}
+            </a>
           {% endif %}
         {% endfor %}
         <div class="border-t border-line my-2"></div>
-        <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
-        <form method="post" action="{% url 'clock' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 {% if work_shift %}text-emerald-700 font-semibold{% endif %}">{% icon "clock" 18 %}{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</button>
+        <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl hover:bg-[#FAF6EF] text-sm font-semibold text-stone-600">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
+        <form method="post" action="{% url 'clock' %}" class="m-0">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold {% if work_shift %}bg-emerald-50 text-emerald-800 hover:bg-emerald-100{% else %}text-stone-600 hover:bg-[#FAF6EF]{% endif %}">{% icon "clock" 18 %}{% if work_shift %}{% translate 'Закончить смену' %} · {{ work_shift.started_at|time:"H:i" }}{% else %}{% translate 'Начать смену' %}{% endif %}</button>
         </form>
-        {% if user.needs_cancel_pin %}
-          <a href="{% url 'cancel_pin_settings' %}" class="flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 {% if not user.has_cancel_pin %}text-orange-700 font-semibold{% endif %}">{% icon "lock" 18 %}{% translate 'Пароль отмены' %}{% if not user.has_cancel_pin %} · {% translate 'задайте' %}{% endif %}</a>
+        {% if user.can_take_payment %}
+          <button type="button" onclick="closeDrawer(); openShiftModal()" class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl hover:bg-[#FAF6EF] text-sm font-semibold text-stone-600">{% icon "wallet" 18 %}{% translate 'Кассовая смена' %}</button>
         {% endif %}
-        <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
-        <div class="px-1">{% include "components/lang_switch.html" %}</div>
-        <form method="post" action="{% url 'logout' %}" class="mt-1">{% csrf_token %}
-          <button class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-lg hover:bg-slate-50 text-red-700">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
-        </form>
+        {% if user.needs_cancel_pin %}
+          <a href="{% url 'cancel_pin_settings' %}" class="flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold {% if user.has_cancel_pin %}text-stone-600 hover:bg-[#FAF6EF]{% else %}text-orange-700 bg-orange-50{% endif %}">{% icon "lock" 18 %}{% translate 'Пароль отмены' %}{% if not user.has_cancel_pin %} · {% translate 'задайте' %}{% endif %}</a>
+        {% endif %}
+        <button type="button" data-install-app class="hidden w-full items-center gap-3 px-3 min-h-[44px] rounded-xl hover:bg-[#FAF6EF] text-sm text-brand font-semibold">{% icon "arrow-down" 18 %}{% translate 'Установить приложение' %}</button>
+        <div class="px-1 pt-1">{% include "components/lang_switch.html" %}</div>
       </div>
-    </details>
-  </header>
+      <form method="post" action="{% url 'logout' %}" class="m-0 p-3 border-t border-line shrink-0">{% csrf_token %}
+        <button class="w-full flex items-center gap-3 px-3 min-h-[46px] rounded-xl hover:bg-red-50 text-red-700 font-semibold">{% icon "log-out" 18 %}{% translate 'Выйти' %}</button>
+      </form>
+    </div>
+  </div>
 {% endif %}
 
-<div class="{% if user.is_authenticated and not user.simple_floor %}md:pl-[84px] xl:pl-60{% endif %} min-h-screen flex flex-col bg-canvas">
+<div class="min-h-screen flex flex-col bg-canvas">
   {% if DEMO_MODE and not user.is_authenticated %}
     <div class="no-print bg-orange-50 text-orange-900 text-[13px] px-4 py-1.5 text-center border-b border-orange-100">
       <b>{% translate 'Демо-режим' %}</b> · {% translate 'учебные данные, рабочая база не используется' %}
     </div>
-  {% endif %}
-  {% if user.is_authenticated and not user.simple_floor %}
-    <header class="no-print hidden md:flex sticky top-0 z-30 bg-[#FAF6EF]/95 backdrop-blur-md px-6 py-3 items-center justify-between gap-4 border-b border-line">
-      <div class="flex-1 max-w-xl relative">
-        {% if user.is_superuser or user.role != 'cook' %}
-          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">{% icon "search" 18 %}</span>
-          <input id="global-pos-search" name="q" type="search" autocomplete="off"
-                 data-tour="1" data-tour-title="{% translate 'Поиск' %}" data-tour-text="{% translate 'Введите номер заказа, стола или имя гостя. Поиск работает на любом экране.' %}"
-                 placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
-                 hx-get="{% url 'global_search' %}" hx-trigger="input changed delay:250ms, search" hx-target="#search-results" hx-swap="innerHTML" hx-indicator="#progress"
-                 class="w-full bg-white border border-line rounded-xl pl-10 pr-4 py-2 text-[14px] text-ink placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand shadow-sm">
-          <div id="search-results" class="absolute left-0 right-0 top-full mt-2 z-50"></div>
-        {% endif %}
-      </div>
-      <div class="flex items-center gap-3 shrink-0">
-        <button type="button" onclick="startTour()" class="icon-btn w-9 h-9 text-sm font-bold" title="{% translate 'Показать подсказки' %}" aria-label="{% translate 'Показать подсказки' %}">?</button>
-        <div class="text-right text-xs leading-tight pr-1">
-          <div id="live-date" class="text-stone-500 font-medium">--</div>
-          <div id="live-time" class="text-ink font-bold text-[13px]">--:--</div>
-        </div>
-        <div id="conn-pill" data-state="online" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold shadow-sm"
-             title="{% translate 'Касса работает по локальной сети, интернет ей не нужен. Здесь видно только связь вашего устройства с кассой.' %}"
-             data-online="{% translate 'Касса на связи' %}" data-offline="{% translate 'Нет связи с кассой' %}">
-          <span id="conn-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="conn-label">{% translate 'Касса на связи' %}</span>
-        </div>
-        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand text-white text-xs font-bold shadow-sm">
-          {% icon "coffee" 16 %}
-          <span>{{ cafe.name }}</span>
-        </div>
-      </div>
-    </header>
   {% endif %}
   <div id="conn-banner" role="alert" class="hidden no-print sticky top-0 z-[60] bg-red-600 text-white px-4 py-2.5 text-sm font-semibold text-center">
     {% translate 'Нет связи с кассой. Заказы и оплаты сейчас не сохраняются. Проверьте Wi-Fi: когда связь вернётся, это сообщение исчезнет само.' %}
@@ -302,8 +192,10 @@
     window.closeNewOrder = function () { var m = document.getElementById('new-order-modal'); if (m) m.classList.add('hidden'); };
     window.openShiftModal = function () { var m = document.getElementById('shift-modal-container'); if (m) m.classList.remove('hidden'); };
     window.closeShiftModal = function () { var m = document.getElementById('shift-modal-container'); if (m) m.classList.add('hidden'); };
+    window.openDrawer = function () { var d = document.getElementById('app-drawer'); if (d) { d.classList.remove('hidden'); var c = document.getElementById('drawer-close'); if (c) c.focus(); } };
+    window.closeDrawer = function () { var d = document.getElementById('app-drawer'); if (d) d.classList.add('hidden'); };
     function clearSearch() { var r = document.getElementById('search-results'); if (r) r.innerHTML = ''; }
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeNewOrder(); closeShiftModal(); clearSearch(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeNewOrder(); closeShiftModal(); closeDrawer(); clearSearch(); } });
     document.addEventListener('click', function (e) { if (!e.target.closest('#global-pos-search, #search-results')) clearSearch(); });
     document.body.addEventListener('toast', function (e) { showToast(e.detail.message, e.detail.kind); });
     document.body.addEventListener('htmx:responseError', function (e) {

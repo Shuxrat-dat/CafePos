@@ -107,7 +107,7 @@
         <button class="btn btn-secondary btn-lg w-full">{% icon "plus" 20 %}{% translate 'Новый заказ навынос' %}</button>
       </form>
     {% endif %}
-    <a href="{% url user.home_url_name %}{% if user.home_url_name == 'floor' %}?tab={{ order.order_type }}{% endif %}" class="btn btn-ghost btn-lg w-full">{% translate 'К залу' %}</a>
+    <a href="{% if not user.simple_floor and order.order_type != 'dine_in' %}{% url 'floor' %}?tab={{ order.order_type }}{% else %}{% url user.home_url_name %}{% endif %}" class="btn btn-ghost btn-lg w-full">{% translate 'К залу' %}</a>
   </div>
 </div>
 {% endblock %}

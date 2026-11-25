@@ -5247,3 +5247,6 @@ msgstr "qarzga"
 
 msgid "часть счёта, которую гость заплатит позже"
 msgstr "hisobning mehmon keyinroq to‘laydigan qismi"
+
+msgid "Обновить"
+msgstr "Yangilash"

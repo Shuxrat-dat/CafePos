@@ -224,11 +224,12 @@ class PermissionTests(TestCase):
                     page = self.client.get(reverse("order_detail", args=[order.id])).content.decode()
                     self.assertIn(f'href="{reverse("table_map")}" class="icon-btn shrink-0"', page)
                     self.assertEqual(self.waiter1.home_url_name, "table_map")
-                    self.assertEqual(self.cashier.home_url_name, "floor")
+                    self.assertEqual(self.cashier.home_url_name, "table_map")
+                    self.assertEqual(self.cook.home_url_name, "floor")
 
-                def test_cashier_still_lands_on_orders_after_login(self):
+                def test_cashier_lands_on_tables_after_login(self):
                     response = self.client.post(reverse("login"), {"username": "c1", "password": "pass12345"})
-                    self.assertRedirects(response, reverse("floor"), fetch_redirect_response=False)
+                    self.assertRedirects(response, reverse("table_map"), fetch_redirect_response=False)
 
                 def test_waiter_still_cannot_cancel_order_sent_to_kitchen(self):
                     order = self._make_order(OrderItem.Status.QUEUED)

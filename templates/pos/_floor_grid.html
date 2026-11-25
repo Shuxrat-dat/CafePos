@@ -1,20 +1,16 @@
 {% load i18n ui %}
-{# Карточки столов: одинаковая структура, состояние видно по полосе сверху, иконке и тексту #}
+{# Плитки столов одинаковы у всех ролей: состояние видно по цвету, сумме и подписи #}
 {% for hall in halls %}
-  <section data-hall-section="{{ hall.id }}" class="{% if user.simple_floor %}mb-5{% else %}mb-6{% endif %}">
-    {% if halls|length > 1 %}<h2 class="{% if user.simple_floor %}flex items-center gap-2 text-[15px] font-bold text-ink mb-2.5{% else %}text-sm font-semibold text-muted uppercase tracking-wide mb-2.5{% endif %}">{% if user.simple_floor %}<span class="w-1.5 h-4 rounded-full bg-brand"></span>{% endif %}{{ hall|tr }}</h2>{% endif %}
-    <div class="grid {% if user.simple_floor %}wgrid{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(164px,1fr))]{% endif %}">
+  <section data-hall-section="{{ hall.id }}" class="mb-3">
+    {% if halls|length > 1 %}<h2 class="flex items-center gap-2 text-[15px] font-bold text-ink mb-1.5"><span class="w-1.5 h-4 rounded-full bg-brand"></span>{{ hall|tr }}</h2>{% endif %}
+    <div class="grid wgrid">
       {% for table in hall.tables.all %}
         {% with order=table.open_order %}
-        {% if user.simple_floor %}
-        {# Карточка официанта: цветная полоса состояния, номер, сумма, время, статус. Размер растёт вместе с экраном #}
-        <div data-table="{{ table.number }}" data-state="{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}" data-mine="{% if order and order.waiter_id == user.id %}1{% endif %}"
+        <div data-table="{{ table.number }}" data-state="{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}" data-mine="{% if order and order.waiter_id == user.id %}1{% endif %}" data-waiter="{{ order.waiter_id|default:'' }}"
              class="wcard wcard-{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}">
           <div class="flex items-start justify-between gap-1">
             <span class="wcard-num">{{ table.number }}</span>
-            {% if table.state == 'free' and not table.locked %}
-              <span class="wcard-plus">{% icon "plus" 18 %}</span>
-            {% elif table.state == 'reserved' %}
+            {% if table.state == 'reserved' %}
               <span class="text-blue-600">{% icon "calendar" 18 %}</span>
             {% elif table.locked %}
               <span class="text-stone-400">{% icon "lock" 16 %}</span>
@@ -22,18 +18,22 @@
               <span class="wcard-total">{{ order.total|num }}</span>
             {% endif %}
           </div>
+          {% if table.state == 'free' and not table.locked %}
+            <span class="wcard-add">{% icon "plus" 22 %}</span>
+          {% endif %}
           {% if table.guest_pending %}<span class="wcard-alert" title="{% translate 'Заявка гостя' %}">{% icon "bell" 12 %}</span>{% endif %}
           <div class="min-w-0 space-y-1">
             {% if table.locked %}
-              <div class="wcard-meta truncate">{{ order.waiter.first_name|default:order.waiter.username }}</div>
+              <div class="wcard-meta truncate">{% icon "user" 13 %}{{ order.waiter.first_name|default:order.waiter.username }}</div>
             {% elif table.state == 'free' %}
               <div class="wcard-meta">{% icon "users" 13 %}{{ table.seats }}</div>
             {% elif table.state == 'reserved' %}
-              <div class="wcard-meta truncate">{{ table.reserved_for }}</div>
+              <div class="wcard-meta truncate">{{ table.reserved_for }}{% if table.reserved_at %} · {{ table.reserved_at|time:"H:i" }}{% endif %}</div>
             {% else %}
+              <div class="wcard-meta truncate">{% icon "user" 13 %}{{ order.waiter.first_name|default:order.waiter.username }}</div>
               <div class="wcard-meta">{% icon "clock" 13 %}{{ order.created_at|duration }}</div>
             {% endif %}
-            <span class="wcard-pill">{% if table.locked %}{% translate 'Занят' %}{% elif table.state == 'free' %}{% translate 'Свободен' %}{% elif table.state == 'reserved' %}{% translate 'Бронь' %}{% elif table.state == 'bill' %}{% translate 'Ожидает оплаты' %}{% elif order.has_ready_items %}{% translate 'Готово к подаче' %}{% else %}{% translate 'Занят' %}{% endif %}</span>
+            <span class="wcard-pill">{% if table.locked %}{% translate 'Занят' %}{% elif table.state == 'free' %}{% translate 'Свободен' %}{% elif table.state == 'reserved' %}{% translate 'Бронь' %}{% elif table.state == 'bill' %}{% translate 'Ожидает оплаты' %}{% elif order.has_ready_items %}{% translate 'Готово к подаче' %}{% elif order.has_new_items %}{% translate 'Не отправлен' %}{% else %}{% translate 'Занят' %}{% endif %}</span>
           </div>
           {% if table.state == 'reserved' and not table.locked %}
             <button type="button" hx-get="{% url 'reserve_table' table.id %}" hx-target="#modal" class="absolute inset-0 rounded-[inherit]" aria-label="{% blocktranslate trimmed with n=table.number %}Стол {{ n }}{% endblocktranslate %}"></button>
@@ -43,69 +43,11 @@
               <button class="w-full h-full rounded-[inherit]" aria-label="{% blocktranslate trimmed with n=table.number %}Открыть стол {{ n }}{% endblocktranslate %}"></button>
             </form>
           {% endif %}
-        </div>
-        {% else %}
-        <div data-table="{{ table.number }}" data-state="{% if table.locked %}locked{% else %}{{ table.state }}{% endif %}" data-waiter="{{ order.waiter_id|default:'' }}"
-             class="group relative card h-[140px] p-3.5 flex flex-col overflow-hidden transition-colors {% if not table.locked %}hover:border-slate-400{% endif %}">
-          <span class="absolute inset-x-0 top-0 h-1 {% if table.locked %}bg-slate-200{% elif table.state == 'free' %}bg-emerald-500{% elif table.state == 'busy' %}bg-brand{% elif table.state == 'bill' %}bg-orange-500{% else %}bg-slate-400{% endif %}"></span>
-
-          <div class="flex items-start justify-between gap-2">
-            <span class="text-[26px] font-bold leading-none tracking-tight {% if table.locked %}text-slate-400{% endif %}">{{ table.number }}</span>
-            <span class="flex items-center gap-1 text-xs font-semibold whitespace-nowrap
-              {% if table.locked %}text-slate-400{% elif table.state == 'free' %}text-emerald-700{% elif table.state == 'busy' %}text-brand-700{% elif table.state == 'bill' %}text-orange-700{% else %}text-slate-600{% endif %}">
-              {% if table.locked %}{% icon "lock" 14 %}{% translate 'Занят' %}
-              {% elif table.state == 'free' %}{% icon "check-circle" 14 %}{% translate 'Свободен' %}
-              {% elif table.state == 'bill' %}{% icon "receipt" 14 %}{% translate 'Ожидает оплаты' %}
-              {% elif table.state == 'reserved' %}{% icon "calendar" 14 %}{% translate 'Бронь' %}
-              {% elif order.has_ready_items %}<span class="text-emerald-700 flex items-center gap-1">{% icon "check" 14 %}{% translate 'Готово к подаче' %}</span>
-              {% elif order.has_new_items %}{% icon "pencil" 14 %}{% translate 'Не отправлен' %}
-              {% else %}{% icon "utensils" 14 %}{% translate 'Занят' %}{% endif %}
-            </span>
-          </div>
-          {% if table.guest_pending %}
-            <span class="mt-1.5 self-start badge bg-orange-50 text-orange-800">{% icon "bell" 12 %}{% translate 'Заявка гостя' %}</span>
-          {% endif %}
-
-          <div class="mt-auto">
-            {% if table.locked %}
-              <div class="text-sm text-slate-400 truncate">{{ order.waiter.first_name|default:order.waiter.username }}</div>
-            {% elif table.state == 'free' %}
-              <div class="flex items-center gap-1.5 text-sm text-muted">{% icon "users" 15 %}{{ table.seats }} {% translate 'мест' %}</div>
-            {% elif table.state == 'reserved' %}
-              <div class="text-sm font-semibold truncate">{{ table.reserved_for }}</div>
-              <div class="text-xs text-muted">{% if table.reserved_at %}{{ table.reserved_at|time:"H:i" }} · {% endif %}{{ table.seats }} {% translate 'мест' %}</div>
-            {% else %}
-              <div class="text-lg font-bold tabular-nums leading-tight">{{ order.total|money }}</div>
-              <div class="flex items-center justify-between gap-2 text-xs text-muted mt-0.5 min-h-[30px]">
-                <span class="flex items-center gap-1 whitespace-nowrap">{% icon "clock" 12 %}{{ order.created_at|duration }}</span>
-                {% if table.state == 'bill' and user.can_take_payment %}
-                  {# Быстрый переход к оплате поверх карточки #}
-                  <a href="{% url 'pay' order.id %}" class="relative z-10 btn btn-warn btn-sm min-h-[30px] px-2.5 text-[13px]">{% icon "wallet" 14 %}{% translate 'Оплатить' %}</a>
-                {% else %}
-                  <span class="truncate">{{ order.waiter.first_name|default:order.waiter.username }}</span>
-                {% endif %}
-              </div>
-            {% endif %}
-          </div>
-
-          {# Основное действие — вся карточка #}
-          {% if table.state == 'reserved' and not table.locked %}
-            <button type="button" hx-get="{% url 'reserve_table' table.id %}" hx-target="#modal" class="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:outline-brand" aria-label="{% blocktranslate trimmed with n=table.number %}Стол {{ n }}{% endblocktranslate %}"></button>
-          {% elif not table.locked %}
-            <form method="post" action="{% url 'open_table' table.id %}" class="absolute inset-0">
-              {% csrf_token %}
-              <button class="w-full h-full rounded-xl focus-visible:outline-2 focus-visible:outline-brand" aria-label="{% blocktranslate trimmed with n=table.number %}Открыть стол {{ n }}{% endblocktranslate %}"></button>
-            </form>
-          {% endif %}
-
-          {# Дополнительные действия поверх карточки #}
-          {% if table.state == 'free' %}
-            <button type="button" hx-get="{% url 'reserve_table' table.id %}" hx-target="#modal"
-                    class="absolute right-2 bottom-2 z-10 grid place-items-center w-9 h-9 rounded-lg text-slate-400 hover:text-ink hover:bg-slate-100"
-                    title="{% translate 'Забронировать' %}" aria-label="{% translate 'Забронировать' %}">{% icon "calendar" 17 %}</button>
+          {% if table.state == 'bill' and user.can_take_payment and not table.locked %}
+            {# Кассиру: быстрый переход к оплате поверх плитки #}
+            <a href="{% url 'pay' order.id %}" class="wcard-pay" title="{% translate 'Оплатить' %}" aria-label="{% translate 'Оплатить' %}">{% icon "wallet" 16 %}</a>
           {% endif %}
         </div>
-        {% endif %}
         {% endwith %}
       {% endfor %}
     </div>
@@ -119,7 +61,7 @@
 
 {% if counter_orders %}
   <section class="mt-2">
-    <h2 class="text-sm font-semibold text-muted uppercase tracking-wide mb-2.5">{% translate 'Навынос и доставка' %}</h2>
+    <h2 class="flex items-center gap-2 text-[15px] font-bold text-ink mb-2.5"><span class="w-1.5 h-4 rounded-full bg-brand"></span>{% translate 'Навынос и доставка' %}</h2>
     <div class="card divide-y divide-line">
       {% for o in counter_orders %}
         <a href="{% if o.status == 'open' %}{% url 'order_detail' o.id %}{% else %}{% url 'order_view' o.id %}{% endif %}"

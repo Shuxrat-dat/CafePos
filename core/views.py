@@ -325,7 +325,7 @@ def demo_login(request):
         messages.error(request, _("Демо-данные не загружены. Запустите seed_demo."))
         return redirect("login")
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    return redirect("kitchen_board" if user.role == User.Role.COOK else "floor")
+    return redirect("kitchen_board" if user.role == User.Role.COOK else user.home_url_name)
 
 
 @manager_only

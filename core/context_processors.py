@@ -34,6 +34,9 @@ def _debts_enabled(request):
     return DebtEntry.objects.exists()
 
 
+_PRIMARY_NAV = {"table_map", "floor", "new_order", "bookings", "juma_board"}
+
+
 def _nav(request):
     user = request.user
     if not user.is_authenticated:
@@ -74,10 +77,10 @@ def _nav(request):
     items = [
         ("orders", _("Обзор"), "home", SERVICE_ROLES, {"orders", "order_view"}),
         ("floor", _("Заказы"), "receipt", SERVICE_ROLES, {"floor"} | order_pages, open_count),
-        # Схема столов для зала: у владельца и администратора свой пункт «Столы» (управление), второй им не нужен
+        # Схема столов: главный экран зала для всех, кто работает с заказами
         ("table_map", _("Столы"), "table", SERVICE_ROLES, {"table_map"}),
         ("manage_menu", _("Меню"), "utensils", MANAGE_ROLES, {"manage_menu", "dish_create", "dish_edit", "manage_categories", "manage_categories_edit", "manage_modifiers", "manage_modifiers_edit"}),
-        ("manage_tables", _("Столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
+        ("manage_tables", _("Залы и столы"), "table", MANAGE_ROLES, {"manage_tables", "table_edit"}),
         # Кнопка создаёт заказ навынос, так и называем
         ("new_order", _("Навынос"), "shopping-bag", SERVICE_ROLES, set()),
         ("juma_board", "Juma", "bike", PAYMENT_ROLES, {"juma_board"}, juma_badge),
@@ -96,8 +99,6 @@ def _nav(request):
         roles = entry[3]
         pages = entry[4]
         badge = entry[5] if len(entry) > 5 else None
-        if name == "table_map" and has_role(user, MANAGE_ROLES):
-            continue
         if name == "debts" and not _debts_enabled(request):
             continue
         if name == "bookings" and not _bookings_enabled(request):
@@ -117,6 +118,8 @@ def _nav(request):
                 "name": name,
                 "post": name == "new_order",
                 "badge": badge,
+                # Эти пункты стоят вкладками в шапке, остальные спрятаны в панели профиля
+                "primary": name in _PRIMARY_NAV,
             })
     return res
 

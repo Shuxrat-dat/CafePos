@@ -33,9 +33,9 @@
 <div class="grid {% if user.simple_floor %}lg:grid-cols-[minmax(0,1fr)_clamp(320px,28vw,420px)] gap-3 lg:gap-4 pb-24 lg:pb-0{% else %}lg:grid-cols-[minmax(0,1fr)_420px] gap-4{% endif %} items-start">
   {# ---------- Меню ---------- #}
   <section class="min-w-0 {% if user.simple_floor %}sm:grid sm:grid-cols-[116px_minmax(0,1fr)] sm:gap-x-3 sm:items-start{% endif %}">
-    <div class="sticky top-14 z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-0 pb-3{% endif %}">
+    <div class="sticky top-[var(--hh)] z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-[var(--hh)] pb-3{% endif %}">
       <div class="flex items-center gap-2 {% if not user.simple_floor %}mb-3{% endif %}">
-        <a href="{% url user.home_url_name %}{% if user.home_url_name == 'floor' %}?tab={{ order.order_type }}{% endif %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
+        <a href="{% if not user.simple_floor and order.order_type != 'dine_in' %}{% url 'floor' %}?tab={{ order.order_type }}{% else %}{% url user.home_url_name %}{% endif %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
         <div class="relative flex-1">
           <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
           <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">
@@ -52,7 +52,7 @@
     </div>
     {% if user.simple_floor %}
     {# Категории: узкая колонка слева (на телефоне — лента сверху) #}
-    <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-visible no-scrollbar mb-2 sm:mb-0 sm:sticky sm:top-[7.25rem]">
+    <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-visible no-scrollbar mb-2 sm:mb-0 sm:sticky sm:top-[calc(var(--hh)+3.5rem)]">
       <button type="button" data-cat="" class="cat-side chip-active">{% translate 'Все' %}</button>
       {% for category in categories %}
         <button type="button" data-cat="{{ category.id }}" class="cat-side">{{ category|tr }}</button>
@@ -109,7 +109,7 @@
   </section>
 
   {# ---------- Корзина ---------- #}
-  <aside id="cart" class="card {% if user.simple_floor %}fixed inset-x-0 bottom-0 z-40 max-h-[88vh] translate-y-full transition-transform duration-200 rounded-b-none lg:rounded-2xl lg:sticky lg:top-16 lg:translate-y-0 lg:max-h-[calc(100vh-4.5rem)]{% else %}lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]{% endif %} flex flex-col overflow-hidden">
+  <aside id="cart" class="card {% if user.simple_floor %}fixed inset-x-0 bottom-0 z-40 max-h-[88vh] translate-y-full transition-transform duration-200 rounded-b-none lg:rounded-2xl lg:sticky lg:top-[calc(var(--hh)+8px)] lg:translate-y-0 lg:max-h-[calc(100vh-var(--hh)-16px)]{% else %}lg:sticky lg:top-[calc(var(--hh)+8px)] lg:max-h-[calc(100vh-var(--hh)-16px)]{% endif %} flex flex-col overflow-hidden">
     {% if user.simple_floor %}<button type="button" class="lg:hidden grid place-items-center h-7 shrink-0" onclick="toggleCart(false)" aria-label="{% translate 'Закрыть' %}"><span class="w-10 h-1.5 rounded-full bg-stone-300"></span></button>{% endif %}
     <div id="order-panel" class="flex flex-col min-h-0 h-full" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_order_panel.html" %}

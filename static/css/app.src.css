@@ -32,11 +32,15 @@
   .seg-item-active { @apply bg-white text-ink shadow-card; }
   .nav-link { @apply relative flex flex-col items-center justify-center gap-1 w-full h-[54px] rounded-xl text-[12px] font-medium text-stone-600 hover:bg-[#FAF6EF] hover:text-ink transition-colors xl:flex-row xl:justify-start xl:gap-3 xl:h-11 xl:px-3.5 xl:text-[14px]; }
   .nav-link-active { @apply bg-brand text-white font-bold shadow-sm hover:bg-brand-600 hover:text-white; }
-  .wtab { @apply relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-[#EFE8DC] text-stone-700 text-sm font-semibold whitespace-nowrap hover:bg-[#E6DCCB] transition-colors; }
+  .wtab { @apply relative inline-flex items-center gap-2 rounded-2xl bg-[#E8ECF2] text-slate-600 font-bold whitespace-nowrap hover:bg-[#DDE3EC] transition-colors; height: var(--ctl); padding: 0 clamp(12px, 1.6vw, 24px); font-size: clamp(14px, 1.25vw, 17px); }
   .wtab-active { @apply bg-brand text-white hover:bg-brand-600; }
-  .wtab-badge { @apply min-w-[18px] h-[18px] px-1 rounded-full bg-white text-brand text-[11px] font-bold inline-flex items-center justify-center; }
+  .wtab-badge { @apply absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-600 text-white text-[12px] font-extrabold inline-flex items-center justify-center shadow; }
 }
-html { -webkit-tap-highlight-color: transparent; }
+/* Размеры шапки и кнопок плавно подстраиваются под высоту экрана: от маленького моноблока до большого монитора */
+:root { --hh: clamp(56px, 8vh, 80px); --ctl: clamp(40px, 6vh, 54px); }
+.hbtn { width: var(--ctl); height: var(--ctl); }
+.hctl { height: var(--ctl); }
+html { -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
 body { font-feature-settings: "tnum" 1, "cv11" 1; }
 ::selection { background: #EBCBA6; color: #43200E; }
 :focus-visible { outline: 2px solid #C98B45; outline-offset: 2px; }
