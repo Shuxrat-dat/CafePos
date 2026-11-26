@@ -154,6 +154,24 @@ class RemoveDishTests(Base):
         item.refresh_from_db()
         self.assertEqual(item.quantity, 2)
 
+    def test_minus_with_pin_removes_one_portion_and_trash_removes_the_dish(self):
+        """«−» у 20 шашлыков с паролем отмены оставляет 19; корзина убирает блюдо целиком."""
+        order, item = self.order(quantity=20, status=OrderItem.Status.QUEUED)
+        form = self.client.get(reverse("remove_item_form", args=[order.id, item.id]) + "?one=1").content.decode()
+        self.assertIn('name="one" value="1"', form)
+        url = reverse("remove_item", args=[order.id, item.id])
+        self.client.post(url, {"one": "1", "pin": "0000"})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 20)
+        with mock.patch("pos.views.telegram.notify_item_removed"):
+            self.client.post(url, {"one": "1", "pin": "7391"})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 19)
+        self.assertEqual(AuditLog.objects.filter(action=AuditLog.Action.ITEM_REMOVE).count(), 1)
+        with mock.patch("pos.views.telegram.notify_item_removed"):
+            self.client.post(url, {"pin": "7391"})
+        self.assertFalse(order.items.exists())
+
     def test_dish_in_kitchen_stays_for_cashier_without_pin(self):
         newbie = User.objects.create_user(username="yangi", password="Login-pass-91", role="cashier")
         self.client.force_login(newbie)

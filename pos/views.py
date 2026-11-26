@@ -68,9 +68,11 @@ def _pin_error(request):
     return ""
 
 
-def _remove_form(request, order, item, error=""):
-    """Окно подтверждения удаления блюда с вводом пароля отмены (с ошибкой, если пароль не подошёл)."""
-    response = render(request, "pos/_remove_item_form.html", {"order": order, "item": item, "error": error})
+def _remove_form(request, order, item, error="", one=False):
+    """Окно подтверждения удаления блюда с вводом пароля отмены (с ошибкой, если пароль не подошёл).
+    one=True — убрать только одну порцию (кнопка «−»), а не всё блюдо (корзина)."""
+    one = one and item.quantity > 1 and not item.by_weight
+    response = render(request, "pos/_remove_item_form.html", {"order": order, "item": item, "error": error, "one": one})
     response["HX-Retarget"] = "#modal"
     response["HX-Reswap"] = "innerHTML"
     return response
@@ -876,11 +878,24 @@ def remove_item(request, order_id, item_id):
     """Удалить позицию. Уже отправленную на кухню может убрать только тот, кто вправе отменять такие заказы."""
     order = _get_order(request, order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
+    one = request.POST.get("one") == "1" and item.quantity > 1 and not item.by_weight
     error = _pin_error(request)
     if error:
-        return _remove_form(request, order, item, error)
+        return _remove_form(request, order, item, error, one=one)
     if item.status != OrderItem.Status.NEW and not request.user.can_remove_sent_items:
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
+    if one:
+        # «−» с паролем отмены: убирается одна порция, остальные остаются (20 шашлыков → 19)
+        was = item.quantity
+        if item.status != OrderItem.Status.NEW:
+            item.quantity = 1
+            audit.record(request.user, audit.A.ITEM_REMOVE, order=order, amount=item.line_total,
+                         detail=f"{item.dish.name} −1 ({was} → {was - 1})")
+            telegram.notify_item_removed(order, item, request.user)
+        item.quantity = was - 1
+        item.save()
+        _order_changed(order)
+        return _panel(request, order, _("Порция убрана."))
     if item.status != OrderItem.Status.NEW:
         audit.record(request.user, audit.A.ITEM_REMOVE, order=order, amount=item.line_total,
                      detail=f"{item.dish.name} × {item.quantity}")
@@ -895,7 +910,7 @@ def remove_item_form(request, order_id, item_id):
     """Окно «Убрать блюдо?» с паролем отмены."""
     order = _get_order(request, order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
-    return _remove_form(request, order, item)
+    return _remove_form(request, order, item, one=request.GET.get("one") == "1")
 
 
 @login_required

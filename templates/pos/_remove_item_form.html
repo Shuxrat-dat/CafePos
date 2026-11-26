@@ -1,11 +1,12 @@
 {% extends "components/modal.html" %}
 {% load i18n ui %}
-{% block modal_title %}{% translate 'Убрать блюдо из заказа?' %}{% endblock %}
-{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item|item_qty }}{% else %} × {{ item.quantity }}{% endif %} · {{ item.line_total|money }}</p>{% endblock %}
+{% block modal_title %}{% if one %}{% translate 'Убрать одну порцию?' %}{% else %}{% translate 'Убрать блюдо из заказа?' %}{% endif %}{% endblock %}
+{% block modal_sub %}<p class="text-sm text-muted mt-0.5">{{ item.dish|tr }}{% if item.by_weight and item.weight_grams %} · {{ item|item_qty }}{% elif one %} · {{ item.quantity }} → {{ item.quantity|add:'-1' }}{% else %} × {{ item.quantity }}{% endif %} · {{ item.line_total|money }}</p>{% endblock %}
 {% block modal_body %}
 <form hx-post="{% url 'remove_item' order.id item.id %}" hx-target="#order-panel" hx-swap="innerHTML"
       hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
       class="space-y-4">
+  {% if one %}<input type="hidden" name="one" value="1">{% endif %}
   {% if item.status != 'new' %}
     <div class="alert-warn">{% icon "alert" 18 %}{% translate 'Блюдо уже отправлено на кухню. Об этом узнает владелец.' %}</div>
   {% endif %}

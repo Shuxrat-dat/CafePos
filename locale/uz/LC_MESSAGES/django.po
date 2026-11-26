@@ -5265,3 +5265,6 @@ msgstr "Soni"
 
 msgid "Товары"
 msgstr "Mahsulotlar"
+
+msgid "Убрать одну порцию?"
+msgstr "Bitta porsiyani olib tashlaysizmi?"
