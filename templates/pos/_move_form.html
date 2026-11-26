@@ -10,7 +10,7 @@
       <div class="text-sm font-semibold text-slate-600 mb-2">{{ row.hall|tr }}</div>
       <div class="grid grid-cols-4 gap-2">
         {% for table in row.tables %}
-          <form method="post" action="{% url 'move_order' order.id table.id %}">
+          <form method="post" action="{% url 'move_order' order.id table.id %}"{% if table.is_reserved %} onsubmit="return confirm('{% translate 'Стол забронирован. Посадить сюда и снять бронь?' %}')"{% endif %}>
             {% csrf_token %}
             <button class="w-full min-h-[60px] rounded-xl border {% if table.is_reserved %}border-slate-200 bg-slate-100{% else %}border-line bg-white{% endif %} hover:border-brand hover:bg-brand-50 flex flex-col items-center justify-center">
               <span class="font-bold text-lg">{{ table.number }}</span>

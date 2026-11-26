@@ -106,10 +106,10 @@ class PrintFlowTests(TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             pos_services.send_to_kitchen(self.order)
         first, second = PrintJob.objects.filter(printer=self.kitchen).order_by("id")
-        self.assertIn("5 x Плов", text_of(first))
-        self.assertIn("3 x Плов", text_of(second))
-        self.assertNotIn("8 x", text_of(second))
-        self.assertNotIn("5 x", text_of(second))
+        self.assertRegex(text_of(first), r"Плов\s+5\s")
+        self.assertRegex(text_of(second), r"Плов\s+3\s")
+        self.assertNotRegex(text_of(second), r"Плов\s+8\s")
+        self.assertNotRegex(text_of(second), r"Плов\s+5\s")
 
     def test_order_slip_on_cash_printer_has_all_new_dishes_each_send(self):
         """Бегунок на кассе: каждая отправка отдельным листком со всеми новыми блюдами, включая напитки."""
@@ -123,13 +123,13 @@ class PrintFlowTests(TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             pos_services.send_to_kitchen(self.order)
         first, second = PrintJob.objects.filter(printer=self.receipt_printer).order_by("id")
-        self.assertIn("5 x Плов", text_of(first))
-        self.assertIn("2 x Чай", text_of(first))
+        self.assertRegex(text_of(first), r"Плов\s+5\s")
+        self.assertRegex(text_of(first), r"Чай\s+2\s")
         self.assertNotIn("ДОЗАКАЗ", text_of(first))
         self.assertIn("ДОЗАКАЗ", text_of(second))
-        self.assertIn("3 x Плов", text_of(second))
+        self.assertRegex(text_of(second), r"Плов\s+3\s")
         self.assertNotIn("Чай", text_of(second))
-        self.assertNotIn("5 x", text_of(second))
+        self.assertNotRegex(text_of(second), r"Плов\s+5\s")
         self.assertEqual(second.title, f"Дозаказ №{self.order.id}")
         # Кухонные принтеры работают как раньше
         self.assertEqual(PrintJob.objects.filter(printer=self.kitchen).count(), 2)
@@ -151,7 +151,7 @@ class PrintFlowTests(TestCase):
         self.assertFalse(self.order.items.filter(status=OrderItem.Status.NEW).exists())
         second = PrintJob.objects.filter(printer=self.kitchen).order_by("id").last()
         self.assertIn("ДОЗАКАЗ", text_of(second))
-        self.assertIn("3 x Плов", text_of(second))
+        self.assertRegex(text_of(second), r"Плов\s+3\s")
 
     def test_kitchen_printer_without_categories_gets_everything(self):
         self.bar.categories.clear()

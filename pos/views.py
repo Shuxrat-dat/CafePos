@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -93,6 +94,7 @@ def _panel_context(request, order):
         "can_cancel": _can_cancel(request.user, order),
         "can_discount": has_role(request.user, DISCOUNT_ROLES),
         "loyalty_customer": loyalty.find_customer(order.customer_phone),
+        "takeaway_mode": _takeaway_mode(request, order),
     }
 
 
@@ -195,19 +197,24 @@ def _clean_comment(request):
     return request.POST.get("comment", "").strip()[:200]
 
 
-def _find_same(order, dish, modifier_ids, comment):
+def _find_same(order, dish, modifier_ids, comment, takeaway=False):
     from menu.models import best_promotion, promo_price
 
     # Склеиваем только позиции с той же ценой: началась или кончилась акция — новая строка по новой цене
     promo = best_promotion(dish)
     price = promo_price(dish.price, promo.percent) if promo else dish.price
     items = order.items.filter(
-        dish=dish, status=OrderItem.Status.NEW, comment=comment, price=price
+        dish=dish, status=OrderItem.Status.NEW, comment=comment, price=price, takeaway=takeaway
     ).prefetch_related("modifiers")
     for item in items:
         if {m.id for m in item.modifiers.all()} == set(modifier_ids):
             return item
     return None
+
+
+def _takeaway_mode(request, order):
+    """Режим «С собой» для заказа за столом: новые блюда помечаются «с собой» (без обслуживания, на кухне упакуют)."""
+    return order.is_dine_in and request.session.get(f"takeaway_mode_{order.id}", False)
 
 
 def _order_changed(order):
@@ -697,7 +704,8 @@ def add_item(request, order_id, dish_id):
         grams, error = _clean_weight(request, dish)
         if error:
             return _weight_form(request, order, dish, None, error)
-        item = OrderItem.objects.create(order=order, dish=dish, quantity=1, weight_grams=grams, comment=comment)
+        item = OrderItem.objects.create(order=order, dish=dish, quantity=1, weight_grams=grams, comment=comment,
+                                        takeaway=_takeaway_mode(request, order))
         item.modifiers.set(modifiers)
         audit.record(request.user, audit.A.ITEM_ADD, order=order, amount=item.line_total,
                      detail=f"{order.place_label}: {dish.name}")
@@ -705,12 +713,13 @@ def add_item(request, order_id, dish_id):
         return _panel(request, order)
 
     qty = _clean_qty(request)
-    item = _find_same(order, dish, [m.id for m in modifiers], comment)
+    takeaway = _takeaway_mode(request, order)
+    item = _find_same(order, dish, [m.id for m in modifiers], comment, takeaway)
     if item:
         item.quantity = min(item.quantity + qty, 99)
         item.save()
     else:
-        item = OrderItem.objects.create(order=order, dish=dish, quantity=qty, comment=comment)
+        item = OrderItem.objects.create(order=order, dish=dish, quantity=qty, comment=comment, takeaway=takeaway)
         item.modifiers.set(modifiers)
     audit.record(request.user, audit.A.ITEM_ADD, order=order, amount=dish.price * qty,
                  detail=f"{order.place_label}: {qty} x {dish.name}")
@@ -773,12 +782,13 @@ def _change_sent_qty(request, order, item):
     if request.POST.get("delta") != "1" and (not user.can_remove_sent_items or user.needs_cancel_pin):
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
     if request.POST.get("delta") == "1":
-        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment)
+        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment, item.takeaway)
         if same:
             same.quantity = min(same.quantity + 1, 99)
             same.save()
         else:
-            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=1, comment=item.comment)
+            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=1, comment=item.comment,
+                                           takeaway=item.takeaway)
             new.modifiers.set(item.modifiers.all())
         _order_changed(order)
         return _panel(request, order, _("Порция добавлена. Отправьте её на кухню."))
@@ -851,12 +861,13 @@ def set_qty(request, order_id, item_id):
         _order_changed(order)
         return _panel(request, order, _("Позиция изменена."))
     if diff > 0:
-        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment)
+        same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment, item.takeaway)
         if same:
             same.quantity = min(same.quantity + diff, MAX_QTY)
             same.save()
         else:
-            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=diff, comment=item.comment)
+            new = OrderItem.objects.create(order=order, dish=item.dish, quantity=diff, comment=item.comment,
+                                           takeaway=item.takeaway)
             new.modifiers.set(item.modifiers.all())
         _order_changed(order)
         return _panel(request, order, _("Порция добавлена. Отправьте её на кухню."))
@@ -903,6 +914,33 @@ def remove_item(request, order_id, item_id):
     item.delete()
     _order_changed(order)
     return _panel(request, order, _("Позиция удалена."))
+
+
+@login_required
+@require_POST
+def toggle_takeaway_mode(request, order_id):
+    """Кнопка «С собой»: следующие блюда этого стола идут с собой (без обслуживания), повторное нажатие выключает."""
+    order = _get_order(request, order_id)
+    if not order.is_dine_in:
+        return _panel(request, order)
+    key = f"takeaway_mode_{order.id}"
+    request.session[key] = not request.session.get(key, False)
+    if request.session[key]:
+        return _panel(request, order, _("Режим «С собой»: новые блюда упакуют, обслуживание на них не начисляется."))
+    return _panel(request, order)
+
+
+@login_required
+@require_POST
+def toggle_item_takeaway(request, order_id, item_id):
+    """Пометить или снять «с собой» у ещё не отправленной позиции заказа за столом."""
+    order = _get_order(request, order_id)
+    item = get_object_or_404(OrderItem, id=item_id, order=order, status=OrderItem.Status.NEW)
+    if order.is_dine_in:
+        item.takeaway = not item.takeaway
+        item.save(update_fields=["takeaway"])
+        _order_changed(order)
+    return _panel(request, order)
 
 
 @login_required
@@ -1137,18 +1175,22 @@ def move_form(request, order_id):
 def move_order(request, order_id, table_id):
     order = _get_order(request, order_id)
     table = get_object_or_404(Table, id=table_id)
-    if table.id != order.table_id and table.id in _busy_table_ids():
-        messages.error(request, _("Стол %(n)s уже занят.") % {"n": table.number})
+    if order.status != Order.Status.OPEN:
         return redirect("order_detail", order_id=order.id)
-    # Пустые черновики на целевом столе закрываем, чтобы не было двух открытых заказов
-    Order.objects.filter(table=table, status=Order.Status.OPEN).exclude(id=order.id).annotate(
-        n_items=Count("items")
-    ).filter(n_items=0).update(status=Order.Status.CANCELLED, closed_at=timezone.now())
-    was_dine_in = order.is_dine_in
-    services.set_order_type(order, Order.OrderType.DINE_IN, table)
-    if table.is_reserved:
-        table.reserved_for, table.reserved_at = "", None
-        table.save(update_fields=["reserved_for", "reserved_at"])
+    # Проверка «стол свободен» и перенос — одной транзакцией: два официанта не пересадят гостей на один стол
+    with transaction.atomic():
+        if table.id != order.table_id and table.id in _busy_table_ids():
+            messages.error(request, _("Стол %(n)s уже занят.") % {"n": table.number})
+            return redirect("order_detail", order_id=order.id)
+        # Пустые черновики на целевом столе закрываем, чтобы не было двух открытых заказов
+        Order.objects.filter(table=table, status=Order.Status.OPEN).exclude(id=order.id).annotate(
+            n_items=Count("items")
+        ).filter(n_items=0).update(status=Order.Status.CANCELLED, closed_at=timezone.now())
+        was_dine_in = order.is_dine_in
+        services.set_order_type(order, Order.OrderType.DINE_IN, table)
+        if table.is_reserved:
+            table.reserved_for, table.reserved_at = "", None
+            table.save(update_fields=["reserved_for", "reserved_at"])
     if was_dine_in:
         messages.success(request, _("Заказ перенесён на стол %(n)s.") % {"n": table.number})
     else:
@@ -1174,13 +1216,13 @@ def _parse_split(request, items):
     return selected
 
 
-def split_totals(order, part_subtotal):
+def split_totals(order, part_subtotal, part_no_service=0):
     """Суммы для оплачиваемой части счёта: процентная скидка и обслуживание пропорциональны,
     скидка фиксированной суммой остаётся на остатке заказа."""
     part = Order(service_percent=order.service_percent)
     if order.discount_kind == Order.DiscountKind.PERCENT:
         part.discount_kind, part.discount_value = order.discount_kind, order.discount_value
-    return part.totals_for(part_subtotal)
+    return part.totals_for(part_subtotal, part_no_service)
 
 
 def _quick_amounts(due):
@@ -1223,7 +1265,7 @@ def pay(request, order_id):
     error = ""
     selected = {}
     method = allowed[0]
-    received_raw = card_raw = debt_raw = ""
+    received_raw = card_raw = debt_raw = click_raw = ""
 
     if request.method == "POST":
         split = request.POST.get("split") == "1"
@@ -1244,13 +1286,19 @@ def pay(request, order_id):
         if pay_all:
             due = order.amount_due
         else:
-            due = split_totals(order, sum(i.unit_total * selected[i.id] for i in items if i.id in selected))["total"]
+            due = split_totals(
+                order,
+                sum(i.unit_total * selected[i.id] for i in items if i.id in selected),
+                sum(i.unit_total * selected[i.id] for i in items if i.id in selected and i.takeaway),
+            )["total"]
 
         debt_raw = request.POST.get("debt", "").strip()
-        debt_part = Decimal(0)
+        click_raw = request.POST.get("click", "").strip()
+        debt_part = click_part = Decimal(0)
         if not error:
             try:
                 debt_part = services.parse_mixed_debt(method, debt_raw, allowed)
+                click_part = services.parse_mixed_click(method, click_raw, allowed)
             except services.PaymentError as exc:
                 error = str(exc)
 
@@ -1264,12 +1312,15 @@ def pay(request, order_id):
 
         if not error:
             try:
-                received, card = services.check_payment(due, method, received_raw, card_raw, allowed, debt=debt_part)
+                received, card = services.check_payment(
+                    due, method, received_raw, card_raw, allowed, debt=debt_part, click=click_part
+                )
                 target = services.pay_order(
                     order, request.user, method, received, card,
                     selected=None if pay_all else selected,
                     idempotency_key=idempotency_key,
                     debt=debt_part,
+                    click=click_part,
                 )
             except services.PaymentError as exc:
                 error = str(exc)
@@ -1296,6 +1347,7 @@ def pay(request, order_id):
             "received": received_raw,
             "card": card_raw,
             "debt_raw": debt_raw,
+            "click_raw": click_raw,
             "quick_amounts": _quick_amounts(order.amount_due),
             "due_total": order.amount_due,
             "deposit": order.deposit_applied,

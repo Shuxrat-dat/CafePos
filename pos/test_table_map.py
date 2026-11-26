@@ -60,6 +60,19 @@ class TableMapTests(TestCase):
         header = page[page.index("<header"):page.index('id="app-drawer"')]
         self.assertNotIn(f'href="{reverse("reports")}"', header)
 
+    def test_waiter_sees_only_the_table_map_without_section_tabs(self):
+        """Официанту не нужны «Заказы», «Столы», «Навынос»: в шапке и в панели профиля разделов нет."""
+        self.client.force_login(self.waiter)
+        page = self.client.get(reverse("table_map")).content.decode()
+        self.assertNotIn('class="wtab', page)
+        self.assertNotIn('id="global-pos-search"', page)  # поиск официанту не нужен
+        self.assertNotIn('id="table-search"', page)
+        drawer = page[page.index('id="app-drawer"'):]
+        self.assertNotIn(f'href="{reverse("floor")}"', drawer)
+        self.assertIn('id="drawer-btn"', page)
+        self.client.force_login(self.cashier)
+        self.assertIn('class="wtab', self.client.get(reverse("table_map")).content.decode())
+
     def test_cook_cannot_open_it(self):
         self.client.force_login(self.cook)
         self.assertEqual(self.client.get(reverse("table_map")).status_code, 403)

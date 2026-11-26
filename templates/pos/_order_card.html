@@ -45,7 +45,7 @@
   {% if totals.service %}<div class="flex justify-between"><dt class="text-muted">{% translate 'Обслуживание' %}</dt><dd class="tabular-nums">{{ totals.service|money }}</dd></div>{% endif %}
   <div class="flex justify-between text-lg font-bold pt-1"><dt>{% translate 'Итого' %}</dt><dd class="tabular-nums">{{ totals.total|money }}</dd></div>
   {% if order.status == 'paid' %}
-    <div class="flex justify-between"><dt class="text-muted">{% translate 'Оплата' %}</dt><dd>{{ order.get_payment_method_display }}{% if order.payment_method == 'mixed' %} ({% if order.card_amount %}{% translate 'карта' %} {{ order.card_amount|num }} + {% endif %}{% translate 'наличные' %} {{ order.cash_amount|num }}{% if order.debt_amount %} + {% translate 'в долг' %} {{ order.debt_amount|num }}{% endif %}){% endif %}</dd></div>
+    <div class="flex justify-between"><dt class="text-muted">{% translate 'Оплата' %}</dt><dd>{{ order.get_payment_method_display }}{% if order.payment_method == 'mixed' %} ({% if order.card_amount %}{% translate 'карта' %} {{ order.card_amount|num }} + {% endif %}{% if order.click_amount %}Click {{ order.click_amount|num }} + {% endif %}{% translate 'наличные' %} {{ order.cash_amount|num }}{% if order.debt_amount %} + {% translate 'в долг' %} {{ order.debt_amount|num }}{% endif %}){% endif %}</dd></div>
   {% endif %}
 </dl>
 

@@ -5268,3 +5268,54 @@ msgstr "Mahsulotlar"
 
 msgid "Убрать одну порцию?"
 msgstr "Bitta porsiyani olib tashlaysizmi?"
+
+msgid "С собой"
+msgstr "Olib ketish"
+
+msgid "С собой: включено"
+msgstr "Olib ketish: yoqilgan"
+
+msgid "с собой"
+msgstr "olib ketish"
+
+msgid "с собой, без обслуживания"
+msgstr "olib ketish, xizmat haqisiz"
+
+msgid "Режим «С собой»: новые блюда упакуют, обслуживание на них не начисляется."
+msgstr "«Olib ketish» rejimi: yangi taomlar qadoqlanadi, ularga xizmat haqi qoʻshilmaydi."
+
+msgid "Отправить новые блюда на кухню"
+msgstr "Yangi taomlarni oshxonaga yuborish"
+
+msgid "Стол забронирован. Посадить сюда и снять бронь?"
+msgstr "Stol band qilingan. Shu yerga oʻtqazib, bronni bekor qilasizmi?"
+
+msgid "Номер заказа"
+msgstr "Buyurtma raqami"
+
+msgid "На стол"
+msgstr "Stolga"
+
+msgid "Наименование"
+msgstr "Nomi"
+
+msgid "Карта, Click и долг вместе больше итога."
+msgstr "Karta, Click va qarz birgalikda jami summadan koʻp."
+
+msgid "Укажите сумму картой или через Click."
+msgstr "Karta yoki Click orqali summani kiriting."
+
+msgid "Сумма Click не может быть отрицательной."
+msgstr "Click summasi manfiy boʻlishi mumkin emas."
+
+msgid "Оплата через Click выключена в настройках."
+msgstr "Click orqali toʻlov sozlamalarda oʻchirilgan."
+
+msgid "Карта, Click и долг вместе больше суммы к оплате."
+msgstr "Karta, Click va qarz birgalikda toʻlanadigan summadan koʻp."
+
+msgid "Оплачено через Click"
+msgstr "Click orqali toʻlandi"
+
+msgid "Из них через Click"
+msgstr "Shundan Click orqali"

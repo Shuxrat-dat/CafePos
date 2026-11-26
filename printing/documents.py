@@ -76,7 +76,8 @@ def receipt(order, printer, precheck=False):
                 detail = ""
             t.pair(title, num(item.line_total))
             modifiers = ", ".join(tr(m) for m in item.modifiers.all())
-            extra = ", ".join(part for part in (detail, modifiers) if part)
+            takeaway = _("с собой, без обслуживания") if item.takeaway and order.service_percent else (_("с собой") if item.takeaway else "")
+            extra = ", ".join(part for part in (detail, modifiers, takeaway) if part)
             if extra:
                 t.text(f"  {extra}")
         t.rule()
@@ -101,6 +102,8 @@ def receipt(order, printer, precheck=False):
             if order.payment_method == "mixed":
                 if order.card_amount:
                     t.pair(_("Картой"), num(order.card_amount))
+                if order.click_amount:
+                    t.pair("Click", num(order.click_amount))
                 if order.debt_amount:
                     t.pair(_("В долг"), num(order.debt_amount))
             if order.change is not None:
@@ -116,32 +119,55 @@ def receipt(order, printer, precheck=False):
         return t.finish(printer.cut_paper)
 
 
+def _kitchen_cols(qty, price, total):
+    """Колонки «Кол-во | Цена | Итого» фиксированной ширины (24 символа), справа от названия блюда."""
+    return f"{qty:>6}{price:>9}{total:>9}"
+
+
 def kitchen(order, items, printer, addition=False):
-    """Бланк для кухни или бара: только блюда этого принтера, крупно, без цен."""
+    """Бланк для кухни или бара: только блюда этого принтера.
+    Крупно номер заказа, потом тип заказа, стол и официант, таблица «Наименование | Кол-во | Цена | Итого» и время."""
     cafe = CafeSettings.get()
     with translation.override(cafe.default_language):
         t = _ticket(printer)
-        t.text(printer.name.upper(), align="center", bold=True)
+        t.text(f"{_('Номер заказа')}: #{order.id}", align="center", bold=True, size=SIZE_BIG)
         if addition:
             t.text(_("Дозаказ").upper(), align="center", bold=True, size=SIZE_TALL)
-        t.text(f"№{order.id}", align="center", bold=True, size=SIZE_BIG)
-        t.text(str(order.place_label), align="center", bold=True, size=SIZE_TALL)
+        t.dashed()
+        if order.is_dine_in:
+            kind = _("На стол")
+            if any(item.takeaway for item in items):
+                kind += f" ({_('С собой')})"
+        else:
+            kind = str(order.get_order_type_display())
+        t.pair(f"{_('Тип заказа')}:", kind)
+        if order.is_dine_in and order.table_id:
+            t.pair(_("Номер стола"), f"{order.table.number} ({tr(order.table.hall)})")
+        if order.waiter_id:
+            t.pair(_("Официант"), _person(order.waiter))
         # Заказ Juma: номер для покупателя и код выдачи водителю. Адрес покупателя на кухню не печатаем.
         juma = getattr(order, "juma", None)
         if juma is not None:
             t.text(f"Juma {juma.number}", align="center", bold=True)
-            t.text(f"{_('Код выдачи')}: {juma.pickup_code}", align="center", bold=True)
-        t.pair(_("Официант"), _person(order.waiter))
-        t.pair(_("Время"), timezone.localtime().strftime("%H:%M"))
-        t.rule()
+            t.pair(_("Код выдачи"), str(juma.pickup_code), bold=True)
+        t.dashed()
+        t.pair(_("Наименование"), _kitchen_cols(_("Кол-во"), _("Цена"), _("Итого")), bold=True)
         for item in items:
-            amount = weight(item.weight_grams) if item.by_weight and item.weight_grams else f"{item.quantity} x"
-            t.text(f"{amount} {tr(item.dish)}", bold=True, size=SIZE_TALL)
+            if item.by_weight:
+                qty = weight(item.weight_grams, item.measure) if item.weight_grams else "?"
+                price = num(item.price)
+            else:
+                qty, price = str(item.quantity), num(item.unit_total)
+            total = num(item.line_total) if not item.by_weight or item.weight_grams else ""
+            t.pair(tr(item.dish), _kitchen_cols(qty, price, total), bold=True)
             for modifier in item.modifiers.all():
                 t.text(f"   + {tr(modifier)}")
             if item.comment:
                 t.text(f"   ! {item.comment}", bold=True)
-        t.rule()
+            if item.takeaway:
+                t.text(f"   >> {_('С собой').upper()}", bold=True)
+        t.dashed()
+        t.text(f"{_('Время')} - {timezone.localtime().strftime('%H:%M %d.%m.%Y')}")
         return t.finish(printer.cut_paper)
 
 

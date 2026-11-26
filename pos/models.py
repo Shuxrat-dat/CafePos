@@ -141,9 +141,12 @@ class CashShift(models.Model):
 
     @property
     def click_sales(self):
+        """Click: оплаты целиком через Click (сумма в card_amount) и часть Click в смешанной оплате (click_amount)."""
         from django.db.models import Sum
-        payments = self.payments.filter(is_refund=False, payment_method=Order.PaymentMethod.CLICK)
-        return payments.aggregate(total=Sum("card_amount"))["total"] or Decimal(0)
+        payments = self.payments.filter(is_refund=False)
+        whole = payments.filter(payment_method=Order.PaymentMethod.CLICK).aggregate(total=Sum("card_amount"))["total"]
+        part = payments.aggregate(total=Sum("click_amount"))["total"]
+        return (whole or Decimal(0)) + (part or Decimal(0))
 
     @property
     def total_revenue(self):
@@ -270,6 +273,8 @@ class Order(models.Model):
     payment_method = models.CharField(_("Способ оплаты"), max_length=10, choices=PaymentMethod.choices, blank=True)
     cash_received = models.DecimalField(_("Получено наличными"), max_digits=12, decimal_places=0, null=True, blank=True)
     card_amount = models.DecimalField(_("Оплачено картой"), max_digits=12, decimal_places=0, null=True, blank=True)
+    # Часть счёта через Click при смешанной оплате (наличные + карта + Click + долг)
+    click_amount = models.DecimalField(_("Оплачено через Click"), max_digits=12, decimal_places=0, null=True, blank=True)
     # Часть счёта, записанная в долг при смешанной оплате (наличные + карта + долг)
     debt_amount = models.DecimalField(_("Записано в долг"), max_digits=12, decimal_places=0, null=True, blank=True)
     cashier = models.ForeignKey(
@@ -336,19 +341,30 @@ class Order(models.Model):
             return min(subtotal, round_sum(self.discount_value))
         return Decimal(0)
 
-    def service_for(self, subtotal):
+    def service_for(self, subtotal, no_service=Decimal(0)):
+        """Обслуживание с суммы после скидки. no_service — сумма блюд «с собой»: на неё обслуживание не начисляется,
+        скидка делится между частями пропорционально."""
+        if not self.service_percent:
+            return Decimal(0)
         base = subtotal - self.discount_for(subtotal)
-        return round_sum(base * self.service_percent / 100) if self.service_percent else Decimal(0)
+        if no_service and subtotal:
+            base = base * (subtotal - min(no_service, subtotal)) / subtotal
+        return round_sum(base * self.service_percent / 100)
 
-    def totals_for(self, subtotal):
+    @property
+    def takeaway_amount(self):
+        """Сумма блюд «с собой» в заказе за столом."""
+        return sum((item.line_total for item in self.items.all() if item.takeaway), Decimal(0))
+
+    def totals_for(self, subtotal, no_service=Decimal(0)):
         """Подытог, скидка, обслуживание и итог для заданной суммы позиций."""
         discount = self.discount_for(subtotal)
-        service = self.service_for(subtotal)
+        service = self.service_for(subtotal, no_service)
         return {"subtotal": subtotal, "discount": discount, "service": service, "total": subtotal - discount + service}
 
     @property
     def totals(self):
-        return self.totals_for(self.subtotal)
+        return self.totals_for(self.subtotal, self.takeaway_amount)
 
     @property
     def total(self):
@@ -386,7 +402,7 @@ class Order(models.Model):
         if self.payment_method == self.PaymentMethod.CASH:
             return self.amount_due
         if self.payment_method == self.PaymentMethod.MIXED:
-            return self.amount_due - (self.card_amount or 0) - (self.debt_amount or 0)
+            return self.amount_due - (self.card_amount or 0) - (self.click_amount or 0) - (self.debt_amount or 0)
         return Decimal(0)
 
     @property
@@ -399,7 +415,11 @@ class Order(models.Model):
 
     @property
     def click_paid(self):
-        return self.amount_due if self.payment_method == self.PaymentMethod.CLICK else Decimal(0)
+        if self.payment_method == self.PaymentMethod.CLICK:
+            return self.amount_due
+        if self.payment_method == self.PaymentMethod.MIXED:
+            return self.click_amount or Decimal(0)
+        return Decimal(0)
 
     @property
     def change(self):
@@ -485,6 +505,8 @@ class OrderItem(models.Model):
     weight_grams = models.PositiveIntegerField(_("Вес, г"), null=True, blank=True)
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
+    # Гость за столом берёт блюдо с собой: на кухне его упаковывают, обслуживание на него не начисляется
+    takeaway = models.BooleanField(_("С собой"), default=False)
     promo_label = models.CharField(_("Акция"), max_length=100, blank=True)
     status = models.CharField(_("Статус"), max_length=20, choices=Status.choices, default=Status.NEW)
     sent_at = models.DateTimeField(_("Отправлено на кухню"), null=True, blank=True)
@@ -602,6 +624,8 @@ class Payment(models.Model):
     amount = models.DecimalField(_("Сумма платежа"), max_digits=14, decimal_places=0)
     cash_amount = models.DecimalField(_("Из них наличными"), max_digits=14, decimal_places=0, default=0)
     card_amount = models.DecimalField(_("Из них картой"), max_digits=14, decimal_places=0, default=0)
+    # Часть через Click при смешанной оплате. При оплате целиком через Click сумма лежит в card_amount
+    click_amount = models.DecimalField(_("Из них через Click"), max_digits=14, decimal_places=0, default=0)
     cash_received = models.DecimalField(_("Получено наличных"), max_digits=14, decimal_places=0, null=True, blank=True)
     change = models.DecimalField(_("Сдача"), max_digits=14, decimal_places=0, default=0)
     cashier = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("Кассир"), on_delete=models.SET_NULL, null=True, blank=True, related_name="processed_payments")

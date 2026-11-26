@@ -195,7 +195,10 @@ class NumpadScreensTests(TestCase):
     def test_pay_screen_has_pad_for_cash_card_and_phone(self):
         html = self.client.get(reverse("pay", args=[self.order.id])).content.decode()
         self.assertIn('data-numpad="received"', html)
-        self.assertIn('data-numpad="debt_phone"', html)
+        # Одна панель цифр на экране: пишет и в телефон должника, когда на него нажали
+        form = html[html.index('id="pay-form"'):]
+        self.assertEqual(form[:form.index("</form>")].count("data-numpad="), 1)
+        self.assertRegex(html, r'id="debt_phone"[^>]*data-money')
         self.assertIn('id="received" name="received" value="" inputmode="none"', html)
         self.assertIn('id="card" name="card" value="" inputmode="none"', html)
         self.assertNotIn('data-key=","', html.split('data-numpad="received"')[1].split("</div>")[0])

@@ -40,7 +40,8 @@
       </span>
     </button>
     <nav class="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar py-2 px-1" aria-label="{% translate 'Разделы' %}">
-      {% for item in nav_items %}{% if item.primary %}
+      {# Официанту вкладки не нужны: его экран — только схема столов #}
+      {% if not user.simple_floor %}{% for item in nav_items %}{% if item.primary %}
         {% if item.post %}
           <form method="post" action="{{ item.url }}" class="m-0 shrink-0">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
             <button class="wtab" title="{{ item.label }}">{% icon item.icon 18 %}<span class="hidden lg:inline">{{ item.label }}</span></button>
@@ -51,7 +52,7 @@
             {% if item.badge %}<span class="wtab-badge">{{ item.badge }}</span>{% endif %}
           </a>
         {% endif %}
-      {% endif %}{% endfor %}
+      {% endif %}{% endfor %}{% endif %}
     </nav>
     <div class="flex-1"></div>
     {% if user.simple_floor %}
@@ -59,7 +60,7 @@
       {% icon "wallet" 16 %}<span class="hidden sm:inline font-medium">{% translate 'Сегодня' %}:</span> {{ earned_today|money }}
     </a>
     {% endif %}
-    {% if user.is_superuser or user.role != 'cook' %}
+    {% if not user.simple_floor %}{% if user.is_superuser or user.role != 'cook' %}
     <div class="relative hidden md:block w-40 lg:w-44 xl:w-56 2xl:w-72">
       <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">{% icon "search" 18 %}</span>
       <input id="global-pos-search" name="q" type="search" autocomplete="off" placeholder="{% translate 'Поиск по заказу, столику или напитку...' %}"
@@ -68,7 +69,7 @@
              class="w-full bg-[#E8ECF2] border border-transparent rounded-2xl pl-10 pr-3 hctl text-[14px] text-ink placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand focus:bg-white">
       <div id="search-results" class="absolute right-0 w-[22rem] top-full mt-2 z-50"></div>
     </div>
-    {% endif %}
+    {% endif %}{% endif %}
     {% if not user.simple_floor %}
     <button type="button" onclick="startTour()" class="hidden 2xl:grid place-items-center hbtn rounded-2xl bg-[#E8ECF2] text-slate-600 text-base font-bold shrink-0" title="{% translate 'Показать подсказки' %}" aria-label="{% translate 'Показать подсказки' %}">?</button>
     <div class="hidden 2xl:block text-right text-xs leading-tight pr-1 shrink-0">
@@ -104,6 +105,7 @@
         <button type="button" id="drawer-close" onclick="closeDrawer()" class="icon-btn shrink-0" aria-label="{% translate 'Закрыть' %}">{% icon "x" 20 %}</button>
       </div>
       <div class="flex-1 overflow-y-auto p-3 space-y-1">
+        {% if not user.simple_floor %}
         {% for item in nav_items %}
           {% if item.post %}
             <form method="post" action="{{ item.url }}" class="m-0">{% csrf_token %}<input type="hidden" name="type" value="takeaway">
@@ -117,6 +119,7 @@
             </a>
           {% endif %}
         {% endfor %}
+        {% endif %}
         <div class="border-t border-line my-2"></div>
         <button type="button" onclick="cycleNumpadMode()" class="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl hover:bg-[#FAF6EF] text-sm font-semibold text-stone-600">{% icon "layout-grid" 18 %}<span data-numpad-mode>{% translate 'Панель цифр: авто' %}</span></button>
         <form method="post" action="{% url 'clock' %}" class="m-0">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -138,7 +141,7 @@
   </div>
 {% endif %}
 
-<div class="min-h-screen flex flex-col bg-canvas">
+<div class="min-h-[calc(100vh-var(--hh))] flex flex-col bg-canvas">
   {% if DEMO_MODE and not user.is_authenticated %}
     <div class="no-print bg-orange-50 text-orange-900 text-[13px] px-4 py-1.5 text-center border-b border-orange-100">
       <b>{% translate 'Демо-режим' %}</b> · {% translate 'учебные данные, рабочая база не используется' %}

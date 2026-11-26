@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% load i18n ui %}
 {% block title %}{% translate 'Оплата' %} · №{{ order.id }}{% endblock %}
+{% block main_class %}px-3 py-3 lg:px-4 w-full max-w-[1500px] mx-auto{% endblock %}
 {% block content %}
-<div class="flex items-center gap-3 mb-5">
+<div class="flex items-center gap-3 mb-3">
   <a href="{% url 'order_detail' order.id %}" class="icon-btn" aria-label="{% translate 'К заказу' %}">{% icon "arrow-left" 20 %}</a>
-  <div>
-    <h1 class="page-title">{% translate 'Оплата' %} · {% blocktranslate trimmed with n=order.id %}заказ №{{ n }}{% endblocktranslate %}</h1>
-    <p class="page-sub">{{ order.place_label }}{% if order.customer_name %} · {{ order.customer_name }}{% endif %}</p>
+  <div class="min-w-0">
+    <h1 class="text-[20px] font-extrabold tracking-tight truncate">{% translate 'Оплата' %} · {% blocktranslate trimmed with n=order.id %}заказ №{{ n }}{% endblocktranslate %}</h1>
+    <p id="pay-sub" class="text-sm text-muted truncate">{{ order.place_label }}{% if order.customer_name %} · {{ order.customer_name }}{% endif %}</p>
   </div>
 </div>
 
 {% if not current_shift %}
-<form method="post" action="{% url 'shift_open' %}" class="card p-4 mb-4 flex flex-wrap items-end gap-3 border-amber-300 bg-amber-50">
+<form method="post" action="{% url 'shift_open' %}" class="card p-4 mb-3 flex flex-wrap items-end gap-3 border-amber-300 bg-amber-50">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
   <div class="flex-1 min-w-[220px]">
@@ -26,7 +27,8 @@
 </form>
 {% endif %}
 
-<form method="post" id="pay-form" class="grid lg:grid-cols-[minmax(0,1fr)_440px] gap-4 items-start"
+{# Весь экран оплаты помещается без прокрутки: слева счёт (прокручивается сам), справа поля, кнопка и панель цифр рядом #}
+<form method="post" id="pay-form" class="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,700px)] gap-3 items-start"
       data-percent="{{ percent_discount|default:0 }}" data-service="{{ order.service_percent }}" data-split="{{ split|yesno:'1,0' }}"
       data-total="{{ due_total|stringformat:'d' }}" data-currency="{% translate 'сум' %}">
   {% csrf_token %}
@@ -34,18 +36,18 @@
   {% if split %}<input type="hidden" name="split" value="1">{% endif %}
 
   {# ---------- Состав счёта ---------- #}
-  <section class="card p-5">
-    <div class="seg mb-4">
+  <section class="card p-4 flex flex-col lg:max-h-[calc(100vh-var(--hh)-84px)]">
+    <div class="seg mb-3 shrink-0">
       <a href="{% url 'pay' order.id %}" class="seg-item {% if not split %}seg-item-active{% endif %}">{% translate 'Весь счёт' %}</a>
       <a href="{% url 'pay' order.id %}?split=1" class="seg-item {% if split %}seg-item-active{% endif %}">{% translate 'Разделить счёт' %}</a>
     </div>
-    {% if split %}<p class="text-sm text-muted mb-2">{% translate 'Укажите, сколько штук каждой позиции оплачивает этот гость.' %}</p>{% endif %}
-    <ul class="divide-y divide-line">
+    {% if split %}<p class="text-sm text-muted mb-2 shrink-0">{% translate 'Укажите, сколько штук каждой позиции оплачивает этот гость.' %}</p>{% endif %}
+    <ul class="divide-y divide-line overflow-y-auto min-h-0 -mx-1 px-1">
       {% for item in items %}
-        <li class="py-3 flex items-center justify-between gap-3">
+        <li class="py-2 flex items-center justify-between gap-3">
           <div class="min-w-0">
-            <div class="font-semibold">{{ item.dish|tr }} {% if split %}<span class="text-muted font-normal">{% blocktranslate trimmed with q=item.quantity %}из {{ q }}{% endblocktranslate %}</span>{% endif %}</div>
-            <div class="text-xs text-muted">{% if item.by_weight %}{{ item|item_qty }} · {{ item.price|num }}{{ item|per_kg }}{% else %}{{ item.unit_total|money }}{% endif %}{% for m in item.modifiers.all %} · {{ m|tr }}{% endfor %}</div>
+            <div class="font-semibold leading-tight">{{ item.dish|tr }} {% if split %}<span class="text-muted font-normal">{% blocktranslate trimmed with q=item.quantity %}из {{ q }}{% endblocktranslate %}</span>{% endif %}</div>
+            <div class="text-xs text-muted">{% if item.by_weight %}{{ item|item_qty }} · {{ item.price|num }}{{ item|per_kg }}{% else %}{{ item.unit_total|money }}{% endif %}{% for m in item.modifiers.all %} · {{ m|tr }}{% endfor %}{% if item.takeaway %} · {% translate 'с собой' %}{% endif %}</div>
           </div>
           {% if split %}
             <div class="flex items-center gap-1.5">
@@ -56,103 +58,128 @@
               <button type="button" class="icon-btn w-10 h-10" data-step="1">{% icon "plus" 16 %}</button>
             </div>
           {% else %}
-            <div class="text-right tabular-nums"><span class="text-muted text-sm">{{ item|item_qty }}</span> <b class="ml-2">{{ item.line_total|money }}</b></div>
+            <div class="text-right tabular-nums whitespace-nowrap"><span class="text-muted text-sm">{{ item|item_qty }}</span> <b class="ml-2">{{ item.line_total|money }}</b></div>
           {% endif %}
         </li>
       {% endfor %}
     </ul>
     {% if not split %}
-      <dl class="mt-3 pt-3 border-t border-line space-y-1 text-sm">
+      <dl class="mt-2 pt-2 border-t border-line space-y-1 text-sm shrink-0">
         <div class="flex justify-between"><dt class="text-muted">{% translate 'Подытог' %}</dt><dd class="tabular-nums">{{ totals.subtotal|money }}</dd></div>
         {% if totals.discount %}<div class="flex justify-between"><dt class="text-muted">{% translate 'Скидка' %}{% if order.discount_reason %} · {{ order.discount_reason }}{% endif %}</dt><dd class="tabular-nums text-red-600">−{{ totals.discount|money }}</dd></div>{% endif %}
         {% if totals.service %}<div class="flex justify-between"><dt class="text-muted">{% blocktranslate trimmed with p=order.service_percent|num %}Обслуживание {{ p }}%{% endblocktranslate %}</dt><dd class="tabular-nums">{{ totals.service|money }}</dd></div>{% endif %}
       </dl>
     {% elif order.discount_kind == 'amount' %}
-      <p class="mt-3 text-xs text-muted">{% translate 'Скидка суммой останется на неоплаченной части счёта.' %}</p>
+      <p class="mt-2 text-xs text-muted shrink-0">{% translate 'Скидка суммой останется на неоплаченной части счёта.' %}</p>
     {% endif %}
   </section>
 
   {# ---------- Приём оплаты ---------- #}
-  <section class="card p-5 lg:sticky lg:top-4">
-    <p class="text-sm text-muted">{% translate 'К оплате' %}</p>
-    <p id="due" class="text-[40px] leading-tight font-extrabold tracking-tight tabular-nums">{% if split %}0 {% translate 'сум' %}{% else %}{{ due_total|money }}{% endif %}</p>
-    {% if deposit and not split %}<p class="text-sm text-emerald-700 font-medium">{% blocktranslate trimmed with s=totals.total|money d=deposit|money %}Итого {{ s }}, депозит брони {{ d }} уже оплачен{% endblocktranslate %}</p>{% endif %}
-
-    {% if error %}<div class="alert-error mt-3">{% icon "alert" 18 %}<span>{{ error }}</span></div>{% endif %}
-    {% if shortages %}
-      <div class="alert-warn mt-3">
-        {% icon "alert" 18 %}
-        <div>
-          <p class="font-semibold">{% translate 'Продукта на складе не хватает. Оплата возможна.' %}</p>
-          <ul class="mt-1 list-disc pl-4">
-            {% for s in shortages %}<li>{{ s.name }}: {% translate 'нужно' %} {{ s.need|qty }} {{ s.unit }}, {% translate 'на складе' %} {{ s.stock|qty }} {{ s.unit }}</li>{% endfor %}
-          </ul>
-        </div>
+  <section class="card p-4">
+    <div class="flex flex-wrap items-end justify-between gap-x-4">
+      <div>
+        <p class="text-sm text-muted">{% translate 'К оплате' %}</p>
+        <p id="due" class="pay-due leading-tight font-extrabold tracking-tight tabular-nums">{% if split %}0 {% translate 'сум' %}{% else %}{{ due_total|money }}{% endif %}</p>
       </div>
+      {% if deposit and not split %}<p class="text-sm text-emerald-700 font-medium pb-1">{% blocktranslate trimmed with s=totals.total|money d=deposit|money %}Итого {{ s }}, депозит брони {{ d }} уже оплачен{% endblocktranslate %}</p>{% endif %}
+    </div>
+
+    {% if error %}<div class="alert-error mt-2">{% icon "alert" 18 %}<span>{{ error }}</span></div>{% endif %}
+    {% if shortages %}
+      {# Нехватка на складе оплату не останавливает: одна строка, подробности по нажатию #}
+      <details class="mt-2 rounded-xl bg-orange-50 border border-orange-200 px-3 py-2 text-sm text-orange-900">
+        <summary class="cursor-pointer font-semibold flex items-center gap-2">{% icon "alert" 16 %}{% translate 'Продукта на складе не хватает. Оплата возможна.' %}</summary>
+        <ul class="mt-1 list-disc pl-5">
+          {% for s in shortages %}<li>{{ s.name }}: {% translate 'нужно' %} {{ s.need|qty }} {{ s.unit }}, {% translate 'на складе' %} {{ s.stock|qty }} {{ s.unit }}</li>{% endfor %}
+        </ul>
+      </details>
     {% endif %}
 
-    <div class="seg mt-4 flex-wrap" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
+    <div class="seg mt-3" role="radiogroup" aria-label="{% translate 'Способ оплаты' %}">
       {% for m in methods %}
-        <label class="seg-item px-1 gap-1 cursor-pointer min-h-[48px] has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
+        <label class="seg-item pay-seg px-1 gap-1 cursor-pointer has-[:checked]:bg-white has-[:checked]:text-ink has-[:checked]:shadow-card">
           <input type="radio" name="method" value="{{ m }}" class="sr-only" {% if m == method %}checked{% endif %}>
           {% if m == 'cash' %}{% icon "banknote" 18 %}{% translate 'Наличные' %}{% elif m == 'card' %}{% icon "credit-card" 18 %}{% translate 'Карта' %}{% elif m == 'click' %}{% icon "smartphone" 18 %}Click{% elif m == 'debt' %}{% icon "user" 18 %}{% translate 'В долг' %}{% else %}{% icon "wallet" 18 %}{% translate 'Смешанная' %}{% endif %}
         </label>
       {% endfor %}
     </div>
 
-    <div class="mt-4 space-y-3">
-      <div data-show="mixed">
-        <label class="label" for="card">{% translate 'Оплачено картой' %}</label>
-        <input id="card" name="card" value="{{ card }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
-      </div>
-      {% if 'debt' in methods %}
-      <div data-show="mixed">
-        <label class="label" for="debt">{% translate 'В долг' %} <span class="text-muted font-normal">· {% translate 'часть счёта, которую гость заплатит позже' %}</span></label>
-        <input id="debt" name="debt" value="{{ debt_raw }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
-      </div>
-      {% endif %}
-      <div data-show="cash mixed">
-        <label class="label" for="received">{% translate 'Получено наличными' %} <span class="text-muted font-normal">· {% translate 'пусто — без сдачи' %}</span></label>
-        <input id="received" name="received" value="{{ received }}" inputmode="none" autocomplete="off" class="input text-xl font-semibold tabular-nums" data-money>
-        <div class="flex flex-wrap gap-2 mt-2" id="quick">
-          <button type="button" class="chip" data-exact>{% translate 'Без сдачи' %}</button>
-          {% for a in quick_amounts %}<button type="button" class="chip tabular-nums" data-amount="{{ a }}">{{ a|num }}</button>{% endfor %}
+    <div class="mt-3 grid sm:grid-cols-2 gap-3 items-start">
+      {# Поля, сдача и кнопка #}
+      <div class="space-y-2.5 min-w-0">
+        {# Смешанная: карта, Click, долг и наличные — сеткой, без прокрутки #}
+        <div data-show="mixed" class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="label mb-1 flex items-center gap-1" for="card">{% icon "credit-card" 14 %} {% translate 'Карта' %}</label>
+            <input id="card" name="card" value="{{ card }}" inputmode="none" autocomplete="off" class="input pay-in" data-money>
+          </div>
+          {% if 'click' in methods %}
+          <div>
+            <label class="label mb-1 flex items-center gap-1" for="click">{% icon "smartphone" 14 %} Click</label>
+            <input id="click" name="click" value="{{ click_raw }}" inputmode="none" autocomplete="off" class="input pay-in" data-money>
+          </div>
+          {% endif %}
+          {% if 'debt' in methods %}
+          <div>
+            <label class="label mb-1 flex items-center gap-1" for="debt">{% icon "user" 14 %} {% translate 'В долг' %}</label>
+            <input id="debt" name="debt" value="{{ debt_raw }}" inputmode="none" autocomplete="off" class="input pay-in" data-money>
+          </div>
+          {% endif %}
+          <div>
+            <span class="label mb-1 flex items-center gap-1">{% icon "banknote" 14 %} {% translate 'Наличные' %}</span>
+            <p id="received-mixed" class="input pay-in flex items-center bg-slate-50 text-slate-600" aria-live="polite">0</p>
+          </div>
         </div>
-      </div>
-      <div data-show="card" class="rounded-xl bg-slate-50 border border-line p-4 text-sm text-slate-600 flex gap-2">
-        {% icon "credit-card" 18 %}{% translate 'Проведите оплату на терминале, затем подтвердите.' %}
-      </div>
-      <div data-show="click" class="rounded-xl bg-sky-50 border border-sky-200 p-4 text-sm text-sky-900 flex gap-2">
-        {% icon "smartphone" 18 %}{% translate 'Убедитесь, что оплата через Click пришла, затем подтвердите.' %}
-      </div>
-      {% if 'debt' in methods %}
-      <div id="debt-who" data-show="debt mixed" class="space-y-3">
-        <div data-show="debt" class="rounded-xl bg-orange-50 border border-orange-200 p-3 text-sm text-orange-900 flex gap-2">
-          {% icon "alert" 18 %}{% translate 'Деньги в кассу не поступают. Сумма запишется в долг гостя, погасить его можно в разделе «Долги».' %}
+        <div data-show="cash mixed">
+          <label class="label mb-1 flex items-center gap-1" for="received">{% translate 'Получено наличными' %} <span class="text-muted font-normal">· {% translate 'пусто — без сдачи' %}</span></label>
+          <input id="received" name="received" value="{{ received }}" inputmode="none" autocomplete="off" class="input pay-in" data-money>
+          <div class="flex gap-1.5 mt-1.5 overflow-x-auto no-scrollbar" id="quick" data-show="cash">
+            <button type="button" class="chip min-h-[34px] shrink-0" data-exact>{% translate 'Без сдачи' %}</button>
+            {% for a in quick_amounts %}<button type="button" class="chip min-h-[34px] tabular-nums shrink-0" data-amount="{{ a }}">{{ a|num }}</button>{% endfor %}
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="label" for="debt_name">{% translate 'Имя гостя' %}</label><input id="debt_name" name="debt_name" value="{{ order.customer_name }}" maxlength="100" class="input" autocomplete="off"></div>
-          <div><label class="label" for="debt_phone">{% translate 'Телефон' %}</label><input id="debt_phone" name="debt_phone" value="{{ order.customer_phone }}" maxlength="20" inputmode="none" class="input" placeholder="+998 90 123 45 67" autocomplete="off"></div>
+        <div data-show="card" class="rounded-xl bg-slate-50 border border-line p-3 text-sm text-slate-600 flex gap-2">
+          {% icon "credit-card" 18 %}{% translate 'Проведите оплату на терминале, затем подтвердите.' %}
         </div>
-        {% include "components/numpad.html" with target="debt_phone" no_comma=True %}
+        <div data-show="click" class="rounded-xl bg-sky-50 border border-sky-200 p-3 text-sm text-sky-900 flex gap-2">
+          {% icon "smartphone" 18 %}{% translate 'Убедитесь, что оплата через Click пришла, затем подтвердите.' %}
+        </div>
+        {% if 'debt' in methods %}
+        <div id="debt-who" data-show="debt mixed" class="space-y-2">
+          <div data-show="debt" class="rounded-xl bg-orange-50 border border-orange-200 p-3 text-sm text-orange-900 flex gap-2">
+            {% icon "alert" 18 %}{% translate 'Деньги в кассу не поступают. Сумма запишется в долг гостя, погасить его можно в разделе «Долги».' %}
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="label mb-1 flex items-center gap-1" for="debt_name">{% translate 'Имя гостя' %}</label><input id="debt_name" name="debt_name" value="{{ order.customer_name }}" maxlength="100" class="input" autocomplete="off"></div>
+            <div><label class="label mb-1 flex items-center gap-1" for="debt_phone">{% translate 'Телефон' %}</label><input id="debt_phone" name="debt_phone" value="{{ order.customer_phone }}" maxlength="20" inputmode="none" class="input" placeholder="+998 90 123 45 67" autocomplete="off" data-money></div>
+          </div>
+        </div>
+        {% endif %}
+        <div data-show="cash mixed" class="flex justify-between items-baseline rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
+          <span class="font-medium text-emerald-900">{% translate 'Сдача' %}</span>
+          <span id="change" class="text-xl font-bold tabular-nums text-emerald-900">0 {% translate 'сум' %}</span>
+        </div>
+        <p id="pay-hint" class="hidden text-sm text-red-700 font-medium"></p>
+        <button id="pay-btn" class="btn btn-primary w-full pay-btn text-lg">{% icon "check-circle" 22 %}<span>{% translate 'Принять оплату' %}</span></button>
       </div>
-      {% endif %}
-
-
-      <div data-show="cash mixed" class="flex justify-between items-baseline rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
-        <span class="font-medium text-emerald-900">{% translate 'Сдача' %}</span>
-        <span id="change" class="text-2xl font-bold tabular-nums text-emerald-900">0 {% translate 'сум' %}</span>
-      </div>
-      <p id="pay-hint" class="hidden text-sm text-red-700 font-medium"></p>
-      <button id="pay-btn" class="btn btn-primary w-full min-h-[60px] text-lg">{% icon "check-circle" 22 %}<span>{% translate 'Принять оплату' %}</span></button>
-      <div data-show="cash mixed" id="keypad">{% include "components/numpad.html" with target="received" no_comma=True %}</div>
+      {# Панель цифр: пишет в поле, на которое нажали последним #}
+      <div data-show="cash mixed debt" id="keypad" class="[&_[data-numpad]]:mt-0">{% include "components/numpad.html" with target="received" no_comma=True %}</div>
     </div>
-
   </section>
 </form>
 {% endblock %}
 
 {% block scripts %}
+<style>
+  /* Высота полей и кнопок зависит от высоты экрана: на невысоком моноблоке всё помещается без прокрутки */
+  .pay-in { min-height: clamp(38px, 6vh, 46px); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pay-seg { min-height: clamp(38px, 6vh, 46px); }
+  .pay-btn { min-height: clamp(46px, 7vh, 56px); }
+  .pay-due { font-size: clamp(24px, 4.2vh, 32px); }
+  .pay-in-active { border-color: #7A3F1E; box-shadow: 0 0 0 2px rgba(122,63,30,.25); }
+  #keypad [data-numpad] button { min-height: clamp(40px, 7vh, 58px); }
+  @media (max-height: 700px) { #pay-form .label { margin-bottom: 2px; font-size: 12px; } #pay-sub { display: none; } }
+</style>
 <script>
   (function () {
     var form = document.getElementById('pay-form');
@@ -166,11 +193,14 @@
       cardEmpty: '{% translate "Укажите сумму по карте." as t %}{{ t|escapejs }}',
       nothing: '{% translate "Выберите хотя бы одну позицию." as t %}{{ t|escapejs }}',
       debtBig: '{% translate "Карта и долг вместе больше итога." as t %}{{ t|escapejs }}',
+      partsBig: '{% translate "Карта, Click и долг вместе больше итога." as t %}{{ t|escapejs }}',
+      partsEmpty: '{% translate "Укажите сумму картой или через Click." as t %}{{ t|escapejs }}',
       debtAll: '{% translate "Весь счёт в долг: выберите «В долг»." as t %}{{ t|escapejs }}',
       debtWho: '{% translate "Для записи в долг укажите имя и телефон гостя." as t %}{{ t|escapejs }}',
       debtSplit: '{% translate "В долг можно записать только весь заказ, без деления счёта." as t %}{{ t|escapejs }}'
     };
     var activeInput = document.getElementById('received');
+    var pad = document.querySelector('#keypad [data-numpad]');
 
     function fmt(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ' + currency; }
     function parse(v) { return parseInt((v || '').replace(/[^\d]/g, ''), 10) || 0; }
@@ -196,23 +226,28 @@
       var card = m === 'mixed' ? parse(document.getElementById('card').value) : 0;
       var debtEl = document.getElementById('debt');
       var debt = (m === 'mixed' && debtEl) ? parse(debtEl.value) : 0;
+      var clickEl = document.getElementById('click');
+      var click = (m === 'mixed' && clickEl) ? parse(clickEl.value) : 0;
       // Имя и телефон гостя нужны при «В долг» и при смешанной оплате с долгом
       var who = document.getElementById('debt-who');
       if (who && m === 'mixed') who.classList.toggle('hidden', debt <= 0);
       var noCash = m === 'card' || m === 'click' || m === 'debt';
-      var cashDue = noCash ? 0 : d - card - debt;
+      var cashDue = noCash ? 0 : d - card - click - debt;
+      // Смешанная: сколько доплатить наличными после карты, Click и долга
+      var mixedCash = document.getElementById('received-mixed');
+      if (mixedCash) mixedCash.textContent = fmt(Math.max(0, cashDue));
       var receivedRaw = document.getElementById('received').value;
       var received = receivedRaw.trim() === '' ? cashDue : parse(receivedRaw);
       var change = Math.max(0, received - cashDue);
       document.getElementById('change').textContent = fmt(change);
       var hint = '';
       if (split && d <= 0) hint = TXT.nothing;
-      else if (m === 'mixed' && debt > 0 && card + debt > d) hint = TXT.debtBig;
-      else if (m === 'mixed' && debt > 0 && card === 0 && debt >= d) hint = TXT.debtAll;
+      else if (m === 'mixed' && card + click + debt > d) hint = click > 0 ? TXT.partsBig : TXT.debtBig;
+      else if (m === 'mixed' && debt > 0 && card === 0 && click === 0 && debt >= d) hint = TXT.debtAll;
       else if (m === 'mixed' && debt > 0 && split) hint = TXT.debtSplit;
       else if (m === 'mixed' && debt > 0 && (!document.getElementById('debt_name').value.trim() || document.getElementById('debt_phone').value.replace(/\D/g, '').length < 9)) hint = TXT.debtWho;
-      else if (m === 'mixed' && debt <= 0 && card <= 0) hint = TXT.cardEmpty;
-      else if (m === 'mixed' && debt <= 0 && card >= d) hint = TXT.cardTooBig;
+      else if (m === 'mixed' && debt <= 0 && card <= 0 && click <= 0) hint = clickEl ? TXT.partsEmpty : TXT.cardEmpty;
+      else if (m === 'mixed' && debt <= 0 && click <= 0 && card >= d) hint = TXT.cardTooBig;
       else if (!noCash && received < cashDue) hint = TXT.short;
       else if (m === 'debt' && split) hint = TXT.debtSplit;
       else if (m === 'debt' && (!document.getElementById('debt_name').value.trim() || document.getElementById('debt_phone').value.replace(/\D/g, '').length < 9)) hint = TXT.debtWho;
@@ -224,15 +259,22 @@
 
     form.addEventListener('input', recalc);
     form.addEventListener('change', recalc);
-    function target(i) { activeInput = i; if (pad) pad.dataset.numpad = i.id; }
+    // Панель цифр пишет в поле, на которое нажали последним; это поле подсвечено
+    function target(i) {
+      if (!i) return;
+      activeInput = i;
+      if (pad) pad.dataset.numpad = i.id;
+      form.querySelectorAll('[data-money]').forEach(function (x) { x.classList.toggle('pay-in-active', x === i); });
+    }
     form.querySelectorAll('[data-money]').forEach(function (i) {
       i.addEventListener('focus', function () { target(i); });
       i.addEventListener('pointerdown', function () { target(i); });
     });
-    // Сменили способ оплаты: «Смешанная» — сначала сумма по карте, иначе — полученные наличные
+    // Сменили способ оплаты: «Смешанная» — сначала сумма по карте, «В долг» — телефон, иначе — полученные наличные
+    function startField(m) { return document.getElementById(m === 'mixed' ? 'card' : m === 'debt' ? 'debt_phone' : 'received'); }
     form.addEventListener('change', function (e) {
       if (e.target.name !== 'method') return;
-      target(document.getElementById(e.target.value === 'mixed' ? 'card' : 'received'));
+      target(startField(e.target.value));
     });
     form.querySelectorAll('[data-step]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -242,8 +284,6 @@
         recalc();
       });
     });
-    // Панель с цифрами пишет в поле, которое выбрано последним: «Получено» или «Оплачено картой»
-    var pad = document.querySelector('#keypad [data-numpad]');
     document.getElementById('quick').addEventListener('click', function (e) {
       var b = e.target.closest('button');
       if (!b) return;
@@ -252,6 +292,7 @@
       else received.value = b.dataset.amount;
       recalc();
     });
+    target(startField(method()));
     recalc();
   })();
 </script>

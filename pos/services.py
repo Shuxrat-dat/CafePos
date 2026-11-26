@@ -195,9 +195,24 @@ def parse_mixed_debt(method, debt_raw, allowed):
     return debt
 
 
-def check_payment(due, method, received_raw, card_raw, allowed, debt=Decimal(0)):
+def parse_mixed_click(method, click_raw, allowed):
+    """Часть счёта через Click при смешанной оплате. Вне смешанной оплаты и без ввода — 0."""
+    if method != Order.PaymentMethod.MIXED:
+        return Decimal(0)
+    click = parse_money(click_raw)
+    if not click:
+        return Decimal(0)
+    if click < 0:
+        raise PaymentError(_("Сумма Click не может быть отрицательной."))
+    if Order.PaymentMethod.CLICK not in allowed:
+        raise PaymentError(_("Оплата через Click выключена в настройках."))
+    return click
+
+
+def check_payment(due, method, received_raw, card_raw, allowed, debt=Decimal(0), click=Decimal(0)):
     """Проверяет ввод кассира. Возвращает (получено наличными, оплачено картой) или бросает PaymentError.
-    debt — часть счёта, записанная в долг при смешанной оплате (наличные + карта + долг)."""
+    debt — часть счёта, записанная в долг при смешанной оплате, click — часть через Click
+    (наличные + карта + Click + долг дают весь счёт)."""
     if method not in allowed:
         raise PaymentError(_("Выберите способ оплаты."))
     received = parse_money(received_raw)
@@ -209,7 +224,15 @@ def check_payment(due, method, received_raw, card_raw, allowed, debt=Decimal(0))
             raise PaymentError(_("Полученная сумма меньше итога."))
         return received, None
     card = parse_money(card_raw)
-    if debt > 0:
+    if click > 0:
+        # Смешанная с Click: карта необязательна, наличными доплачивается остаток (может быть 0)
+        card = card or Decimal(0)
+        if card < 0:
+            raise PaymentError(_("Укажите, сколько оплачено картой."))
+        if card + click + debt > due:
+            raise PaymentError(_("Карта, Click и долг вместе больше итога."))
+        cash_due = due - card - click - debt
+    elif debt > 0:
         # С долгом карта необязательна: наличные, карта (если есть) и долг вместе дают весь счёт
         card = card or Decimal(0)
         if card < 0:
@@ -311,7 +334,7 @@ def add_cash_movement(shift, kind, amount_raw, reason="", user=None):
     return movement
 
 
-def _split_off(order, items, selected, method, received, card, cashier, shift=None):
+def _split_off(order, items, selected, method, received, card, cashier, shift=None, click=Decimal(0)):
     """Переносит выбранные позиции в новый оплаченный заказ, остальное остаётся в открытом.
     Процентная скидка и обслуживание переходят в оплачиваемую часть, скидка суммой остаётся на остатке."""
     percent = order.discount_kind == Order.DiscountKind.PERCENT
@@ -330,6 +353,7 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
         payment_method=method,
         cash_received=received,
         card_amount=card,
+        click_amount=click or None,
         cashier=cashier,
         shift=shift,
         closed_at=timezone.now(),
@@ -345,6 +369,7 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
             part = OrderItem.objects.create(
                 order=target, dish=item.dish, quantity=qty, price=item.price,
                 by_weight=item.by_weight, weight_grams=item.weight_grams, comment=item.comment, status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
+                takeaway=item.takeaway,
             )
             part.modifiers.set(item.modifiers.all())
             item.quantity -= qty
@@ -352,7 +377,8 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
     return target
 
 
-def pay_order(order, cashier, method, received, card, items=None, selected=None, idempotency_key=None, debt=Decimal(0)):
+def pay_order(order, cashier, method, received, card, items=None, selected=None, idempotency_key=None, debt=Decimal(0),
+              click=Decimal(0)):
     """Закрывает заказ (или его часть) оплатой, регистрирует Payment в текущей смене и списывает продукты."""
     # Серверная защита от повторных списаний (идемпотентность)
     if idempotency_key:
@@ -374,6 +400,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
 
         debt_phone = ""
         debt = Decimal(debt or 0) if method == Order.PaymentMethod.MIXED else Decimal(0)
+        click = Decimal(click or 0) if method == Order.PaymentMethod.MIXED else Decimal(0)
         if method == Order.PaymentMethod.DEBT or debt > 0:
             # В долг записываем только весь заказ и только на гостя с именем и телефоном
             from .loyalty import normalize_phone
@@ -386,7 +413,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
         send_to_kitchen(locked)
         if selected:
             items = [i for i in locked.items.select_related("dish").prefetch_related("modifiers")]
-            target = _split_off(locked, items, selected, method, received, card, cashier, shift=shift)
+            target = _split_off(locked, items, selected, method, received, card, cashier, shift=shift, click=click)
         else:
             target = locked
             # Аренда кабины фиксируется на момент оплаты
@@ -396,6 +423,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             target.payment_method = method
             target.cash_received = received
             target.card_amount = card
+            target.click_amount = click or None
             target.debt_amount = debt or None
             target.cashier = cashier
             target.shift = shift
@@ -421,6 +449,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
                 last.refund_shift = shift
                 last.save(update_fields=["refund_amount", "refund_shift"])
         collect = total - deposit
+        click_amount = Decimal(0)
         if method == Order.PaymentMethod.CASH:
             cash_amount = collect
             card_amount = Decimal(0)
@@ -435,9 +464,11 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             cash_amount = card_amount = change = Decimal(0)
         else:  # MIXED
             card_amount = card or Decimal(0)
-            if debt > collect - card_amount:
-                raise PaymentError(_("Карта и долг вместе больше суммы к оплате."))
-            cash_amount = collect - card_amount - debt  # долг — часть счёта, которую гость не платит сейчас
+            click_amount = click
+            if debt + click_amount > collect - card_amount:
+                raise PaymentError(_("Карта, Click и долг вместе больше суммы к оплате."))
+            # долг — часть счёта, которую гость не платит сейчас; Click — безнал, в кассу не поступает
+            cash_amount = collect - card_amount - click_amount - debt
             change = (received - cash_amount) if received is not None else Decimal(0)
 
         Payment.objects.create(
@@ -447,6 +478,7 @@ def pay_order(order, cashier, method, received, card, items=None, selected=None,
             amount=collect,
             cash_amount=cash_amount,
             card_amount=card_amount,
+            click_amount=click_amount,
             cash_received=received,
             change=max(Decimal(0), change),
             cashier=cashier,
@@ -600,7 +632,7 @@ def move_items(source, target, selection):
                 copy = OrderItem.objects.create(
                     order=dst, dish=item.dish, quantity=qty, price=item.price, by_weight=item.by_weight,
                     weight_grams=item.weight_grams, comment=item.comment, promo_label=item.promo_label,
-                    status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
+                    status=item.status, sent_at=item.sent_at, ready_at=item.ready_at, takeaway=item.takeaway,
                 )
                 copy.modifiers.set(item.modifiers.all())
             moved += qty
