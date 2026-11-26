@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load i18n ui %}
-{% block title %}{% translate 'Оплата' %} · №{{ order.id }}{% endblock %}
+{% block title %}{% translate 'Оплата' %} · №{{ order.number }}{% endblock %}
 {% block main_class %}px-3 py-3 lg:px-4 w-full max-w-[1500px] mx-auto{% endblock %}
 {% block content %}
 <div class="flex items-center gap-3 mb-3">
   <a href="{% url 'order_detail' order.id %}" class="icon-btn" aria-label="{% translate 'К заказу' %}">{% icon "arrow-left" 20 %}</a>
   <div class="min-w-0">
-    <h1 class="text-[20px] font-extrabold tracking-tight truncate">{% translate 'Оплата' %} · {% blocktranslate trimmed with n=order.id %}заказ №{{ n }}{% endblocktranslate %}</h1>
+    <h1 class="text-[20px] font-extrabold tracking-tight truncate">{% translate 'Оплата' %} · {% blocktranslate trimmed with n=order.number %}заказ №{{ n }}{% endblocktranslate %}</h1>
     <p id="pay-sub" class="text-sm text-muted truncate">{{ order.place_label }}{% if order.customer_name %} · {{ order.customer_name }}{% endif %}</p>
   </div>
 </div>

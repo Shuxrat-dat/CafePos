@@ -67,7 +67,7 @@
         <a href="{% if o.status == 'open' %}{% url 'order_detail' o.id %}{% else %}{% url 'order_view' o.id %}{% endif %}"
            class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 first:rounded-t-xl last:rounded-b-xl">
           <span class="text-slate-500">{% if o.order_type == 'delivery' %}{% icon "bike" 20 %}{% else %}{% icon "shopping-bag" 20 %}{% endif %}</span>
-          <span class="font-semibold tabular-nums w-14">№{{ o.id }}</span>
+          <span class="font-semibold tabular-nums w-14">№{{ o.number }}</span>
           <span class="flex-1 min-w-0 truncate text-sm text-muted">{{ o.get_order_type_display }}{% if o.customer_name %} · {{ o.customer_name }}{% endif %} · {{ o.created_at|duration }}</span>
           {% include "components/stage_badge.html" with order=o %}
           {% if o.status == 'paid' %}<span class="badge bg-slate-100 text-slate-600 hidden sm:inline-flex">{% translate 'Оплачен' %}</span>{% endif %}

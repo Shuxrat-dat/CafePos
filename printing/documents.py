@@ -49,7 +49,7 @@ def receipt(order, printer, precheck=False):
         t.text((_("Пречек") if precheck else _("Кассовый чек")).upper(), align="center", bold=True)
         if precheck:
             t.text(_("Не является документом об оплате"), align="center")
-        t.pair(_("Заказ"), f"№{order.id}")
+        t.pair(_("Заказ"), f"№{order.number}")
         t.pair(_("Дата"), _when(timezone.now() if precheck or not order.closed_at else order.closed_at))
         t.pair(_("Тип"), str(order.place_label))
         if order.waiter_id:
@@ -130,7 +130,7 @@ def kitchen(order, items, printer, addition=False):
     cafe = CafeSettings.get()
     with translation.override(cafe.default_language):
         t = _ticket(printer)
-        t.text(f"{_('Номер заказа')}: #{order.id}", align="center", bold=True, size=SIZE_BIG)
+        t.text(f"{_('Номер заказа')}: #{order.number}", align="center", bold=True, size=SIZE_BIG)
         if addition:
             t.text(_("Дозаказ").upper(), align="center", bold=True, size=SIZE_TALL)
         t.dashed()

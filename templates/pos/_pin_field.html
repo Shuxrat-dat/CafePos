@@ -4,7 +4,15 @@
   {% if user.has_cancel_pin %}
     <div>
       <label class="label" for="{{ field_id }}">{% translate 'Ваш пароль отмены' %}</label>
-      <input id="{{ field_id }}" name="pin" type="password" autocomplete="new-password" required autofocus class="input" placeholder="••••">
+      {# inputmode="none": без системной клавиатуры, пароль набирают на панели цифр ниже (на сенсорной кассе удобнее) #}
+      <div class="flex gap-2">
+        <input id="{{ field_id }}" name="pin" type="password" autocomplete="new-password" required autofocus inputmode="none"
+               class="input text-center text-2xl tracking-[.4em]" placeholder="••••">
+        {# Пароль с буквами: открыть обычную клавиатуру #}
+        <button type="button" class="btn btn-secondary shrink-0 px-3 text-sm font-bold" title="{% translate 'Клавиатура' %}"
+                onclick="var i=document.getElementById('{{ field_id }}'); i.setAttribute('inputmode','text'); i.blur(); i.focus();">ABC</button>
+      </div>
+      {% include "components/numpad.html" with target=field_id no_comma=True no_zeros=True %}
     </div>
   {% else %}
     <div class="alert-warn">{% icon "lock" 18 %}

@@ -7,7 +7,7 @@
       <a href="{% if o.status == 'open' %}{% url 'order_detail' order_id=o.id %}{% elif o.status == 'paid' %}{% url 'receipt' order_id=o.id %}{% else %}{% url 'order_view' order_id=o.id %}{% endif %}"
          class="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-canvas transition">
         <span class="flex items-center gap-2 min-w-0">
-          <span class="font-black text-ink">#{{ o.id }}</span>
+          <span class="font-black text-ink">#{{ o.number }}</span>
           <span class="text-sm text-stone-600 truncate">{{ o.place_label }}{% if o.customer_name %} · {{ o.customer_name }}{% endif %}</span>
         </span>
         <span class="text-xs font-semibold text-muted shrink-0">{{ o.get_status_display }}</span>

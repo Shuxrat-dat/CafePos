@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n ui %}
-{% block title %}{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
+{% block title %}{% blocktranslate trimmed with n=order.number %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
 {% block main_class %}px-2 py-2 sm:px-3 w-full{% endblock %}
 {% block content %}
 <style>

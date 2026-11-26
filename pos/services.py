@@ -339,6 +339,7 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
     Процентная скидка и обслуживание переходят в оплачиваемую часть, скидка суммой остаётся на остатке."""
     percent = order.discount_kind == Order.DiscountKind.PERCENT
     target = Order.objects.create(
+        day_number=order.day_number,
         order_type=order.order_type,
         table=order.table,
         waiter=order.waiter,

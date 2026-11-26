@@ -5319,3 +5319,9 @@ msgstr "Click orqali toʻlandi"
 
 msgid "Из них через Click"
 msgstr "Shundan Click orqali"
+
+msgid "Номер за день"
+msgstr "Kunlik raqam"
+
+msgid "Клавиатура"
+msgstr "Klaviatura"

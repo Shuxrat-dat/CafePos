@@ -4,7 +4,7 @@
   <div class="flex items-start justify-between gap-2">
     <div class="min-w-0">
       <div class="flex items-center gap-2">
-        <h1 class="text-lg font-bold tracking-tight whitespace-nowrap">{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}</h1>
+        <h1 class="text-lg font-bold tracking-tight whitespace-nowrap">{% blocktranslate trimmed with n=order.number %}Заказ №{{ n }}{% endblocktranslate %}</h1>
         {% include "components/stage_badge.html" %}
       </div>
       <p class="text-sm text-muted truncate">

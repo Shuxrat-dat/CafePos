@@ -78,7 +78,7 @@
               {# Шапка карточки: #ID, таймер, стол, гости #}
               <div class="flex items-center justify-between mb-2">
                 <span class="min-w-0 flex items-baseline gap-2.5">
-                  <span class="text-xl font-black text-ink tracking-tight">#{{ o.id }}</span>
+                  <span class="text-xl font-black text-ink tracking-tight">#{{ o.number }}</span>
                   <span class="text-[15px] font-bold text-brand tabular-nums whitespace-nowrap">{{ o.totals.total|money }}</span>
                 </span>
                 {% if o.status_color == 'orange' %}
@@ -304,7 +304,7 @@
       {# Официант на телефоне открывает заказ целиком, сводка справа нужна только на широком экране #}
       <div class="card p-5 {% if user.simple_floor %}hidden xl:block{% endif %}">
         <div class="flex items-center justify-between pb-3 border-b border-line mb-3">
-          <span class="text-xl font-black text-ink">#{{ selected_order.id }}</span>
+          <span class="text-xl font-black text-ink">#{{ selected_order.number }}</span>
           <div class="flex items-center gap-3">
             <a href="{% url 'order_detail' order_id=selected_order.id %}" class="text-blue-600 hover:text-blue-700 text-xs font-bold">
               {% translate 'Редактировать' %}

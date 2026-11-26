@@ -46,7 +46,7 @@ def queue_receipt(order, printer=None, precheck=False, auto=False):
         if auto:
             printers = printers.filter(auto_receipt=True)
     kind = PrintJob.Kind.PRECHECK if precheck else PrintJob.Kind.RECEIPT
-    title = (_("Пречек №%(n)s") if precheck else _("Чек №%(n)s")) % {"n": order.id}
+    title = (_("Пречек №%(n)s") if precheck else _("Чек №%(n)s")) % {"n": order.number}
     jobs = []
     for p in printers:
         jobs += _queue(p, kind, title, documents.receipt(order, p, precheck=precheck), order)
@@ -72,11 +72,11 @@ def queue_kitchen(order, item_ids):
             continue  # этот принтер и так получит бегунок со всеми новыми блюдами
         mine = [item for item in items if printer.takes_dish(item.dish, claimed)]
         if mine:
-            title = _("Кухня №%(n)s") % {"n": order.id}
+            title = _("Кухня №%(n)s") % {"n": order.number}
             jobs += _queue(printer, PrintJob.Kind.KITCHEN, title, documents.kitchen(order, mine, printer, addition), order)
     # Бегунок: каждая отправка отдельным листком, только то, что добавили сейчас (5 шашлыков, потом отдельно 3)
     for printer in slips:
-        title = (_("Дозаказ №%(n)s") if addition else _("Заказ №%(n)s")) % {"n": order.id}
+        title = (_("Дозаказ №%(n)s") if addition else _("Заказ №%(n)s")) % {"n": order.number}
         jobs += _queue(printer, PrintJob.Kind.KITCHEN, title, documents.kitchen(order, items, printer, addition), order)
     return jobs
 

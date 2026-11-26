@@ -255,7 +255,7 @@ def notify_order_cancelled(order, user):
             if not total:
                 return False  # пустые черновики не интересны
             lines = [
-                "❌ " + _("Отменён заказ №%(id)s · %(cafe)s") % {"id": order.id, "cafe": cafe.name},
+                "❌ " + _("Отменён заказ №%(id)s · %(cafe)s") % {"id": order.number, "cafe": cafe.name},
                 _("Сумма: %(sum)s, %(place)s") % {"sum": money(total), "place": order.place_label},
                 _("Кто отменил: %(name)s") % {"name": _person(user)},
                 _("Причина: %(text)s") % {"text": order.cancel_reason or _("не указана")},
@@ -316,7 +316,7 @@ def notify_refund(order, user, reason):
         cafe = CafeSettings.get()
         with _lang(cafe):
             lines = [
-                "↩️ " + _("Возврат по чеку №%(id)s · %(cafe)s") % {"id": order.id, "cafe": cafe.name},
+                "↩️ " + _("Возврат по чеку №%(id)s · %(cafe)s") % {"id": order.number, "cafe": cafe.name},
                 _("Сумма: %(sum)s, %(place)s") % {"sum": money(order.total), "place": order.place_label},
                 _("Кто оформил: %(name)s") % {"name": _person(user)},
                 _("Причина: %(text)s") % {"text": reason or _("не указана")},
@@ -334,7 +334,7 @@ def notify_item_removed(order, item, user):
         with _lang(cafe):
             lines = [
                 "🗑 " + _("Убрано блюдо с кухни · %(cafe)s") % {"cafe": cafe.name},
-                _("Заказ №%(id)s, %(place)s") % {"id": order.id, "place": order.place_label},
+                _("Заказ №%(id)s, %(place)s") % {"id": order.number, "place": order.place_label},
                 _("Блюдо: %(dish)s, %(sum)s") % {"dish": item.dish.name, "sum": money(item.line_total)},
                 _("Кто убрал: %(name)s") % {"name": _person(user)},
             ]
@@ -374,7 +374,7 @@ def notify_discount(order, user):
         with _lang(cafe):
             lines = [
                 "🏷 " + _("Крупная скидка %(p)s%% · %(cafe)s") % {"p": round(percent), "cafe": cafe.name},
-                _("Заказ №%(id)s, %(place)s") % {"id": order.id, "place": order.place_label},
+                _("Заказ №%(id)s, %(place)s") % {"id": order.number, "place": order.place_label},
                 _("Скидка %(d)s из %(s)s") % {"d": money(discount), "s": money(subtotal)},
                 _("Кто дал: %(name)s") % {"name": _person(user)},
                 _("Причина: %(text)s") % {"text": order.discount_reason or _("не указана")},
@@ -395,7 +395,7 @@ def notify_review(review):
             order = review.order
             lines = [
                 "⭐ " + _("Оценка %(r)s из 5 · %(cafe)s") % {"r": review.rating, "cafe": cafe.name},
-                _("Заказ №%(id)s, %(place)s") % {"id": order.id, "place": order.place_label},
+                _("Заказ №%(id)s, %(place)s") % {"id": order.number, "place": order.place_label},
                 _("Официант: %(name)s") % {"name": _person(order.waiter)},
             ]
             if review.comment:

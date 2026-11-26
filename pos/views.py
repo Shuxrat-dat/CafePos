@@ -496,7 +496,9 @@ def global_search(request):
     if q and has_role(user, {"owner", "admin", "waiter", "cashier"}):
         cond = Q(table__number__icontains=q) | Q(customer_name__icontains=q) | Q(customer_phone__icontains=q)
         if q.lstrip("#").isdigit():
-            cond |= Q(id=int(q.lstrip("#")))
+            # Номер за день (сегодняшние заказы) и внутренний номер — оба находят заказ
+            today = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+            cond |= Q(id=int(q.lstrip("#"))) | Q(day_number=int(q.lstrip("#")), created_at__gte=today)
         found = Order.objects.filter(cond).select_related("table", "waiter").order_by("-created_at")
         if not user.sees_all_orders:
             found = found.filter(Q(waiter=user) | Q(status=Order.Status.OPEN))
@@ -1124,7 +1126,7 @@ def cancel_order(request, order_id):
         return redirect("order_detail", order_id=order.id)
     services.cancel_order(order, request.user, reason)
     telegram.notify_order_cancelled(order, request.user)
-    messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.id})
+    messages.success(request, _("Заказ №%(n)s отменён.") % {"n": order.number})
     if htmx:
         return HttpResponse(headers={"HX-Redirect": _home_url(request.user, order)})
     return redirect(_home_url(request.user, order))
@@ -1149,7 +1151,7 @@ def assign_waiter(request, order_id):
             old = order.waiter
             order.waiter = new
             order.save(update_fields=["waiter"])
-            place = (_("стол %(n)s") % {"n": order.table.number}) if order.table_id else f"№{order.id}"
+            place = (_("стол %(n)s") % {"n": order.table.number}) if order.table_id else f"№{order.number}"
             audit.record(request.user, audit.A.WAITER_CHANGE, order=order, detail=_("%(place)s: %(old)s → %(new)s") % {
                 "place": place, "old": old.get_full_name() or old.username, "new": new.get_full_name() or new.username,
             })
@@ -1414,7 +1416,7 @@ def refund_order_view(request, order_id):
         messages.error(request, str(exc))
     else:
         telegram.notify_refund(order, request.user, reason)
-        messages.success(request, _("Заказ №%(id)s успешно возвращён.") % {"id": order.id})
+        messages.success(request, _("Заказ №%(id)s успешно возвращён.") % {"id": order.number})
     return redirect("order_view", order_id=order.id)
 
 

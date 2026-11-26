@@ -1,6 +1,6 @@
 {% extends "components/modal.html" %}
 {% load i18n ui %}
-{% block modal_title %}{% blocktranslate trimmed with n=order.id %}Отменить заказ №{{ n }}?{% endblocktranslate %}{% endblock %}
+{% block modal_title %}{% blocktranslate trimmed with n=order.number %}Отменить заказ №{{ n }}?{% endblocktranslate %}{% endblock %}
 {% block modal_body %}
 <form hx-post="{% url 'cancel_order' order.id %}" hx-target="#modal" hx-swap="innerHTML" class="space-y-4">
   {% csrf_token %}

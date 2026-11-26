@@ -264,7 +264,7 @@
     <ul class="divide-y divide-line text-sm">
       {% for o in recent %}
         <li class="py-2 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 -mx-2 px-2 rounded-lg" hx-get="{% url 'order_view' o.id %}" hx-target="#modal">
-          <span><b>№{{ o.id }}</b> <span class="text-muted">· {{ o.closed_at|date:"d.m H:i" }} · {{ o.place_label }}</span></span>
+          <span><b>№{{ o.number }}</b> <span class="text-muted">· {{ o.closed_at|date:"d.m H:i" }} · {{ o.place_label }}</span></span>
           <span class="font-semibold tabular-nums">{{ o.total|money }}</span>
         </li>
       {% empty %}

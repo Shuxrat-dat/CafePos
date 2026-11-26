@@ -149,7 +149,7 @@ def advance(request, order_id):
     action = request.POST.get("action")
     if action == "send" and order.status == Order.Status.OPEN:
         services.send_to_kitchen(order)
-        messages.success(request, _("Заказ №%(n)s отправлен на кухню.") % {"n": order.id})
+        messages.success(request, _("Заказ №%(n)s отправлен на кухню.") % {"n": order.number})
     elif action in ("start", "ready"):
         if not has_role(request.user, KITCHEN_ROLES):
             raise PermissionDenied
@@ -157,10 +157,10 @@ def advance(request, order_id):
             services.start_cooking(order)
         else:
             services.mark_items_ready(order.items.all())
-        messages.success(request, _("Статус заказа №%(n)s обновлён.") % {"n": order.id})
+        messages.success(request, _("Статус заказа №%(n)s обновлён.") % {"n": order.number})
     elif action == "serve":
         services.serve_ready(order)
-        messages.success(request, _("Заказ №%(n)s выдан.") % {"n": order.id})
+        messages.success(request, _("Заказ №%(n)s выдан.") % {"n": order.number})
     else:
         raise Http404
     next_url = request.POST.get("next", "")

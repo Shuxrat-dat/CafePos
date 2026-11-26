@@ -5319,3 +5319,9 @@ msgstr "Оплачено через Click"
 
 msgid "Из них через Click"
 msgstr "Из них через Click"
+
+msgid "Номер за день"
+msgstr "Номер за день"
+
+msgid "Клавиатура"
+msgstr "Клавиатура"

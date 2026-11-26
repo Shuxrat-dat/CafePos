@@ -299,6 +299,8 @@ class Order(models.Model):
     )
     created_at = models.DateTimeField(_("Создан"), auto_now_add=True)
     closed_at = models.DateTimeField(_("Закрыт"), null=True, blank=True)
+    # Номер заказа за день: каждый день с 00:00 заказы снова идут с №1. Внутренний номер (id) не меняется
+    day_number = models.PositiveIntegerField(_("Номер за день"), null=True, blank=True, editable=False)
 
     class Meta:
         verbose_name = "Заказ"
@@ -308,6 +310,24 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Заказ №{self.pk}"
+
+    @property
+    def number(self):
+        """Номер для людей: на экране, кухонном чеке и чеке. Старые заказы без номера за день — по id."""
+        return self.day_number or self.pk
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and not self.day_number:
+            from django.db import transaction
+
+            # Подсчёт номера и запись — одной транзакцией: два заказа в одну секунду не получат один номер
+            with transaction.atomic():
+                start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+                last = Order.objects.filter(created_at__gte=start).aggregate(n=models.Max("day_number"))["n"]
+                self.day_number = (last or 0) + 1
+                super().save(*args, **kwargs)
+            return
+        super().save(*args, **kwargs)
 
     # ---------- суммы ----------
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load i18n ui %}
-{% block title %}{% if is_precheck %}{% translate 'Пречек' %}{% else %}{% translate 'Чек' %}{% endif %} №{{ order.id }}{% endblock %}
+{% block title %}{% if is_precheck %}{% translate 'Пречек' %}{% else %}{% translate 'Чек' %}{% endif %} №{{ order.number }}{% endblock %}
 {% block head %}
 <style>
   :root { --receipt-width: 80mm; }  /* для ленты 58 мм поставьте 58mm */
@@ -28,7 +28,7 @@
     <div class="mt-3 pt-3 border-t border-dashed border-slate-400">
       <div class="font-bold text-center uppercase tracking-wide">{% if is_precheck %}{% translate 'Пречек' %}{% else %}{% translate 'Кассовый чек' %}{% endif %}</div>
       {% if is_precheck %}<div class="text-center text-[11px] text-slate-500">{% translate 'Не является документом об оплате' %}</div>{% endif %}
-      <div class="mt-2 flex justify-between"><span>{% translate 'Заказ' %}</span><span>№{{ order.id }}</span></div>
+      <div class="mt-2 flex justify-between"><span>{% translate 'Заказ' %}</span><span>№{{ order.number }}</span></div>
       <div class="flex justify-between"><span>{% translate 'Дата' %}</span><span>{% if is_precheck %}{% now "d.m.Y H:i" %}{% else %}{{ order.closed_at|date:"d.m.Y H:i" }}{% endif %}</span></div>
       <div class="flex justify-between"><span>{% translate 'Тип' %}</span><span>{{ order.place_label }}</span></div>
       <div class="flex justify-between"><span>{% translate 'Официант' %}</span><span>{{ order.waiter.get_full_name|default:order.waiter.username }}</span></div>
@@ -79,7 +79,7 @@
 
   <div class="no-print w-full lg:w-[320px] space-y-2.5 mx-auto lg:mx-0">
     {% if not is_precheck %}
-      <div class="alert-ok">{% icon "check-circle" 20 %}<span>{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }} оплачен{% endblocktranslate %}{% if change %} · {% translate 'сдача' %} {{ change|money }}{% endif %}</span></div>
+      <div class="alert-ok">{% icon "check-circle" 20 %}<span>{% blocktranslate trimmed with n=order.number %}Заказ №{{ n }} оплачен{% endblocktranslate %}{% if change %} · {% translate 'сдача' %} {{ change|money }}{% endif %}</span></div>
     {% endif %}
     {% if printers %}
       <form method="post" action="{% url 'print_order' order.id %}" class="space-y-2">

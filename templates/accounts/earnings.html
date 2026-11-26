@@ -51,7 +51,7 @@
     <tbody class="divide-y divide-line">
       {% for o in orders %}
         <tr>
-          <td class="px-4 py-2.5">№{{ o.id }}{% if o.table %} · {% blocktranslate trimmed with n=o.table.number %}стол {{ n }}{% endblocktranslate %}{% endif %}</td>
+          <td class="px-4 py-2.5">№{{ o.number }}{% if o.table %} · {% blocktranslate trimmed with n=o.table.number %}стол {{ n }}{% endblocktranslate %}{% endif %}</td>
           <td class="px-4 py-2.5 text-muted tabular-nums">{{ o.closed_at|date:"d.m H:i" }}</td>
           <td class="px-4 py-2.5 text-right tabular-nums">{{ o.waiter_base|money }}</td>
           <td class="px-4 py-2.5 text-right tabular-nums font-semibold text-emerald-700">+{{ o.earned_by_waiter|money }}</td>
