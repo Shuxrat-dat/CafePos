@@ -38,7 +38,7 @@
     </div>
 
     <ul class="mt-3 pt-3 border-t border-dashed border-slate-400">
-      {% for item in order_items %}
+      {% for item in receipt_items %}
         <li class="py-1.5 {% if not forloop.first %}border-t border-dashed border-slate-400{% endif %}">
           <div class="flex justify-between gap-2"><span>{% if item.by_weight %}{{ item.dish|tr }} {{ item|item_qty }}{% else %}{{ item.quantity }} × {{ item.dish|tr }}{% endif %}</span><span class="whitespace-nowrap tabular-nums">{{ item.line_total|num }}</span></div>
           {% if item.by_weight or item.modifiers.all %}<div class="text-slate-500 text-[12px]">{% if item.by_weight %}{{ item.price|num }}{{ item|per_kg }}{% endif %}{% for m in item.modifiers.all %}{% if forloop.first and not item.by_weight %}{% else %}, {% endif %}{{ m|tr }}{% endfor %}</div>{% endif %}

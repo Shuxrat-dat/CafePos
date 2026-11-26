@@ -64,7 +64,10 @@ def receipt(order, printer, precheck=False):
 
         items = _items(order)
         order._prefetched_objects_cache = {"items": items}
-        for number, item in enumerate(items):
+        from pos.models import receipt_lines
+
+        # Гостю одинаковые блюда одной строкой: «3 x Choy», даже если чай добавляли трижды
+        for number, item in enumerate(receipt_lines(items)):
             if number:
                 t.dashed()  # пунктир между блюдами
             # Количество в одной строке с названием: «2 x Плов ... 80 000»; на вес — «Рыба 1,5 кг ... 112 500»

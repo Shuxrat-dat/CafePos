@@ -9,15 +9,17 @@
   #cart #order-panel > div:first-child { padding: 12px 14px; }
   #cart #order-panel ul { padding-left: 0; padding-right: 0; }
   #cart #order-panel li { padding-top: 4px; padding-bottom: 4px; }
-  #cart #order-panel > div:last-child { padding: 12px 14px 14px; }
-  #cart #order-panel .btn-lg { min-height: 50px; font-size: 16px; }
+  #cart #order-panel > div:last-child { padding: clamp(8px, 1.4vh, 12px) 14px clamp(8px, 1.6vh, 14px); }
+  /* Кнопки под заказом ниже на невысоких экранах: в списке помещается больше строк */
+  #cart #order-panel .btn-lg { min-height: clamp(40px, 6.5vh, 50px); font-size: 16px; }
 
-  .cat-btn { display:flex; align-items:center; justify-content:center; min-width:96px; min-height:clamp(48px,7.5vh,80px); padding:0 clamp(8px,1vw,14px); border-radius:16px; background:#E8ECF2; color:#334155; font-size:clamp(12.5px,1.15vw,16px); font-weight:800; line-height:1.15; text-align:center; text-transform:uppercase; overflow-wrap:anywhere; flex-shrink:0; transition:background .15s; }
+  .cat-btn { display:flex; align-items:center; justify-content:center; min-width:96px; min-height:clamp(48px,7.5vh,80px); padding:0 clamp(5px,.8vw,14px); border-radius:16px; background:#E8ECF2; color:#334155; font-size:clamp(11.5px,1.05vw,16px); font-weight:800; line-height:1.15; text-align:center; text-transform:uppercase; overflow-wrap:break-word; word-break:normal; flex-shrink:0; transition:background .15s; }
   .cat-btn:hover { background:#DDE3EC; }
   .cat-btn.chip-active, .cat-btn.chip-active:hover { background:#7A3F1E; color:#fff; }
   @media (min-width:640px) { .cat-btn { width:100%; min-width:0; } }
 
-  .wdgrid { display:grid; gap:clamp(4px,.45vw,8px); grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13vw,240px),1fr)); }
+  /* Отступ сверху и справа: красный кружок с числом выходит за угол карточки и не должен прятаться под строкой поиска */
+  .wdgrid { padding:8px 8px 0 0; display:grid; gap:clamp(4px,.45vw,8px); grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13vw,240px),1fr)); }
   .wdish { position:relative; display:flex; align-items:center; gap:clamp(8px,.8vw,12px); min-height:clamp(64px,9vh,96px); padding:clamp(6px,.6vw,9px); text-align:left; background:#fff; border:1px solid #E3E8EF; border-radius:14px; box-shadow:0 1px 2px rgba(60,36,18,.04); transition:transform .12s, box-shadow .12s, border-color .12s; }
   .wdish:hover { border-color:#C98B45; box-shadow:0 8px 20px -12px rgba(60,36,18,.35); }
   .wdish:active { transform:scale(.97); }
@@ -37,7 +39,7 @@
   /* Заголовки категорий нужны только при поиске: обычно на экране одна категория */
   #dish-list:not(.searching) [data-cat-title] { display:none; }
 </style>
-<div class="grid sm:grid-cols-[clamp(104px,11vw,190px)_minmax(0,1fr)] lg:grid-cols-[clamp(104px,10vw,180px)_minmax(0,1fr)_clamp(300px,25vw,400px)] gap-2 lg:gap-3 items-start pb-24 lg:pb-0">
+<div class="grid sm:grid-cols-[clamp(104px,11vw,190px)_minmax(0,1fr)] lg:grid-cols-[clamp(104px,9.5vw,170px)_minmax(0,1fr)_clamp(340px,31vw,460px)] gap-2 lg:gap-3 items-start pb-24 lg:pb-0">
   {# ---------- Категории ---------- #}
   <div class="sm:sticky sm:top-[calc(var(--hh)+8px)] min-w-0">
     <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-y-auto sm:max-h-[calc(100vh-var(--hh)-24px)] no-scrollbar">

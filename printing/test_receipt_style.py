@@ -45,7 +45,8 @@ class ReceiptStyleTests(TestCase):
         dashed = (b"- " * 24)[:48]
         self.assertNotIn(dashed, self._data(self.plov))
         self.assertEqual(self._data(self.plov, self.tea).count(dashed), 1)
-        self.assertEqual(self._data(self.plov, self.tea, self.plov).count(dashed), 2)
+        # Одинаковые блюда в чеке гостя — одна строка: «Плов, Чай, Плов» печатается как «2 x Плов» и «1 x Чай»
+        self.assertEqual(self._data(self.plov, self.tea, self.plov).count(dashed), 1)
 
     def test_dashed_line_fits_any_paper_width(self):
         for width in (32, 42, 48):

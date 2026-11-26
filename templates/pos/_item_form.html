@@ -1,12 +1,15 @@
 {% extends "components/modal.html" %}
 {% load i18n ui %}
-{% block modal_title %}{{ dish|tr }}{% endblock %}
-{% block modal_sub %}<p class="text-sm text-muted mt-0.5 tabular-nums">{{ dish.price|money }}{{ dish|per_kg }}</p>{% endblock %}
+{% block width %}{% if dish.sold_by_weight %}max-w-4xl{% else %}max-w-md{% endif %}{% endblock %}
+{% block modal_title %}{{ dish|tr }}{% if dish.sold_by_weight %} <span class="text-muted font-semibold tabular-nums">· {{ dish.price|money }}{{ dish|per_kg }}</span>{% endif %}{% endblock %}
+{% block modal_sub %}{% if not dish.sold_by_weight %}<p class="text-sm text-muted mt-0.5 tabular-nums">{{ dish.price|money }}</p>{% endif %}{% endblock %}
 {% block modal_body %}
 <form hx-post="{% if item %}{% url 'edit_item' order.id item.id %}{% else %}{% url 'add_item' order.id dish.id %}{% endif %}"
       hx-target="#order-panel" hx-swap="innerHTML"
       hx-on::after-request="if (event.detail.successful && event.detail.target.id === 'order-panel') closeModal()"
-      class="space-y-5">
+      class="{% if dish.sold_by_weight %}grid md:grid-cols-2 gap-x-6 gap-y-3 items-start{% else %}space-y-5{% endif %}">
+  {# Блюдо на вес: слева комментарий, вес и сумма, справа панель цифр и кнопки — всё на одном экране, без прокрутки #}
+  {% if dish.sold_by_weight %}<div class="space-y-3 min-w-0">{% endif %}
   {% if not item or item.status == "new" %}
   {% for group, options in groups %}
     <fieldset>
@@ -47,7 +50,15 @@
   {% endif %}
 
   {% if dish.sold_by_weight %}
-    {% include "components/weight_input.html" %}
+    {% include "components/weight_input.html" with pad_outside=True %}
+  </div>
+  <div class="min-w-0">
+    {% include "components/numpad.html" with target="item-weight" %}
+    <div class="flex gap-2 mt-3">
+      <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
+      <button class="btn btn-primary btn-lg flex-1">{% if item %}{% translate 'Сохранить' %}{% else %}{% icon "plus" 18 %}{% translate 'Добавить' %}{% endif %}</button>
+    </div>
+  </div>
   {% else %}
   <div class="flex items-center justify-between">
     <span class="label mb-0">{% translate 'Количество' %}</span>
@@ -57,11 +68,10 @@
       <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min(50,(+i.value||0)+1)" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
     </div>
   </div>
-  {% endif %}
-
   <div class="flex gap-2 pt-1">
     <button type="button" onclick="closeModal()" class="btn btn-secondary btn-lg flex-1">{% translate 'Отмена' %}</button>
     <button class="btn btn-primary btn-lg flex-1">{% if item %}{% translate 'Сохранить' %}{% else %}{% icon "plus" 18 %}{% translate 'Добавить' %}{% endif %}</button>
   </div>
+  {% endif %}
 </form>
 {% endblock %}

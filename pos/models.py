@@ -582,6 +582,29 @@ class OrderItem(models.Model):
         return self.unit_total * self.quantity
 
 
+def receipt_lines(items):
+    """Строки для чека гостя: одинаковые блюда одной строкой с общим количеством.
+    Блюдо добавляли в несколько приёмов (чай 1 + 1 + 1) — в заказе и на кухонных чеках это разные позиции,
+    а гостю печатается «3 x Чай». Склеиваются только блюда с той же ценой, теми же вариантами и тем же «с собой»;
+    блюда на вес не склеиваются — у каждого свой вес. Возвращает копии позиций, в базу ничего не пишется."""
+    import copy
+
+    lines, by_key = [], {}
+    for item in items:
+        if item.by_weight:
+            lines.append(item)
+            continue
+        key = (item.dish_id, item.unit_total, tuple(sorted(m.id for m in item.modifiers.all())), item.takeaway)
+        line = by_key.get(key)
+        if line is None:
+            line = copy.copy(item)
+            by_key[key] = line
+            lines.append(line)
+        else:
+            line.quantity += item.quantity
+    return lines
+
+
 class GuestOrder(models.Model):
     """Заявка гостя с телефона. Становится заказом только после подтверждения официантом."""
 

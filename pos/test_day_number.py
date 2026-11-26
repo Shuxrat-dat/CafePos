@@ -68,3 +68,34 @@ class DayNumberTests(TestCase):
         migration.number_existing_orders(django_apps, None)
         numbers = dict(Order.objects.values_list("id", "day_number"))
         self.assertEqual([numbers[o.id] for o in orders], [1, 1, 2])
+
+
+class ReceiptLinesTests(TestCase):
+    """Чек гостя: чай добавляли трижды по одному — в чеке одна строка «3 x Choy», сумма та же."""
+
+    setUp = DayNumberTests.setUp
+    new_order = DayNumberTests.new_order
+
+    def test_same_dishes_are_one_line_on_the_guest_receipt(self):
+        tea = Dish.objects.create(category=self.dish.category, name="Choy", price=3000)
+        fish = Dish.objects.create(category=self.dish.category, name="Baliq", price=100000, sold_by_weight=True)
+        order = self.new_order()
+        for _n in range(3):
+            OrderItem.objects.create(order=order, dish=tea, quantity=1, status=OrderItem.Status.QUEUED)
+        OrderItem.objects.create(order=order, dish=self.dish, quantity=2)
+        OrderItem.objects.create(order=order, dish=tea, quantity=1, takeaway=True)
+        OrderItem.objects.create(order=order, dish=fish, quantity=1, weight_grams=500)
+        OrderItem.objects.create(order=order, dish=fish, quantity=1, weight_grams=700)
+        from .models import receipt_lines
+
+        items = list(order.items.select_related("dish").prefetch_related("modifiers").order_by("id"))
+        lines = receipt_lines(items)
+        summary = [(line.dish.name, line.quantity, line.takeaway) for line in lines if not line.by_weight]
+        self.assertEqual(summary, [("Choy", 3, False), ("Shashlik", 2, False), ("Choy", 1, True)])
+        self.assertEqual(len([line for line in lines if line.by_weight]), 2)
+        self.assertEqual(sum(line.line_total for line in lines), sum(i.line_total for i in items))
+        self.assertEqual(OrderItem.objects.filter(order=order, dish=tea, takeaway=False).count(), 3)  # в базе ничего не склеилось
+
+        ticket = documents.receipt(order, Printer(name="Kassa"), precheck=True).decode("cp866", "replace")
+        self.assertIn("3 x Choy", ticket)
+        self.assertEqual(ticket.count("x Choy"), 2)  # в зале 3 и с собой 1

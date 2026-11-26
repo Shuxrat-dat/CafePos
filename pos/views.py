@@ -29,7 +29,7 @@ from menu.models import Category, Dish
 from printing.services import receipt_printers
 
 from . import loyalty, reviews, services
-from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table
+from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table, receipt_lines
 
 
 # ---------- вспомогательные функции ----------
@@ -1096,8 +1096,10 @@ def request_bill(request, order_id):
 @login_required
 def precheck(request, order_id):
     order = _get_order(request, order_id)
+    context = _panel_context(request, order)
     return render(request, "pos/receipt.html", {
-        **_panel_context(request, order), "is_precheck": True, "printers": list(receipt_printers()),
+        **context, "is_precheck": True, "printers": list(receipt_printers()),
+        "receipt_items": receipt_lines(context["order_items"]),
     })
 
 
@@ -1378,6 +1380,7 @@ def receipt(request, order_id):
         {
             "order": order,
             "order_items": order_items,
+            "receipt_items": receipt_lines(order_items),
             "totals": order.totals,
             "change": order.change,
             "remaining": remaining,

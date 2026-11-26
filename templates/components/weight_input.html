@@ -14,7 +14,7 @@
   </div>
   <input id="{{ input_id|default:'item-weight' }}" name="weight" value="{{ weight }}" inputmode="none" autocomplete="off" required autofocus
          aria-label="{% translate 'Количество' %}"
-         class="input mt-3 text-center text-3xl font-extrabold tabular-nums min-h-[60px]{% if weight_error %} border-red-500{% endif %}">
+         class="input mt-3 text-center text-3xl font-extrabold tabular-nums {% if pad_outside %}min-h-[54px]{% else %}min-h-[60px]{% endif %}{% if weight_error %} border-red-500{% endif %}">
   <p class="mt-2 text-center text-lg font-extrabold tabular-nums min-h-[28px] text-brand" data-weight-result></p>
   {% if weight_error %}<p class="text-sm text-red-700 mt-1 text-center">{{ weight_error }}</p>{% endif %}
   <div class="flex flex-wrap justify-center gap-2 mt-2" data-chips="weight">
@@ -38,7 +38,7 @@
     <button type="button" class="chip tabular-nums" data-v="50000">50 000</button>
     <button type="button" class="chip tabular-nums" data-v="100000">100 000</button>
   </div>
-  {% include "components/numpad.html" with target=input_id|default:'item-weight' %}
+  {% if not pad_outside %}{% include "components/numpad.html" with target=input_id|default:'item-weight' %}{% endif %}
   <p class="text-xs text-muted mt-2" data-hint="weight">{% if dish.measure == 'l' %}{% translate 'В литрах: 1 — это 1 л, 0,5 — пол-литра. Больше 50 считается миллилитрами: 500 — это 500 мл.' %}{% else %}{% translate 'В килограммах: 1 — это 1 кг, 1,5 — полтора кг. Больше 50 считается граммами: 250 — это 250 г.' %}{% endif %}</p>
   <p class="text-xs text-muted mt-2 hidden" data-hint="sum">{% translate 'Введите сумму, на которую берёт гость: количество посчитается само.' %}</p>
 </div>

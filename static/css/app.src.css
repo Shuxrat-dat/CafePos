@@ -34,8 +34,8 @@
   .nav-link-active { @apply bg-brand text-white font-bold shadow-sm hover:bg-brand-600 hover:text-white; }
   .wtab { @apply relative inline-flex items-center gap-2 rounded-2xl bg-[#E8ECF2] text-slate-600 font-bold whitespace-nowrap hover:bg-[#DDE3EC] transition-colors; height: var(--ctl); padding: 0 clamp(12px, 1.6vw, 24px); font-size: clamp(14px, 1.25vw, 17px); }
   .wtab-active { @apply bg-brand text-white hover:bg-brand-600; }
-  .qbtn { @apply grid place-items-center w-8 h-8 rounded-lg bg-brand text-white text-[19px] font-bold leading-none shadow-sm hover:bg-brand-600 active:bg-brand-700 active:scale-95 transition; }
-  .tbtn { @apply grid place-items-center w-8 h-8 shrink-0 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 active:scale-95 transition; }
+  .qbtn { @apply grid place-items-center w-7 h-7 shrink-0 rounded-md bg-brand text-white text-[17px] font-bold leading-none shadow-sm hover:bg-brand-600 active:bg-brand-700 active:scale-95 transition; }
+  .tbtn { @apply grid place-items-center w-7 h-7 shrink-0 rounded-md border border-red-200 bg-white text-red-600 hover:bg-red-50 active:scale-95 transition; }
   .wtab-badge { @apply absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-600 text-white text-[12px] font-extrabold inline-flex items-center justify-center shadow; }
 }
 /* Размеры шапки и кнопок плавно подстраиваются под высоту экрана: от маленького моноблока до большого монитора */
