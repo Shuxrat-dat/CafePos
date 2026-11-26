@@ -84,10 +84,12 @@
           <button hx-get="{% url 'set_qty' order.id item.id %}" hx-target="#modal" title="{% translate 'Количество' %}" class="min-w-[28px] h-8 text-center font-extrabold text-[15px] tabular-nums rounded-lg hover:bg-brand-50">{{ item.quantity }}</button>
           <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="qbtn" aria-label="{% translate 'Увеличить' %}">+</button>
         {% else %}
-          <span class="min-w-[28px] h-8 inline-grid place-items-center font-extrabold text-[16px] tabular-nums">{{ item.quantity }}</span>
+          {# Блюдо уже на кухне: убрать можно только с паролем отмены, а добавить порцию дозаказом можно всегда #}
           {% if user.needs_cancel_pin %}
-            <button hx-get="{% url 'remove_item_form' order.id item.id %}" hx-target="#modal" class="icon-btn w-9 h-9 border-0 hover:text-red-600" aria-label="{% translate 'Удалить' %}">{% icon "trash" 16 %}</button>
-          {% endif %}
+            <button hx-get="{% url 'remove_item_form' order.id item.id %}" hx-target="#modal" class="grid place-items-center w-8 h-8 rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50" aria-label="{% translate 'Удалить' %}">{% icon "trash" 15 %}</button>
+          {% else %}<span class="w-8"></span>{% endif %}
+          <span class="min-w-[28px] h-8 inline-grid place-items-center font-extrabold text-[15px] tabular-nums">{{ item.quantity }}</span>
+          <button hx-post="{% url 'change_qty' order.id item.id %}" hx-vals='{"delta": "1"}' hx-target="#order-panel" class="qbtn" aria-label="{% translate 'Увеличить' %}">+</button>
         {% endif %}
       </div>
       {# Название: нажатие открывает комментарий и варианты #}

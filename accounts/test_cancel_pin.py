@@ -139,6 +139,21 @@ class RemoveDishTests(Base):
         self.assertEqual((log.order_id, log.user), (order.id, self.cashier))
         notify.assert_called_once()
 
+    def test_cashier_with_pin_adds_a_portion_to_a_dish_already_in_kitchen(self):
+        """«+» у отправленного блюда — новая порция отдельной строкой (дозаказ), без пароля; «−» без пароля не работает."""
+        order, item = self.order(quantity=2, status=OrderItem.Status.QUEUED)
+        url = reverse("change_qty", args=[order.id, item.id])
+        panel = self.client.get(reverse("order_panel", args=[order.id])).content.decode()
+        self.assertIn(url, panel)
+        self.client.post(url, {"delta": "1"})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 2)
+        new = order.items.get(status=OrderItem.Status.NEW)
+        self.assertEqual((new.dish, new.quantity), (self.plov, 1))
+        self.client.post(url, {"delta": "-1"})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 2)
+
     def test_dish_in_kitchen_stays_for_cashier_without_pin(self):
         newbie = User.objects.create_user(username="yangi", password="Login-pass-91", role="cashier")
         self.client.force_login(newbie)

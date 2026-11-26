@@ -765,7 +765,10 @@ def _change_sent_qty(request, order, item):
     «+» добавляет порцию новой строкой: её отправляют на кухню, и повара о ней узнают.
     «−» убирает порцию; запись в журнал и уведомление владельцу, как при удалении блюда."""
     user = request.user
-    if not user.can_remove_sent_items or user.needs_cancel_pin or item.by_weight:
+    if item.by_weight:
+        return _panel(request, order)
+    # «+» — это новая порция дозаказом, её может добавить любой, кто ведёт заказ (и кассир с паролем отмены)
+    if request.POST.get("delta") != "1" and (not user.can_remove_sent_items or user.needs_cancel_pin):
         return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
     if request.POST.get("delta") == "1":
         same = _find_same(order, item.dish, [m.id for m in item.modifiers.all()], item.comment)
