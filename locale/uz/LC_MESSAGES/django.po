@@ -5259,3 +5259,9 @@ msgstr "Har safar oshxonaga yuborilganda faqat yangi taomlarni hammasini birga c
 
 msgid "Дозаказ №%(n)s"
 msgstr "Qoʻshimcha buyurtma №%(n)s"
+
+msgid "Кол-во"
+msgstr "Soni"
+
+msgid "Товары"
+msgstr "Mahsulotlar"

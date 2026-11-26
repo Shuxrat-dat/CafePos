@@ -25,9 +25,8 @@ class DishCardBadgeTests(TestCase):
         self.assertContains(response, f'data-line-dish="{self.dish.id}"')
         self.assertContains(response, 'data-line-qty="3"')
         self.assertContains(response, 'data-line-status="new"')
-        self.assertContains(response, f"/orders/{self.order.id}/item/")  # адрес для «−» на карточке
-        self.assertContains(response, 'data-step="+"')
-        self.assertContains(response, 'data-step="-"')
+        # Карточка показывает только число порций, убавляют в заказе справа
+        self.assertNotContains(response, 'data-step=')
 
     def test_panel_refresh_keeps_line_data(self):
         self.order.items.create(dish=self.dish, quantity=2, price=self.dish.price)

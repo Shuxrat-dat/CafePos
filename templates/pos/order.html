@@ -1,100 +1,88 @@
 {% extends "base.html" %}
 {% load i18n ui %}
 {% block title %}{% blocktranslate trimmed with n=order.id %}Заказ №{{ n }}{% endblocktranslate %}{% endblock %}
-{% block main_class %}{% if user.simple_floor %}px-2 py-2 sm:px-3 w-full{% else %}px-3 py-3 lg:px-4 lg:py-4 w-full max-w-[1600px] mx-auto{% endif %}{% endblock %}
+{% block main_class %}px-2 py-2 sm:px-3 w-full{% endblock %}
 {% block content %}
-{% if user.simple_floor %}
 <style>
-  /* Официант: корзина-шторка на телефоне, плотная колонка на широком экране, крупные цели для пальца */
+  /* Экран заказа как в кассовом терминале: категории слева, плотные карточки блюд, заказ справа */
   #cart #order-panel .icon-btn { width: 38px; height: 38px; border-radius: 12px; }
   #cart #order-panel > div:first-child { padding: 12px 14px; }
-  #cart #order-panel ul { padding-left: 14px; padding-right: 14px; }
-  #cart #order-panel li { padding-top: 10px; padding-bottom: 10px; }
+  #cart #order-panel ul { padding-left: 0; padding-right: 0; }
+  #cart #order-panel li { padding-top: 4px; padding-bottom: 4px; }
   #cart #order-panel > div:last-child { padding: 12px 14px 14px; }
   #cart #order-panel .btn-lg { min-height: 50px; font-size: 16px; }
-  .cat-side { display:flex; align-items:center; min-height:44px; padding:0 12px; border-radius:12px; background:#EFE8DC; color:#57534e; font-size:13.5px; font-weight:700; text-align:left; flex-shrink:0; transition:background .15s; }
-  .cat-side:hover { background:#E6DCCB; }
-  .cat-side.chip-active { background:#7A3F1E; color:#fff; border-color:transparent; }
-  @media (max-width: 639px) { .cat-side { white-space:nowrap; } }
 
-  .wdgrid { display:grid; gap:clamp(8px,1vw,14px); grid-template-columns:repeat(auto-fill,minmax(clamp(132px,14vw,190px),1fr)); }
-  .wdish { display:flex; flex-direction:column; text-align:left; overflow:hidden; background:#fff; border:1px solid #E8DFD2; border-radius:16px; box-shadow:0 1px 2px rgba(60,36,18,.05), 0 6px 16px -12px rgba(60,36,18,.25); transition:transform .12s, box-shadow .12s, border-color .12s; }
-  .wdish:hover { border-color:#C98B45; box-shadow:0 10px 24px -12px rgba(60,36,18,.35); }
+  .cat-btn { display:flex; align-items:center; justify-content:center; min-width:96px; min-height:clamp(48px,7.5vh,80px); padding:0 clamp(8px,1vw,14px); border-radius:16px; background:#E8ECF2; color:#334155; font-size:clamp(12.5px,1.15vw,16px); font-weight:800; line-height:1.15; text-align:center; text-transform:uppercase; overflow-wrap:anywhere; flex-shrink:0; transition:background .15s; }
+  .cat-btn:hover { background:#DDE3EC; }
+  .cat-btn.chip-active, .cat-btn.chip-active:hover { background:#7A3F1E; color:#fff; }
+  @media (min-width:640px) { .cat-btn { width:100%; min-width:0; } }
+
+  .wdgrid { display:grid; gap:clamp(4px,.45vw,8px); grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13vw,240px),1fr)); }
+  .wdish { position:relative; display:flex; align-items:center; gap:clamp(8px,.8vw,12px); min-height:clamp(64px,9vh,96px); padding:clamp(6px,.6vw,9px); text-align:left; background:#fff; border:1px solid #E3E8EF; border-radius:14px; box-shadow:0 1px 2px rgba(60,36,18,.04); transition:transform .12s, box-shadow .12s, border-color .12s; }
+  .wdish:hover { border-color:#C98B45; box-shadow:0 8px 20px -12px rgba(60,36,18,.35); }
   .wdish:active { transform:scale(.97); }
-  .wdish-price { display:inline-block; padding:3px 9px; border-radius:999px; background:#F8ECDA; color:#7A3F1E; font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wdish-img { width:clamp(46px,4.6vw,76px); height:clamp(46px,4.6vw,76px); border-radius:10px; flex-shrink:0; }
+  .wdish-name { font-size:clamp(13px,1.05vw,15.5px); font-weight:700; line-height:1.2; color:#1E1915; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .wdish-unit { font-size:11.5px; color:#94A3B8; font-weight:600; }
+  .wdish-price { font-size:clamp(13px,1.05vw,15.5px); font-weight:800; color:#1E1915; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .wdish-off { opacity:.55; cursor:not-allowed; }
+  .wdish-off .wdish-img { filter:grayscale(1); }
+  .wdish-on { border-color:#C98B45; background:#FFF8EE; }
   .wdish-flash { animation:wflash .45s ease-out; }
-  @keyframes wflash { 0% { box-shadow:0 0 0 0 rgba(201,139,69,.7); } 100% { box-shadow:0 0 0 14px rgba(201,139,69,0); } }
+  @keyframes wflash { 0% { box-shadow:0 0 0 0 rgba(201,139,69,.7); } 100% { box-shadow:0 0 0 12px rgba(201,139,69,0); } }
   .cart-bar-pulse { animation:wbar .4s ease-out; }
   @keyframes wbar { 0% { transform:scale(1); } 40% { transform:scale(1.04); } 100% { transform:scale(1); } }
   @media (prefers-reduced-motion: reduce) { .wdish-flash, .cart-bar-pulse { animation:none; } .wdish { transition:none; } }
   #cart.cart-open { transform:translateY(0); }
+  /* Заголовки категорий нужны только при поиске: обычно на экране одна категория */
+  #dish-list:not(.searching) [data-cat-title] { display:none; }
 </style>
-{% endif %}
-<div class="grid {% if user.simple_floor %}lg:grid-cols-[minmax(0,1fr)_clamp(320px,28vw,420px)] gap-3 lg:gap-4 pb-24 lg:pb-0{% else %}lg:grid-cols-[minmax(0,1fr)_420px] gap-4{% endif %} items-start">
-  {# ---------- Меню ---------- #}
-  <section class="min-w-0 {% if user.simple_floor %}sm:grid sm:grid-cols-[116px_minmax(0,1fr)] sm:gap-x-3 sm:items-start{% endif %}">
-    <div class="sticky top-[var(--hh)] z-20 bg-canvas pt-1 pb-2 -mx-1 px-1 {% if user.simple_floor %}sm:col-span-2{% else %}md:top-[var(--hh)] pb-3{% endif %}">
-      <div class="flex items-center gap-2 {% if not user.simple_floor %}mb-3{% endif %}">
-        <a href="{% if not user.simple_floor and order.order_type != 'dine_in' %}{% url 'floor' %}?tab={{ order.order_type }}{% else %}{% url user.home_url_name %}{% endif %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
-        <div class="relative flex-1">
-          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
-          <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">
-        </div>
-      </div>
-      {% if not user.simple_floor %}
-      <div id="cat-chips" class="flex flex-wrap gap-2">
-        <button type="button" data-cat="" class="chip chip-active">{% translate 'Все' %}</button>
-        {% for category in categories %}
-          <button type="button" data-cat="{{ category.id }}" class="chip">{{ category|tr }}</button>
-        {% endfor %}
-      </div>
-      {% endif %}
-    </div>
-    {% if user.simple_floor %}
-    {# Категории: узкая колонка слева (на телефоне — лента сверху) #}
-    <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-visible no-scrollbar mb-2 sm:mb-0 sm:sticky sm:top-[calc(var(--hh)+3.5rem)]">
-      <button type="button" data-cat="" class="cat-side chip-active">{% translate 'Все' %}</button>
+<div class="grid sm:grid-cols-[clamp(104px,11vw,190px)_minmax(0,1fr)] lg:grid-cols-[clamp(104px,10vw,180px)_minmax(0,1fr)_clamp(300px,25vw,400px)] gap-2 lg:gap-3 items-start pb-24 lg:pb-0">
+  {# ---------- Категории ---------- #}
+  <div class="sm:sticky sm:top-[calc(var(--hh)+8px)] min-w-0">
+    <div id="cat-chips" class="flex sm:flex-col gap-1.5 overflow-x-auto sm:overflow-y-auto sm:max-h-[calc(100vh-var(--hh)-24px)] no-scrollbar">
       {% for category in categories %}
-        <button type="button" data-cat="{{ category.id }}" class="cat-side">{{ category|tr }}</button>
+        <button type="button" data-cat="{{ category.id }}" class="cat-btn{% if forloop.first %} chip-active{% endif %}">{{ category|tr }}</button>
       {% endfor %}
     </div>
-    {% endif %}
+  </div>
 
-    <div id="dish-list" class="{% if user.simple_floor %}space-y-3 min-w-0{% else %}space-y-6{% endif %}">
+  {# ---------- Блюда ---------- #}
+  <section class="min-w-0">
+    <div class="sticky top-[var(--hh)] z-20 bg-canvas pt-0.5 pb-2 flex items-center gap-2">
+      <a href="{% if not user.simple_floor and order.order_type != 'dine_in' %}{% url 'floor' %}?tab={{ order.order_type }}{% else %}{% url user.home_url_name %}{% endif %}" class="icon-btn shrink-0" aria-label="{% translate 'К залу' %}">{% icon "arrow-left" 20 %}</a>
+      <div class="relative flex-1">
+        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">{% icon "search" 18 %}</span>
+        <input id="dish-search" type="search" class="input pl-10" placeholder="{% translate 'Поиск блюда' %}" autocomplete="off">
+      </div>
+    </div>
+    <div id="dish-list" class="space-y-3 min-w-0">
       {% for category in categories %}
         <div data-cat-section="{{ category.id }}">
-          <h2 class="section-title mb-2.5 text-slate-700">{{ category|tr }}</h2>
-          <div class="grid {% if user.simple_floor %}wdgrid{% else %}gap-3 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]{% endif %}">
+          <h2 data-cat-title class="section-title mb-2 text-slate-700">{{ category|tr }}</h2>
+          <div class="wdgrid">
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
                 <button type="button" data-dish data-dish-pk="{{ dish.id }}" data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
                   {% if dish.modifiers.all or dish.sold_by_weight %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
-                  hx-swap="innerHTML"
-                  class="relative {% if user.simple_floor %}wdish{% else %}group card overflow-hidden text-left flex flex-col hover:border-brand hover:shadow-pop active:scale-[.98] transition{% endif %}">
-                  <span data-dish-badge class="hidden absolute {% if not user.simple_floor %}top-[30px]{% endif %} right-1.5 z-10 h-9 rounded-full bg-brand text-white text-base font-extrabold tabular-nums items-center gap-0.5 px-0.5 shadow-pop ring-2 ring-white select-none"{% if user.simple_floor %} style="top:calc(clamp(64px,7vw,104px) - 42px)"{% endif %}>
-                    <span data-step="-" role="button" aria-label="{% translate 'Уменьшить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">−</span>
-                    <span data-badge-n class="min-w-[18px] text-center"></span>
-                    <span data-step="+" role="button" aria-label="{% translate 'Увеличить' %}" class="w-9 h-9 grid place-items-center rounded-full text-xl leading-none active:bg-white/25">+</span>
-                  </span>
-                  {% if user.simple_floor %}{% include "components/dish_image.html" with cls="w-full h-[clamp(64px,7vw,104px)]" size=28 %}{% else %}{% include "components/dish_image.html" with cls="w-full h-[72px]" size=28 %}{% endif %}
-                  <span class="{% if user.simple_floor %}p-2.5{% else %}p-3{% endif %} flex-1 flex flex-col justify-between gap-2">
-                    <span class="{% if user.simple_floor %}text-[14px]{% else %}text-[15px]{% endif %} font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
-                    <span class="flex items-center justify-between gap-2">
-                      <span class="{% if user.simple_floor %}wdish-price{% else %}font-bold tabular-nums{% endif %}">{{ dish.price|money }}{% if dish.sold_by_weight %}<span class="text-xs font-medium text-muted">{{ dish|per_kg }}</span>{% endif %}</span>
-                      {% if dish.modifiers.all %}<span class="text-slate-400" title="{% translate 'Есть варианты' %}">{% icon "more" 18 %}</span>{% endif %}
-                    </span>
+                  hx-swap="innerHTML" class="wdish">
+                  {# Сколько порций уже в заказе: кружок в углу, как у вкладок. Убавить можно в заказе справа #}
+                  <span data-dish-badge class="hidden absolute z-10 -top-1.5 -right-1.5 min-w-[24px] h-6 px-1.5 rounded-full bg-red-600 text-white text-[13px] font-extrabold tabular-nums items-center justify-center shadow ring-2 ring-white select-none"><span data-badge-n></span></span>
+                  {% include "components/dish_image.html" with cls="wdish-img" size=26 %}
+                  <span class="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span class="wdish-name">{{ dish|tr }}</span>
+                    <span class="wdish-unit">{% if dish.sold_by_weight %}{% translate 'кг' %}{% else %}{% translate 'шт' %}{% endif %}{% if dish.modifiers.all %} · {% translate 'Есть варианты' %}{% endif %}</span>
+                    <span class="wdish-price">{{ dish.price|money }}</span>
                   </span>
                 </button>
               {% else %}
-                <div data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}" class="card overflow-hidden flex flex-col opacity-60 cursor-not-allowed" title="{% translate 'Нет в наличии' %}">
-                  <span class="relative">
-                    {% include "components/dish_image.html" with cls="w-full h-[72px] grayscale" size=28 %}
-                    <span class="absolute top-2 left-2 badge bg-ink text-white">{% translate 'Стоп-лист' %}</span>
-                  </span>
-                  <span class="p-3 flex-1 flex flex-col justify-between gap-1.5">
-                    <span class="text-[15px] font-semibold leading-snug line-clamp-2">{{ dish|tr }}</span>
-                    <span class="font-bold tabular-nums text-slate-500">{{ dish.price|money }}{{ dish|per_kg }}</span>
+                <div data-dish data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}" class="wdish wdish-off" title="{% translate 'Нет в наличии' %}">
+                  {% include "components/dish_image.html" with cls="wdish-img" size=26 %}
+                  <span class="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span class="wdish-name">{{ dish|tr }}</span>
+                    <span class="badge bg-ink text-white self-start">{% translate 'Стоп-лист' %}</span>
+                    <span class="wdish-price text-slate-500">{{ dish.price|money }}</span>
                   </span>
                 </div>
               {% endif %}
@@ -108,25 +96,21 @@
     </div>
   </section>
 
-  {# ---------- Корзина ---------- #}
-  <aside id="cart" class="card {% if user.simple_floor %}fixed inset-x-0 bottom-0 z-40 max-h-[88vh] translate-y-full transition-transform duration-200 rounded-b-none lg:rounded-2xl lg:sticky lg:top-[calc(var(--hh)+8px)] lg:translate-y-0 lg:max-h-[calc(100vh-var(--hh)-16px)]{% else %}lg:sticky lg:top-[calc(var(--hh)+8px)] lg:max-h-[calc(100vh-var(--hh)-16px)]{% endif %} flex flex-col overflow-hidden">
-    {% if user.simple_floor %}<button type="button" class="lg:hidden grid place-items-center h-7 shrink-0" onclick="toggleCart(false)" aria-label="{% translate 'Закрыть' %}"><span class="w-10 h-1.5 rounded-full bg-stone-300"></span></button>{% endif %}
+  {# ---------- Заказ ---------- #}
+  <aside id="cart" class="card fixed inset-x-0 bottom-0 z-40 max-h-[88vh] translate-y-full transition-transform duration-200 rounded-b-none lg:rounded-2xl lg:sticky lg:top-[calc(var(--hh)+8px)] lg:translate-y-0 lg:max-h-[calc(100vh-var(--hh)-16px)] flex flex-col overflow-hidden">
+    <button type="button" class="lg:hidden grid place-items-center h-7 shrink-0" onclick="toggleCart(false)" aria-label="{% translate 'Закрыть' %}"><span class="w-10 h-1.5 rounded-full bg-stone-300"></span></button>
     <div id="order-panel" class="flex flex-col min-h-0 h-full" hx-get="{% url 'order_panel' order.id %}" hx-trigger="every 10s" hx-swap="innerHTML">
       {% include "pos/_order_panel.html" %}
     </div>
   </aside>
 </div>
 
-{# Быстрый переход к корзине на телефоне #}
-{% if user.simple_floor %}
+{# Заказ на узком экране: кнопка внизу открывает шторку #}
 <div id="cart-backdrop" class="hidden lg:hidden fixed inset-0 z-30 bg-night/50" onclick="toggleCart(false)"></div>
 <button id="cart-bar" type="button" onclick="toggleCart(true)" class="lg:hidden fixed inset-x-3 bottom-3 z-30 flex items-center justify-between gap-3 rounded-2xl bg-brand text-white px-4 min-h-[56px] shadow-pop active:bg-brand-600">
   <span class="flex items-center gap-2 font-bold">{% icon "receipt" 20 %}{% translate 'Корзина' %}<span id="cart-bar-count" class="min-w-[24px] h-6 px-1.5 rounded-full bg-white text-brand text-sm font-extrabold inline-flex items-center justify-center">0</span></span>
   <span id="cart-bar-total" class="text-lg font-extrabold tabular-nums"></span>
 </button>
-{% else %}
-<a href="#cart" class="lg:hidden fixed bottom-4 right-4 z-30 btn btn-primary btn-lg shadow-pop">{% icon "receipt" 18 %}{% translate 'Корзина' %}</a>
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -134,10 +118,14 @@
   (function () {
     var search = document.getElementById('dish-search');
     var chips = document.getElementById('cat-chips');
-    var cat = '';
+    // Как в кассовом терминале: на экране одна категория, поиск ищет по всему меню
+    var first = chips.querySelector('[data-cat]');
+    var cat = first ? first.dataset.cat : '';
+    var list = document.getElementById('dish-list');
     function apply() {
       var q = search.value.trim().toLowerCase();
       var any = false;
+      list.classList.toggle('searching', q !== '');
       document.querySelectorAll('[data-cat-section]').forEach(function (section) {
         var sectionVisible = false;
         var catOk = q !== '' || cat === '' || section.dataset.catSection === cat;
@@ -165,43 +153,24 @@
         badge.querySelector('[data-badge-n]').textContent = n;
         badge.classList.toggle('hidden', n === 0);
         badge.classList.toggle('inline-flex', n > 0);
+        card.classList.toggle('wdish-on', n > 0);
       });
     }
-    // «+» и «−» прямо на карточке: не нужно искать блюдо в корзине справа
-    document.getElementById('dish-list').addEventListener('click', function (e) {
-      var step = e.target.closest('[data-step]');
-      if (!step) return;
-      var card = step.closest('[data-dish-pk]');
-      if (step.dataset.step === '+') {
-        // Простое блюдо добавляем сразу; для блюда с вариантами или весом пусть сработает сама карточка (окно выбора)
-        if (card.hasAttribute('hx-post')) {
-          e.stopPropagation();
-          htmx.ajax('POST', card.getAttribute('hx-post'), { target: '#order-panel', swap: 'innerHTML' });
-        }
-        return;
-      }
-      e.stopPropagation();
-      var lines = Array.prototype.slice.call(document.querySelectorAll('#order-panel [data-line-dish="' + card.dataset.dishPk + '"]'));
-      if (!lines.length) return;
-      var fresh = lines.filter(function (l) { return l.dataset.lineStatus === 'new'; });
-      var line = fresh.length ? fresh[fresh.length - 1] : lines[lines.length - 1];
-      if (!fresh.length && !confirm('{% translate "Блюдо уже на кухне. Убрать порцию?" %}')) return;
-      htmx.ajax('POST', line.dataset.lineUrl, { target: '#order-panel', swap: 'innerHTML', values: { delta: '-1' } });
-    }, true);
     document.body.addEventListener('htmx:afterSwap', function (e) {
       if (e.target.id === 'order-panel') syncBadges();
     });
     syncBadges();
+    apply();
     search.addEventListener('input', apply);
     chips.addEventListener('click', function (e) {
       var b = e.target.closest('[data-cat]');
       if (!b) return;
       cat = b.dataset.cat;
       search.value = '';
+      window.scrollTo(0, 0);
       chips.querySelectorAll('[data-cat]').forEach(function (c) { c.classList.toggle('chip-active', c === b); });
       apply();
     });
-    {% if user.simple_floor %}
     // Корзина-шторка на телефоне: нижняя панель показывает число позиций и сумму, обновляется после каждого действия
     var cart = document.getElementById('cart'), bar = document.getElementById('cart-bar'), backdrop = document.getElementById('cart-backdrop');
     window.toggleCart = function (open) {
@@ -220,11 +189,10 @@
       if (e.target.id === 'order-panel') updateBar(!!(e.detail.requestConfig && e.detail.requestConfig.verb === 'post'));
     });
     document.getElementById('dish-list').addEventListener('click', function (e) {
-      var d = e.target.closest('.wdish'); if (!d) return;
+      var d = e.target.closest('.wdish'); if (!d || d.classList.contains('wdish-off')) return;
       d.classList.remove('wdish-flash'); void d.offsetWidth; d.classList.add('wdish-flash');
     });
     updateBar(false);
-    {% endif %}
     document.body.addEventListener('openCustomer', function () {
       htmx.ajax('GET', '{% url "customer_form" order.id %}', { target: '#modal' });
     });

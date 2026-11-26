@@ -36,8 +36,10 @@ class WaiterOrderScreenTests(TestCase):
         self.assertIn('id="cart-totals"', html)
         self.assertIn('data-count="1"', html)
 
-    def test_cashier_keeps_old_layout(self):
+    def test_cashier_has_the_same_terminal_layout(self):
+        """Один экран заказа для всех: категории слева, плотные карточки блюд, заказ справа."""
         html = self.page(self.cashier)
-        self.assertNotIn('id="cart-bar"', html)
-        self.assertNotIn("wdgrid", html)
-        self.assertIn('href="#cart"', html)
+        self.assertIn('id="cart-bar"', html)
+        self.assertIn("wdgrid", html)
+        self.assertIn('class="cat-btn chip-active"', html)
+        self.assertNotIn('data-cat="" ', html)
