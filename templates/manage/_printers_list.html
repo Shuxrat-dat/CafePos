@@ -36,8 +36,8 @@
               <div class="text-xs text-red-700 font-semibold mt-0.5">{{ p.check_error }}</div>
             {% endif %}
             <div class="text-xs text-muted mt-0.5">
-              {% if p.prints_receipts %}{% translate 'Чеки' %}{% if p.auto_receipt %} ({% translate 'сразу после оплаты' %}){% endif %}{% endif %}{% if p.prints_receipts and p.prints_kitchen %} · {% endif %}
-              {% if p.prints_kitchen %}{% translate 'Кухня' %}: {% for c in p.categories.all %}{{ c|tr }}{% if not forloop.last %}, {% endif %}{% empty %}{% if not p.dishes.all %}{% translate 'все блюда' %}{% endif %}{% endfor %}{% with extra=p.dishes.all %}{% if extra %}{% if p.categories.all %} + {% endif %}{% for d in extra %}{{ d|tr }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}{% endif %}
+              {% if p.prints_receipts %}{% translate 'Чеки' %}{% if p.auto_receipt %} ({% translate 'сразу после оплаты' %}){% endif %}{% endif %}{% if p.prints_receipts and p.prints_kitchen and not p.order_slips %} · {% endif %}
+              {% if p.order_slips %}{% if p.prints_receipts %} · {% endif %}{% translate 'Бегунок на каждую отправку' %}{% endif %}{% if p.prints_kitchen and not p.order_slips %}{% translate 'Кухня' %}: {% for c in p.categories.all %}{{ c|tr }}{% if not forloop.last %}, {% endif %}{% empty %}{% if not p.dishes.all %}{% translate 'все блюда' %}{% endif %}{% endfor %}{% with extra=p.dishes.all %}{% if extra %}{% if p.categories.all %} + {% endif %}{% for d in extra %}{{ d|tr }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}{% endif %}
               {% if p.checked_at %} · {% translate 'проверено' %} {{ p.checked_at|date:"H:i:s" }}{% endif %}
             </div>
             {% if p.recent %}

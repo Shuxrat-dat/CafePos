@@ -5250,3 +5250,12 @@ msgstr "hisobning mehmon keyinroq to‘laydigan qismi"
 
 msgid "Обновить"
 msgstr "Yangilash"
+
+msgid "Бегунок на каждую отправку"
+msgstr "Har bir yuborishga chek"
+
+msgid "При каждой отправке на кухню печатает только новые блюда, все сразу (с чаем, хлебом и напитками): первый раз «Заказ», потом «Дозаказ». Пречек со всем заказом для этого не нужен."
+msgstr "Har safar oshxonaga yuborilganda faqat yangi taomlarni hammasini birga chop etadi (choy, non va ichimliklar bilan): birinchi marta «Buyurtma», keyin «Qoʻshimcha buyurtma». Buning uchun butun buyurtmali oldindan chek kerak emas."
+
+msgid "Дозаказ №%(n)s"
+msgstr "Qoʻshimcha buyurtma №%(n)s"

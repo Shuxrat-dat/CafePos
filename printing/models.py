@@ -39,6 +39,11 @@ class Printer(models.Model):
     prints_receipts = models.BooleanField(_("Печатает чеки и пречеки"), default=True)
     auto_receipt = models.BooleanField(_("Чек сразу после оплаты"), default=True)
     prints_kitchen = models.BooleanField(_("Печатает заказы для кухни"), default=False)
+    order_slips = models.BooleanField(
+        _("Бегунок на каждую отправку"), default=False,
+        help_text=_("При каждой отправке на кухню печатает только новые блюда, все сразу (с чаем, хлебом и напитками): "
+                    "первый раз «Заказ», потом «Дозаказ». Пречек со всем заказом для этого не нужен."),
+    )
     categories = models.ManyToManyField(
         Category, verbose_name=_("Категории блюд для этого принтера"), blank=True,
         help_text=_("Сюда уходят только блюда отмеченных категорий. Ничего не отмечено — все блюда."),

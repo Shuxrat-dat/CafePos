@@ -55,18 +55,29 @@ def queue_receipt(order, printer=None, precheck=False, auto=False):
 
 def queue_kitchen(order, item_ids):
     """Новые позиции заказа расходятся по кухонным принтерам согласно категориям блюд."""
-    items = list(order.items.filter(id__in=item_ids).select_related("dish").prefetch_related("modifiers").order_by("id"))
+    from pos.models import OrderItem
+
+    # Позиции берём из базы, а не через order.items: пречек подменяет на объекте заказа список позиций
+    items = list(OrderItem.objects.filter(order=order, id__in=item_ids).select_related("dish").prefetch_related("modifiers").order_by("id"))
     if not items:
         return []
-    addition = order.items.exclude(id__in=item_ids).exclude(sent_at=None).exists()
+    addition = OrderItem.objects.filter(order=order).exclude(id__in=item_ids).exclude(sent_at=None).exists()
     jobs = []
     printers = list(_active().filter(prints_kitchen=True).prefetch_related("categories", "dishes"))
     claimed = {d.id for p in printers for d in p.dishes.all()}  # блюда, закреплённые за конкретными принтерами
+    slips = list(_active().filter(order_slips=True))
+    slip_ids = {p.id for p in slips}
     for printer in printers:
+        if printer.id in slip_ids:
+            continue  # этот принтер и так получит бегунок со всеми новыми блюдами
         mine = [item for item in items if printer.takes_dish(item.dish, claimed)]
         if mine:
             title = _("Кухня №%(n)s") % {"n": order.id}
             jobs += _queue(printer, PrintJob.Kind.KITCHEN, title, documents.kitchen(order, mine, printer, addition), order)
+    # Бегунок: каждая отправка отдельным листком, только то, что добавили сейчас (5 шашлыков, потом отдельно 3)
+    for printer in slips:
+        title = (_("Дозаказ №%(n)s") if addition else _("Заказ №%(n)s")) % {"n": order.id}
+        jobs += _queue(printer, PrintJob.Kind.KITCHEN, title, documents.kitchen(order, items, printer, addition), order)
     return jobs
 
 

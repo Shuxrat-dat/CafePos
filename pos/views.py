@@ -1003,6 +1003,9 @@ def request_bill(request, order_id):
     is_htmx = bool(request.headers.get("HX-Request"))
     if not order.items.exists():
         return _panel(request, order) if is_htmx else redirect("order_detail", order_id=order.id)
+    # Добавили блюда и сразу попросили счёт: новые блюда сначала уходят на кухню отдельным дозаказом,
+    # иначе в пречеке они есть, а повар о них не знает
+    services.send_to_kitchen(order)
     order.bill_requested_at = timezone.now()
     order.save(update_fields=["bill_requested_at"])
 

@@ -96,6 +96,63 @@ class PrintFlowTests(TestCase):
         self.assertNotIn("ДОЗАКАЗ", text_of(first))
         self.assertIn("ДОЗАКАЗ", text_of(second))
 
+    def test_addition_prints_only_the_new_portions(self):
+        """Заказали 5 шашлыков, потом ещё 3: на кухню уходит «5», затем отдельно «3», а не «8»."""
+        add = reverse("add_item", args=[self.order.id, self.plov.id])
+        self.client.post(add, {"quantity": "5"})
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        self.client.post(add, {"quantity": "3"})
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        first, second = PrintJob.objects.filter(printer=self.kitchen).order_by("id")
+        self.assertIn("5 x Плов", text_of(first))
+        self.assertIn("3 x Плов", text_of(second))
+        self.assertNotIn("8 x", text_of(second))
+        self.assertNotIn("5 x", text_of(second))
+
+    def test_order_slip_on_cash_printer_has_all_new_dishes_each_send(self):
+        """Бегунок на кассе: каждая отправка отдельным листком со всеми новыми блюдами, включая напитки."""
+        self.receipt_printer.order_slips = True
+        self.receipt_printer.save()
+        OrderItem.objects.create(order=self.order, dish=self.plov, quantity=5)
+        OrderItem.objects.create(order=self.order, dish=self.tea, quantity=2)
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        OrderItem.objects.create(order=self.order, dish=self.plov, quantity=3)
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        first, second = PrintJob.objects.filter(printer=self.receipt_printer).order_by("id")
+        self.assertIn("5 x Плов", text_of(first))
+        self.assertIn("2 x Чай", text_of(first))
+        self.assertNotIn("ДОЗАКАЗ", text_of(first))
+        self.assertIn("ДОЗАКАЗ", text_of(second))
+        self.assertIn("3 x Плов", text_of(second))
+        self.assertNotIn("Чай", text_of(second))
+        self.assertNotIn("5 x", text_of(second))
+        self.assertEqual(second.title, f"Дозаказ №{self.order.id}")
+        # Кухонные принтеры работают как раньше
+        self.assertEqual(PrintJob.objects.filter(printer=self.kitchen).count(), 2)
+
+    def test_slip_is_off_unless_enabled(self):
+        OrderItem.objects.create(order=self.order, dish=self.plov, quantity=1)
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        self.assertFalse(PrintJob.objects.filter(printer=self.receipt_printer).exists())
+
+    def test_bill_request_sends_unsent_dishes_to_kitchen_first(self):
+        """Добавили 3 шашлыка и сразу нажали «Счёт»: эти 3 уходят на кухню дозаказом, а не теряются в пречеке."""
+        OrderItem.objects.create(order=self.order, dish=self.plov, quantity=5)
+        with self.captureOnCommitCallbacks(execute=True):
+            pos_services.send_to_kitchen(self.order)
+        OrderItem.objects.create(order=self.order, dish=self.plov, quantity=3)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse("request_bill", args=[self.order.id]))
+        self.assertFalse(self.order.items.filter(status=OrderItem.Status.NEW).exists())
+        second = PrintJob.objects.filter(printer=self.kitchen).order_by("id").last()
+        self.assertIn("ДОЗАКАЗ", text_of(second))
+        self.assertIn("3 x Плов", text_of(second))
+
     def test_kitchen_printer_without_categories_gets_everything(self):
         self.bar.categories.clear()
         OrderItem.objects.create(order=self.order, dish=self.plov, quantity=1)

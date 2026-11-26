@@ -17,7 +17,7 @@ class PrinterForm(StyledModelForm):
         model = Printer
         fields = [
             "name", "connection", "host", "port", "windows_name", "prints_receipts", "auto_receipt",
-            "prints_kitchen", "categories", "dishes", "copies", "line_width", "encoding", "codepage", "cut_paper", "is_active",
+            "prints_kitchen", "order_slips", "categories", "dishes", "copies", "line_width", "encoding", "codepage", "cut_paper", "is_active",
         ]
         widgets = {"categories": forms.CheckboxSelectMultiple, "dishes": forms.CheckboxSelectMultiple}
 
