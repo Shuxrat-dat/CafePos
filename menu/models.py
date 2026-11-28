@@ -102,6 +102,10 @@ class Dish(models.Model):
         _("Единица"), max_length=2, choices=Measure.choices, default=Measure.KG,
         help_text=_("Только для блюд на вес или в розлив."),
     )
+    pack_size = models.PositiveSmallIntegerField(
+        _("Штук в пачке"), null=True, blank=True,
+        help_text=_("Для сигарет: 20. Тогда на кассе можно продать пачку или поштучно; цена — за пачку."),
+    )
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     is_available = models.BooleanField(
         _("В продаже"), default=True,
@@ -138,6 +142,11 @@ class Dish(models.Model):
     @property
     def can_order(self):
         return self.is_available and not self.is_hidden
+
+    @property
+    def sold_by_piece(self):
+        """Пачка, которую можно продать и поштучно (сигареты): цена за пачку, штука — её доля."""
+        return bool(self.pack_size and self.pack_size > 1 and not self.sold_by_weight)
 
 
 WEEKDAY_CHOICES = [

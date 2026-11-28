@@ -60,12 +60,29 @@
     </div>
   </div>
   {% else %}
+  {% if piece_price %}
+    {# Сигареты: пачкой или поштучно. Цена штуки — доля цены пачки #}
+    {% if item %}<input type="hidden" name="sell" value="piece">{% else %}
+    <div class="grid grid-cols-2 gap-2" data-sell>
+      <label class="flex flex-col items-center justify-center min-h-[56px] rounded-xl border border-line cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-brand">
+        <input type="radio" name="sell" value="pack" class="sr-only" checked>
+        <span class="font-bold">{% translate 'Пачка' %}</span>
+        <span class="text-xs text-muted tabular-nums">{{ dish.price|money }}</span>
+      </label>
+      <label class="flex flex-col items-center justify-center min-h-[56px] rounded-xl border border-line cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-brand">
+        <input type="radio" name="sell" value="piece" class="sr-only">
+        <span class="font-bold">{% translate 'Поштучно' %}</span>
+        <span class="text-xs text-muted tabular-nums">{% blocktranslate trimmed with p=piece_price|money %}1 шт — {{ p }}{% endblocktranslate %}</span>
+      </label>
+    </div>
+    {% endif %}
+  {% endif %}
   <div class="flex items-center justify-between">
-    <span class="label mb-0">{% translate 'Количество' %}</span>
+    <span class="label mb-0">{% if item and piece_price %}{% translate 'Сколько штук' %}{% else %}{% translate 'Количество' %}{% endif %}</span>
     <div class="flex items-center gap-2" data-qty>
       <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.max(1,(+i.value||1)-1)" aria-label="{% translate 'Уменьшить' %}">{% icon "minus" 18 %}</button>
-      <input name="quantity" type="number" min="1" max="50" value="{{ quantity }}" inputmode="numeric" class="input w-20 text-center font-bold">
-      <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min(50,(+i.value||0)+1)" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
+      <input name="quantity" type="number" min="1" max="{% if piece_price %}{% widthratio dish.pack_size 1 5 %}{% else %}50{% endif %}" value="{{ quantity }}" inputmode="numeric" class="input w-20 text-center font-bold">
+      <button type="button" class="icon-btn" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min(+i.max||50,(+i.value||0)+1)" aria-label="{% translate 'Увеличить' %}">{% icon "plus" 18 %}</button>
     </div>
   </div>
   <div class="flex gap-2 pt-1">

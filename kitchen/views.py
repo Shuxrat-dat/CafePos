@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -167,6 +168,8 @@ def item_weight(request, item_id):
     item = get_object_or_404(
         OrderItem.objects.select_related("dish", "order"), id=item_id, by_weight=True, order__status=Order.Status.OPEN
     )
+    if item.is_pieces:
+        raise Http404
     error = ""
     if request.method == "POST":
         grams, error = _clean_weight(request, item.dish)

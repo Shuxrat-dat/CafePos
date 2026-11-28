@@ -70,7 +70,9 @@
         class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 px-2.5 py-1 {% if item.takeaway %}bg-amber-50{% elif item.status == 'ready' %}bg-emerald-50/70{% elif item.status != 'new' %}bg-slate-50/70{% endif %}">
       {# Количество: − (одну порцию), число, + (ещё порцию) #}
       <div class="w-[86px] flex items-center justify-between">
-        {% if item.by_weight %}
+        {% if item.is_pieces and item.status != "new" %}
+          <span class="h-8 px-2 inline-grid place-items-center font-bold tabular-nums text-sm">{{ item|item_qty }}</span>
+        {% elif item.by_weight %}
           <button hx-get="{% url 'edit_item' order.id item.id %}" hx-target="#modal" class="h-8 px-2 rounded-lg border border-dashed font-bold tabular-nums text-sm {% if item.weight_grams %}border-line bg-white hover:border-brand{% else %}border-amber-400 bg-amber-50 text-amber-900{% endif %}">{% if item.weight_grams %}{{ item|item_qty }}{% else %}{% translate 'Укажите вес' %}{% endif %}</button>
         {% else %}
           {% if user.needs_cancel_pin and item.status != "new" or user.needs_cancel_pin and item.quantity <= 1 %}

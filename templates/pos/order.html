@@ -66,7 +66,7 @@
             {% for dish in category.pos_dishes %}
               {% if dish.is_available %}
                 <button type="button" data-dish data-dish-pk="{{ dish.id }}" data-search="{{ dish.name|lower }} {{ dish.name_uz|lower }}"
-                  {% if dish.modifiers.all or dish.sold_by_weight %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
+                  {% if dish.modifiers.all or dish.sold_by_weight or dish.sold_by_piece %}hx-get="{% url 'item_form' order.id dish.id %}" hx-target="#modal"{% if dish.id == weigh_dish_id %} hx-trigger="click, load"{% endif %}
                   {% else %}hx-post="{% url 'add_item' order.id dish.id %}" hx-target="#order-panel"{% endif %}
                   hx-swap="innerHTML" class="wdish">
                   {# Сколько порций уже в заказе: кружок в углу, как у вкладок. Убавить можно в заказе справа #}

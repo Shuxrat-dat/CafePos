@@ -199,6 +199,8 @@ def weight(grams, measure="kg"):
         grams = int(grams)
     except (ValueError, TypeError):
         return ""
+    if measure == "pc":
+        return f"{grams} {_('шт')}"  # штуки из пачки (сигареты)
     small, big = (_("мл"), _("л")) if measure == "l" else (_("г"), _("кг"))
     if grams < 1000:
         return f"{grams} {small}"
@@ -212,7 +214,7 @@ def item_qty(item):
         measure = getattr(item, "measure", "kg")
         if item.weight_grams:
             return weight(item.weight_grams, measure)
-        return f"? {_('мл') if measure == 'l' else _('г')}"
+        return f"? {_('мл') if measure == 'l' else _('шт') if measure == 'pc' else _('г')}"
     return f"× {item.quantity}"
 
 
@@ -221,7 +223,13 @@ def per_kg(obj):
     """Подпись к цене блюда (или позиции) на вес или в розлив: « / кг» или « / л»."""
     if not (getattr(obj, "sold_by_weight", False) or getattr(obj, "by_weight", False)):
         return ""
-    return f" / {_('л') if getattr(obj, 'measure', 'kg') == 'l' else _('кг')}"
+    measure = getattr(obj, "measure", "kg") if getattr(obj, "by_weight", False) or getattr(obj, "sold_by_weight", False) else "kg"
+    return f" / {per_unit_label(measure)}"
+
+
+def per_unit_label(measure):
+    """За что цена: «л», «пачка» (штуки из пачки) или «кг»."""
+    return _("л") if measure == "l" else _("пачка") if measure == "pc" else _("кг")
 
 
 @register.filter

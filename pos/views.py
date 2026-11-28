@@ -29,7 +29,7 @@ from menu.models import Category, Dish
 from printing.services import receipt_printers
 
 from . import loyalty, reviews, services
-from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table, receipt_lines
+from .models import CashMovement, CashShift, GuestOrder, Hall, Order, OrderItem, Payment, Table, receipt_lines, round_sum
 
 
 # ---------- вспомогательные функции ----------
@@ -687,8 +687,53 @@ def item_form(request, order_id, dish_id):
         request,
         "pos/_item_form.html",
         {"order": order, "dish": dish, "item": None, "selected": set(), "quantity": 1, "comment": "",
-         "weight": "", "groups": groups, "extras": extras},
+         "weight": "", "groups": groups, "extras": extras, "piece_price": _piece_price(dish)},
     )
+
+
+def _piece_price(dish):
+    """Цена одной штуки из пачки (сигареты) — для подсказки в окне; в заказе считается так же."""
+    if not dish.sold_by_piece:
+        return None
+    return round_sum(dish.price / dish.pack_size)
+
+
+def _clean_pieces(request, dish):
+    """Сколько штук из пачки: от 1 до 5 пачек поштучно."""
+    try:
+        pieces = int(request.POST.get("quantity", "1"))
+    except ValueError:
+        pieces = 1
+    return max(1, min(pieces, dish.pack_size * 5))
+
+
+def _add_pieces(request, order, dish, comment, modifiers):
+    """Сигареты поштучно: одна строка «3 шт» на заказ (повторное добавление прибавляет штуки).
+    Набрали ровно пачку (20 из 20) — это обычная пачка."""
+    pieces = _clean_pieces(request, dish)
+    takeaway = _takeaway_mode(request, order)
+    packs, rest = divmod(pieces, dish.pack_size)
+    if packs:
+        same = _find_same(order, dish, [m.id for m in modifiers], comment, takeaway)
+        if same:
+            same.quantity = min(same.quantity + packs, 99)
+            same.save()
+        else:
+            OrderItem.objects.create(order=order, dish=dish, quantity=packs, comment=comment,
+                                     takeaway=takeaway).modifiers.set(modifiers)
+    if rest:
+        item = order.items.filter(dish=dish, status=OrderItem.Status.NEW, by_weight=True, measure="pc",
+                                  takeaway=takeaway).first()
+        if item and item.pack_size == dish.pack_size:
+            item.weight_grams = (item.weight_grams or 0) + rest
+            item.save(update_fields=["weight_grams"])
+        else:
+            OrderItem.objects.create(order=order, dish=dish, quantity=1, by_weight=True, measure="pc",
+                                     pack_size=dish.pack_size, weight_grams=rest, comment=comment, takeaway=takeaway)
+    audit.record(request.user, audit.A.ITEM_ADD, order=order, amount=round_sum(dish.price * pieces / dish.pack_size),
+                 detail=f"{order.place_label}: {dish.name} {pieces} шт")
+    _order_changed(order)
+    return _panel(request, order)
 
 
 @login_required
@@ -714,6 +759,8 @@ def add_item(request, order_id, dish_id):
         _order_changed(order)
         return _panel(request, order)
 
+    if dish.sold_by_piece and request.POST.get("sell") == "piece":
+        return _add_pieces(request, order, dish, comment, modifiers)
     qty = _clean_qty(request)
     takeaway = _takeaway_mode(request, order)
     item = _find_same(order, dish, [m.id for m in modifiers], comment, takeaway)
@@ -733,10 +780,16 @@ def add_item(request, order_id, dish_id):
 def edit_item(request, order_id, item_id):
     order = _get_order(request, order_id)
     item = get_object_or_404(OrderItem, id=item_id, order=order)
-    if item.status != OrderItem.Status.NEW and not item.by_weight:
+    if item.status != OrderItem.Status.NEW and (not item.by_weight or item.is_pieces):
         raise Http404
 
     if request.method == "POST":
+        if item.is_pieces:
+            item.weight_grams = max(1, min(_clean_pieces(request, item.dish), (item.pack_size or 20) * 5))
+            item.comment = _clean_comment(request)
+            item.save(update_fields=["weight_grams", "comment"])
+            _order_changed(order)
+            return _panel(request, order, _("Позиция изменена."))
         if item.by_weight:
             grams, error = _clean_weight(request, item.dish)
             if error:
@@ -764,7 +817,8 @@ def edit_item(request, order_id, item_id):
             "dish": item.dish,
             "item": item,
             "selected": {m.id for m in item.modifiers.all()},
-            "quantity": item.quantity,
+            "quantity": item.weight_grams if item.is_pieces else item.quantity,
+            "piece_price": _piece_price(item.dish) if item.is_pieces else None,
             "weight": item.weight_grams or "",
             "comment": item.comment,
             "groups": groups,
@@ -1572,7 +1626,19 @@ def move_items(request, order_id):
     targets = Order.objects.filter(status=Order.Status.OPEN).exclude(id=order.id).select_related("table__hall", "waiter")
     targets = [t for t in targets.order_by("table__hall__id", "table__number", "id") if t.items.exists()]
     busy = _busy_table_ids()
-    free_tables = [t for t in Table.objects.select_related("hall").order_by("hall__id", "number") if t.id not in busy]
+    all_tables = sorted(Table.objects.select_related("hall"),  # 1, 2 … 10, а не 1, 10, 2
+                        key=lambda t: (t.hall_id, len(str(t.number)), str(t.number)))
+    free_tables = [t for t in all_tables if t.id not in busy]
+    # В окне — просто список столов: занятый стол принимает блюда в свой заказ, свободный — новым заказом
+    order_at = {t.table_id: t for t in targets if t.table_id}
+    table_options = []
+    for table in all_tables:
+        if table.id == order.table_id:
+            continue
+        if table.id in order_at:
+            table_options.append((f"order:{order_at[table.id].id}", table))
+        elif table.id not in busy:
+            table_options.append((f"table:{table.id}", table))
     error = ""
 
     if request.method == "POST":
@@ -1610,5 +1676,5 @@ def move_items(request, order_id):
                 return response
 
     return render(request, "pos/_move_items_form.html", {
-        "order": order, "items": items, "targets": targets, "free_tables": free_tables, "error": error,
+        "order": order, "items": items, "table_options": table_options, "error": error,
     })

@@ -521,8 +521,10 @@ class OrderItem(models.Model):
     price = models.DecimalField(_("Цена на момент заказа"), max_digits=12, decimal_places=0, null=True, blank=True)
     # Блюдо на вес: price — цена за 1 кг, сумма считается по weight_grams. Признак фиксируется при заказе.
     by_weight = models.BooleanField(_("На вес"), default=False)
-    measure = models.CharField(_("Единица"), max_length=2, default="kg")  # kg — граммы, l — миллилитры
+    # kg — граммы, l — миллилитры, pc — штуки из пачки (сигареты): в weight_grams число штук, цена за пачку
+    measure = models.CharField(_("Единица"), max_length=2, default="kg")
     weight_grams = models.PositiveIntegerField(_("Вес, г"), null=True, blank=True)
+    pack_size = models.PositiveSmallIntegerField(_("Штук в пачке"), null=True, blank=True)
     modifiers = models.ManyToManyField(Modifier, verbose_name=_("Модификаторы"), blank=True)
     comment = models.CharField(_("Комментарий"), max_length=200, blank=True)
     # Гость за столом берёт блюдо с собой: на кухне его упаковывают, обслуживание на него не начисляется
@@ -562,7 +564,14 @@ class OrderItem(models.Model):
         """Доля от цены и техкарты: для блюда на вес это килограммы (450 г -> 0.45), для штучного 1."""
         if not self.by_weight:
             return Decimal(1)
+        if self.is_pieces:
+            return Decimal(self.weight_grams or 0) / (self.pack_size or 1)  # 3 сигареты из 20 -> 0.15 пачки
         return Decimal(self.weight_grams or 0) / 1000
+
+    @property
+    def is_pieces(self):
+        """Продажа поштучно из пачки (сигареты)."""
+        return self.by_weight and self.measure == "pc"
 
     @property
     def needs_weight(self):

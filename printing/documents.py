@@ -7,7 +7,7 @@ from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from core.models import CafeSettings
-from core.templatetags.ui import num, tr, vat_part, weight
+from core.templatetags.ui import num, per_unit_label, tr, vat_part, weight
 
 from .escpos import SIZE_BIG, SIZE_TALL, Ticket
 
@@ -73,7 +73,7 @@ def receipt(order, printer, precheck=False):
             # Количество в одной строке с названием: «2 x Плов ... 80 000»; на вес — «Рыба 1,5 кг ... 112 500»
             if item.by_weight:
                 title = f"{tr(item.dish)} {weight(item.weight_grams, item.measure)}"
-                detail = f"{num(item.price)} / {_('л') if item.measure == 'l' else _('кг')}"
+                detail = f"{num(item.price)} / {per_unit_label(item.measure)}"
             else:
                 title = f"{item.quantity} x {tr(item.dish)}"
                 detail = ""

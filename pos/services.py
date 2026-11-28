@@ -369,7 +369,8 @@ def _split_off(order, items, selected, method, received, card, cashier, shift=No
         else:
             part = OrderItem.objects.create(
                 order=target, dish=item.dish, quantity=qty, price=item.price,
-                by_weight=item.by_weight, weight_grams=item.weight_grams, comment=item.comment, status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
+                by_weight=item.by_weight, weight_grams=item.weight_grams, measure=item.measure,
+                pack_size=item.pack_size, comment=item.comment, status=item.status, sent_at=item.sent_at, ready_at=item.ready_at,
                 takeaway=item.takeaway,
             )
             part.modifiers.set(item.modifiers.all())
@@ -632,7 +633,8 @@ def move_items(source, target, selection):
                 item.save(update_fields=["quantity"])
                 copy = OrderItem.objects.create(
                     order=dst, dish=item.dish, quantity=qty, price=item.price, by_weight=item.by_weight,
-                    weight_grams=item.weight_grams, comment=item.comment, promo_label=item.promo_label,
+                    weight_grams=item.weight_grams, measure=item.measure, pack_size=item.pack_size,
+                    comment=item.comment, promo_label=item.promo_label,
                     status=item.status, sent_at=item.sent_at, ready_at=item.ready_at, takeaway=item.takeaway,
                 )
                 copy.modifiers.set(item.modifiers.all())

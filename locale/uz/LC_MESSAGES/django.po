@@ -5328,3 +5328,24 @@ msgstr "Klaviatura"
 
 msgid "Из"
 msgstr "Qayerdan"
+
+msgid "Штук в пачке"
+msgstr "Pachkada nechta dona"
+
+msgid "Для сигарет: 20. Тогда на кассе можно продать пачку или поштучно; цена — за пачку."
+msgstr "Sigaret uchun: 20. Shunda kassada pachka yoki donalab sotish mumkin; narx — pachka uchun."
+
+msgid "пачка"
+msgstr "pachka"
+
+msgid "Пачка"
+msgstr "Pachka"
+
+msgid "Поштучно"
+msgstr "Donalab"
+
+msgid "1 шт — %(p)s"
+msgstr "1 dona — %(p)s"
+
+msgid "Сколько штук"
+msgstr "Necha dona"

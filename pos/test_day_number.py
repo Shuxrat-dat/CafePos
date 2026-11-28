@@ -99,3 +99,29 @@ class ReceiptLinesTests(TestCase):
         ticket = documents.receipt(order, Printer(name="Kassa"), precheck=True).decode("cp866", "replace")
         self.assertIn("3 x Choy", ticket)
         self.assertEqual(ticket.count("x Choy"), 2)  # в зале 3 и с собой 1
+
+
+class MoveItemsTableListTests(TestCase):
+    """Окно «Перенести блюда»: просто список столов — занятый принимает блюда в свой заказ, свободный — новым заказом."""
+
+    setUp = DayNumberTests.setUp
+
+    def test_dialog_lists_tables_only(self):
+        hall = self.table.hall
+        busy = Table.objects.create(hall=hall, number="10")
+        free = Table.objects.create(hall=hall, number="3")
+        source = Order.objects.create(table=self.table, waiter=self.waiter)
+        item = OrderItem.objects.create(order=source, dish=self.dish, quantity=2)
+        other = Order.objects.create(table=busy, waiter=self.waiter)
+        OrderItem.objects.create(order=other, dish=self.dish, quantity=1)
+        Order.objects.create(order_type=Order.OrderType.TAKEAWAY, waiter=self.waiter).items.create(dish=self.dish)
+        self.client.force_login(self.cashier)
+        url = reverse("move_items", args=[source.id])
+        page = self.client.get(url).content.decode()
+        self.assertNotIn("<optgroup", page)
+        self.assertIn(f'value="order:{other.id}"', page)
+        self.assertIn(f'value="table:{free.id}"', page)
+        self.assertNotIn(f'value="table:{self.table.id}"', page)  # свой стол не предлагается
+        self.assertLess(page.index(f'value="table:{free.id}"'), page.index(f'value="order:{other.id}"'))  # 3 раньше 10
+        self.client.post(url, {f"qty_{item.id}": "1", "target": f"order:{other.id}"})
+        self.assertEqual(sum(i.quantity for i in other.items.all()), 2)

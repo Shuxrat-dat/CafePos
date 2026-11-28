@@ -32,16 +32,9 @@
     <label class="label" for="move-target">{% translate 'Куда' %}</label>
     <select id="move-target" name="target" class="input" required>
       <option value="">{% translate 'Выберите…' %}</option>
-      {% if targets %}
-        <optgroup label="{% translate 'К открытому заказу (объединить)' %}">
-          {% for t in targets %}<option value="order:{{ t.id }}">{% if t.table_id %}{{ t.table.hall|tr }} · {% endif %}{{ t.place_label }} · №{{ t.number }} · {{ t.waiter.first_name|default:t.waiter.username }}</option>{% endfor %}
-        </optgroup>
-      {% endif %}
-      {% if free_tables %}
-        <optgroup label="{% translate 'На свободный стол (новый заказ)' %}">
-          {% for t in free_tables %}<option value="table:{{ t.id }}">{{ t.hall|tr }} · {% blocktranslate trimmed with n=t.number %}стол {{ n }}{% endblocktranslate %}</option>{% endfor %}
-        </optgroup>
-      {% endif %}
+      {% for value, t in table_options %}
+        <option value="{{ value }}">{{ t.hall|tr }} · {% blocktranslate trimmed with n=t.number %}стол {{ n }}{% endblocktranslate %}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="grid grid-cols-2 gap-2">

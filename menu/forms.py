@@ -22,7 +22,7 @@ class DishForm(StyledModelForm):
         fields = [
             "name", "name_uz", "category", "price", "description", "description_uz",
             "photo", "modifiers", "allergens", "is_available", "is_hidden", "prep_minutes", "sort_order",
-            "sold_by_weight", "measure",
+            "sold_by_weight", "measure", "pack_size",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),

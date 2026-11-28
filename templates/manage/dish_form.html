@@ -20,10 +20,12 @@
         {% include "components/field.html" with field=form.price %}
         <div class="sm:col-span-2">{% include "components/field.html" with field=form.sold_by_weight %}</div>
         <div class="sm:col-span-2" id="measure-field">{% include "components/field.html" with field=form.measure %}</div>
+        <div class="sm:col-span-2" id="pack-field">{% include "components/field.html" with field=form.pack_size %}</div>
         <script>
           (function () {
             var box = document.getElementById("measure-field"), check = document.querySelector("[name=sold_by_weight]");
-            function show() { box.classList.toggle("hidden", !check.checked); }
+            var pack = document.getElementById("pack-field");
+            function show() { box.classList.toggle("hidden", !check.checked); pack.classList.toggle("hidden", check.checked); }
             if (check) { check.addEventListener("change", show); show(); }
           })();
         </script>
