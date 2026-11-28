@@ -843,7 +843,8 @@ def set_qty(request, order_id, item_id):
     item = get_object_or_404(OrderItem, id=item_id, order=order)
     user = request.user
     sent = item.status != OrderItem.Status.NEW
-    if item.by_weight or (sent and (not user.can_remove_sent_items or user.needs_cancel_pin)):
+    # Кассир с паролем отмены убирает порции через окно с паролем. Официант у отправленного блюда может только добавить
+    if item.by_weight or (sent and user.needs_cancel_pin):
         raise Http404
 
     if request.method != "POST":
@@ -873,6 +874,8 @@ def set_qty(request, order_id, item_id):
             new.modifiers.set(item.modifiers.all())
         _order_changed(order)
         return _panel(request, order, _("Порция добавлена. Отправьте её на кухню."))
+    if not user.can_remove_sent_items:
+        return _panel(request, order, _("Блюдо уже на кухне. Убрать его может администратор."), "error")
     was, removed_n = item.quantity, -diff
     item.quantity = removed_n
     removed = item.line_total

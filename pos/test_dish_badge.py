@@ -88,6 +88,10 @@ class SetQuantityTests(TestCase):
         self.item.status = "sent"
         self.item.quantity = 10
         self.item.save()
+        self.client.post(self.url, {"quantity": "4"})  # официант: уже на кухне, убрать нельзя
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, 10)
+        self.client.force_login(User.objects.create_user(username="adm_qty", password="pass12345", role="admin"))
         self.client.post(self.url, {"quantity": "4"})
         self.item.refresh_from_db()
         self.assertEqual(self.item.quantity, 4)

@@ -81,7 +81,7 @@
                     {% if item.status != "new" %}hx-confirm="{% translate 'Блюдо уже на кухне. Убрать порцию?' %}"{% endif %}
                     class="qbtn" aria-label="{% translate 'Уменьшить' %}">−</button>
           {% else %}<span class="w-7 shrink-0"></span>{% endif %}
-          {% if item.status == "new" or user.can_remove_sent_items and not user.needs_cancel_pin %}
+          {% if item.status == "new" or not user.needs_cancel_pin %}
             <button hx-get="{% url 'set_qty' order.id item.id %}" hx-target="#modal" title="{% translate 'Количество' %}" class="min-w-[24px] h-7 text-center font-extrabold text-[15px] tabular-nums rounded-md hover:bg-brand-50">{{ item.quantity }}</button>
           {% else %}
             <span class="min-w-[24px] h-7 inline-grid place-items-center font-extrabold text-[15px] tabular-nums">{{ item.quantity }}</span>

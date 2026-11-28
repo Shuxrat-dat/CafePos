@@ -5325,3 +5325,6 @@ msgstr "Kunlik raqam"
 
 msgid "Клавиатура"
 msgstr "Klaviatura"
+
+msgid "Из"
+msgstr "Qayerdan"

@@ -175,11 +175,14 @@ class PermissionTests(TestCase):
                     response = self.client.get(reverse("order_view", args=[order.id]))
                     self.assertEqual(response.status_code, 403)
 
-                def test_waiter_removes_dish_already_sent_to_kitchen(self):
-                    """Официант исправляет заказ: убирает и блюдо, ушедшее на кухню. Это пишется в журнал."""
+                def test_only_admin_removes_dish_already_sent_to_kitchen(self):
+                    """Блюдо ушло на кухню: официант его не уберёт, администратор уберёт, и это пишется в журнал."""
                     order = self._make_order(OrderItem.Status.QUEUED)
                     item = order.items.get()
                     self.client.force_login(self.waiter2)  # чужой стол, заказ ведёт коллега
+                    self.client.post(reverse("remove_item", args=[order.id, item.id]))
+                    self.assertTrue(order.items.exists())
+                    self.client.force_login(self.admin)
                     self.client.post(reverse("remove_item", args=[order.id, item.id]))
                     self.assertFalse(order.items.exists())
                     self.assertTrue(AuditLog.objects.filter(action="item_remove", order_id=order.id).exists())
@@ -195,7 +198,8 @@ class PermissionTests(TestCase):
                     self.assertFalse(order.items.exists())
 
                 def test_waiter_changes_quantity_of_sent_dish(self):
-                    """«+» добавляет порцию новой строкой для кухни, «−» убирает порцию и пишется в журнал."""
+                    """«+» добавляет порцию новой строкой для кухни; «−» официанту нельзя, администратор убирает
+                    порцию с записью в журнал."""
                     order = self._make_order(OrderItem.Status.QUEUED)
                     sent = order.items.get()
                     self.client.force_login(self.waiter2)
@@ -208,6 +212,10 @@ class PermissionTests(TestCase):
                     self.assertEqual(sent.quantity, 1)
                     sent.quantity = 3
                     sent.save()
+                    self.client.post(url, {"delta": "-1"})
+                    sent.refresh_from_db()
+                    self.assertEqual(sent.quantity, 3)  # официант не убрал
+                    self.client.force_login(self.admin)
                     self.client.post(url, {"delta": "-1"})
                     sent.refresh_from_db()
                     self.assertEqual(sent.quantity, 2)
@@ -234,8 +242,22 @@ class PermissionTests(TestCase):
                 def test_waiter_still_cannot_cancel_order_sent_to_kitchen(self):
                     order = self._make_order(OrderItem.Status.QUEUED)
                     self.assertFalse(self.waiter1.can_cancel_sent_orders)
-                    self.assertTrue(self.waiter1.can_remove_sent_items)
+                    self.assertFalse(self.waiter1.can_remove_sent_items)
                     self.assertFalse(self.cook.can_remove_sent_items)
+                    # После отправки на кухню официант не может убрать ни блюдо, ни порцию
+                    item = order.items.first()
+                    item.quantity = 3
+                    item.save()
+                    self.client.force_login(self.waiter1)
+                    self.client.post(reverse("remove_item", args=[order.id, item.id]))
+                    self.client.post(reverse("change_qty", args=[order.id, item.id]), {"delta": "-1"})
+                    self.client.post(reverse("set_qty", args=[order.id, item.id]), {"quantity": "1"})
+                    item.refresh_from_db()
+                    self.assertEqual(item.quantity, 3)
+                    panel = self.client.get(reverse("order_panel", args=[order.id])).content.decode()
+                    self.assertNotIn(reverse("remove_item", args=[order.id, item.id]), panel)
+                    self.assertNotIn('"delta": "-1"', panel)
+                    self.assertIn('"delta": "1"', panel)  # добавить порцию дозаказом можно
 
                 def test_cashier_opens_any_order(self):
                     order = self._make_order(OrderItem.Status.NEW)

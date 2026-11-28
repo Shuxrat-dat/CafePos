@@ -99,9 +99,9 @@ class User(AbstractUser):
 
     @property
     def can_remove_sent_items(self):
-        """Убрать из заказа блюдо, уже ушедшее на кухню. Официанту можно: каждое такое удаление пишется в журнал
-        и уходит уведомлением владельцу. Целый заказ с кухни отменяют только те, кто вправе (can_cancel_sent_orders)."""
-        return self.can_cancel_sent_orders or (not self.is_superuser and self.role == self.Role.WAITER)
+        """Убрать из заказа блюдо (или порцию), уже ушедшее на кухню: те же, кто вправе отменять такие заказы.
+        Официанту нельзя: до отправки он правит заказ как хочет, после отправки только добавляет порции."""
+        return self.can_cancel_sent_orders
 
     @property
     def can_cancel_sent_orders(self):
